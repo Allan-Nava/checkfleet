@@ -1,5 +1,6 @@
 ---
-title: checkfleet
+title: Home
+nav_order: 1
 ---
 
 **A fleet of infrastructure checks in one binary.**

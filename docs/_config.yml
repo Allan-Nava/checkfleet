@@ -1,7 +1,34 @@
 title: checkfleet
 description: A fleet of infrastructure checks in one binary.
-theme: jekyll-theme-cayman
-show_downloads: false
+theme: just-the-docs
+url: https://allan-nava.github.io/checkfleet
 
-# Rendered by GitHub Pages via .github/workflows/pages.yml (Jekyll build of this
-# docs/ folder). Public URL: https://allan-nava.github.io/checkfleet/
+# Full-text search (built into just-the-docs).
+search_enabled: true
+search:
+  heading_level: 3
+  previews: 3
+
+# Top-right link back to the repo.
+aux_links:
+  "checkfleet on GitHub": "https://github.com/Allan-Nava/checkfleet"
+aux_links_new_tab: true
+
+# Footer / "edit this page" niceties.
+back_to_top: true
+back_to_top_text: "Back to top"
+
+# jekyll-relative-links rewrites our [text](page.md) links to the built page
+# URLs, so the existing cross-references keep working under just-the-docs.
+plugins:
+  - jekyll-relative-links
+
+# Apply the theme's doc layout to every page without repeating it in each file.
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
+
+# Rendered by GitHub Pages via .github/workflows/pages.yml.
+# Public URL: https://allan-nava.github.io/checkfleet/

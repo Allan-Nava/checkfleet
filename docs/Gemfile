@@ -1,0 +1,6 @@
+source "https://rubygems.org"
+
+# GitHub Pages docs site (built by .github/workflows/pages.yml).
+gem "jekyll", "~> 4.3.4"
+gem "just-the-docs", "0.10.1"        # documentation theme: sidebar nav + search
+gem "jekyll-relative-links", "~> 0.7" # keep [text](page.md) cross-links working

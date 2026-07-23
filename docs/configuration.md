@@ -1,5 +1,6 @@
 ---
 title: Configuration
+nav_order: 3
 ---
 
 [← back to index](index.md)

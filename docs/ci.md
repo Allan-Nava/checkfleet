@@ -1,5 +1,6 @@
 ---
 title: CI integration
+nav_order: 7
 ---
 
 [← back to index](index.md)
