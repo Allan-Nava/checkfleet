@@ -37,8 +37,9 @@ go install github.com/Allan-Nava/checkfleet/cmd/checkfleet@latest
 |---|---|
 | `certs` | TLS certificate expiry (WARN/BAD thresholds in days) for explicit targets **and/or every host of an Ansible INI inventory** |
 | `http` | HTTP probes: expected status, max latency (WARN), body substring |
+| `nats` | NATS JetStream cluster health via `/varz` + `/jsz?meta=1`: meta-leader present/expected, offline or lagging peers, ghost/missing peers, mixed versions |
 
-More on the way (see [BACKLOG.md](BACKLOG.md)): `nats`, `haproxy`, `stream` (HLS/DASH), `patroni`, Slack output, Prometheus exporter mode.
+More on the way (see [BACKLOG.md](BACKLOG.md)): `haproxy`, `stream` (HLS/DASH), `patroni`, `postgres`, `consul`, Slack output, Prometheus exporter mode.
 
 ## Configuration
 
@@ -67,6 +68,7 @@ checks:
 ```bash
 checkfleet check all   --config checkfleet.yml                    # terminal
 checkfleet check certs --config checkfleet.yml --output markdown  # ops report
+checkfleet check nats  --config checkfleet.yml --output markdown  # NATS cluster health
 checkfleet check http  --config checkfleet.yml --output json      # machine-readable (includes "worst")
 checkfleet check all   --config checkfleet.yml --exit-on-bad      # exit 2 on BAD/ERROR, for CI gates
 ```

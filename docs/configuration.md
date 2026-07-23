@@ -70,6 +70,35 @@ HTTP probes. See [Modules → http](modules.md#http).
 | `max_latency_ms` | int | — | WARN if the response is slower. Omit to skip the latency check. |
 | `expect_body` | string | — | BAD if this substring is absent from the body. Omit to skip. |
 
+## `checks.nats`
+
+NATS JetStream cluster health via the monitoring endpoints. See
+[Modules → nats](modules.md#nats).
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `targets` | list | — | Monitoring endpoints as `host` or `host:port`. |
+| `port` | int | `8222` | Default monitoring port for targets/inventory hosts without one. |
+| `scheme` | string | `http` | `http` or `https` for the monitoring endpoint. |
+| `ansible_inventory` | string | — | Ansible INI inventory; every host becomes a monitoring target on `port`. |
+| `expect_meta_leader` | string | — | Expected meta-leader `server_name`; a mismatch is WARN. |
+| `expect_peers` | list | — | Expected peer `server_name`s. Unexpected members → WARN (ghost); expected-but-absent → BAD. |
+| `lag_warn` | int | `100` | Raft peer lag (entries) at/above which a peer is WARN. |
+| `lag_crit` | int | `1000` | Raft peer lag (entries) at/above which a peer is BAD. |
+
+```yaml
+checks:
+  nats:
+    port: 8222
+    expect_meta_leader: c0-nats-gw-01
+    expect_peers: [sg-nats-gw-01, c0-nats-gw-01, ov-nats-gw-01]
+    lag_warn: 100
+    lag_crit: 1000
+    targets:
+      - 10.21.10.18
+      - 10.11.10.18:8222
+```
+
 ## No secrets in config
 
 Keep credentials out of `checkfleet.yml` — checks never log or echo secrets, and

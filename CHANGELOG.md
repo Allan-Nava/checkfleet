@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0
+
+- Modulo `nats` (CF-1): health cluster NATS JetStream via endpoint di monitoring (`/varz`, `/jsz?meta=1`), sola lettura.
+  - Reachability + versione per nodo; **versioni miste** nel cluster → WARN.
+  - **Meta-leader**: assente → BAD, incoerente tra i nodi → WARN, diverso da `expect_meta_leader` → WARN.
+  - **Peer**: OFFLINE → BAD, non current → WARN; **lag** raft oltre `lag_warn`/`lag_crit` → WARN/BAD.
+  - **Ghost/missing peer** con `expect_peers`: membro inatteso → WARN, atteso assente → BAD.
+  - Config `checks.nats` (default `port: 8222`, `lag_warn: 100`, `lag_crit: 1000`); target espliciti + inventory Ansible.
+- CLI: `checkfleet check nats`. Docs e config d'esempio aggiornate.
+
 ## 0.1.2
 
 - Docs: sito d'uso in `docs/` (installazione, configurazione, uso, moduli, output, CI, sviluppo) servito via GitHub Pages.

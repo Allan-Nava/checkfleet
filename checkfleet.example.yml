@@ -19,3 +19,18 @@ checks:
       - url: https://example.com/health
         expect_status: 200
         expect_body: "ok"
+
+  nats:
+    port: 8222                       # NATS monitoring HTTP port
+    scheme: http                     # http | https
+    # expect_meta_leader: c0-nats-gw-01   # WARN if the meta-leader isn't this node
+    # expect_peers:                       # ghost/missing peer detection (optional)
+    #   - sg-nats-gw-01
+    #   - c0-nats-gw-01
+    #   - ov-nats-gw-01
+    lag_warn: 100                    # raft peer lag (entries) → WARN
+    lag_crit: 1000                   # raft peer lag (entries) → BAD
+    targets:
+      - 10.21.10.18                  # a JetStream node/gateway (uses `port`)
+      - 10.11.10.18:8222
+    # ansible_inventory: /path/to/inventory/nats   # every host → monitoring target

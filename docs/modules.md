@@ -7,9 +7,9 @@ title: Modules
 # Modules
 
 Each module is a self-contained check that knows what "healthy" means for one
-kind of target. Shipping today: `certs` and `http`. The
+kind of target. Shipping today: `certs`, `http`, `nats`. The
 [backlog](https://github.com/Allan-Nava/checkfleet/blob/main/BACKLOG.md) tracks
-what's next (`nats`, `haproxy`, `stream`, `patroni`, `postgres`, `consul`, …).
+what's next (`haproxy`, `stream`, `patroni`, `postgres`, `consul`, …).
 
 ## `certs`
 
@@ -39,13 +39,35 @@ HTTP endpoint probes.
 
 See [Configuration → checks.http](configuration.md#checkshttp).
 
+## `nats`
+
+Preflight/health of a NATS JetStream cluster, read from each node's HTTP
+monitoring port (`/varz` and `/jsz?meta=1`) — the read-only endpoints only, it
+never mutates the cluster. It encodes the operational signals from the ops
+runbook:
+
+- **Reachability + version** per node (`OK` with `server_name`, version, conns,
+  uptime; `ERROR` if the monitoring port doesn't answer).
+- **Mixed versions** across the cluster → `WARN` (e.g. mid-upgrade skew).
+- **Meta-leader**: `BAD` if no meta-leader is elected (quorum lost), `WARN` if
+  the elected leader disagrees across nodes, or if it isn't the
+  `expect_meta_leader` you configured.
+- **Peer health** (from the meta raft group): `BAD` if a peer is `OFFLINE`,
+  `WARN` if `not current`.
+- **Peer lag**: `WARN`/`BAD` when a peer's raft lag crosses `lag_warn`/`lag_crit`.
+- **Ghost / missing peers**: with `expect_peers` set, an unexpected member is a
+  `WARN` (ghost), an expected member absent from the cluster is `BAD`.
+
+See [Configuration → checks.nats](configuration.md#checksnats).
+
 ## Ansible inventory as a target source
 
-The `certs` module can read a standard Ansible **INI** inventory (a file or a
-directory of files):
+The `certs` and `nats` modules can read a standard Ansible **INI** inventory (a
+file or a directory of files):
 
 - host lines and their `ansible_host=` value are used;
 - `:vars` and `:children` sections are ignored;
 - hosts are de-duplicated.
 
-Every discovered host becomes a certs target on the module's `port`.
+Every discovered host becomes a target on the module's `port` (443 for `certs`,
+8222 for `nats`).

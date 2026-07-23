@@ -16,6 +16,7 @@ type Config struct {
 type ChecksConfig struct {
 	Certs *CertsConfig `yaml:"certs"`
 	HTTP  *HTTPConfig  `yaml:"http"`
+	NATS  *NATSConfig  `yaml:"nats"`
 }
 
 // CertsConfig configures the TLS certificate expiry check.
@@ -28,6 +29,25 @@ type CertsConfig struct {
 	Targets []string `yaml:"targets"`
 	// Optional Ansible INI inventory: every host becomes a target on Port.
 	AnsibleInventory string `yaml:"ansible_inventory"`
+}
+
+// NATSConfig configures the NATS JetStream cluster health check.
+type NATSConfig struct {
+	// Monitoring endpoints as host[:port]; Port applies when a target has none.
+	Targets []string `yaml:"targets"`
+	Port    int      `yaml:"port"`
+	// Optional Ansible INI inventory: every host becomes a monitoring target.
+	AnsibleInventory string `yaml:"ansible_inventory"`
+	// Scheme for the monitoring endpoint (http or https). Default http.
+	Scheme string `yaml:"scheme"`
+	// Optional expected meta-leader (server_name); a mismatch is WARN.
+	ExpectMetaLeader string `yaml:"expect_meta_leader"`
+	// Optional expected peer set (server_name); unexpected peers are ghosts
+	// (WARN), missing expected peers are BAD.
+	ExpectPeers []string `yaml:"expect_peers"`
+	// Raft peer lag thresholds (entries). WARN/BAD when a peer is at or above.
+	LagWarn int `yaml:"lag_warn"`
+	LagCrit int `yaml:"lag_crit"`
 }
 
 // HTTPConfig configures the HTTP probe check.
@@ -71,6 +91,17 @@ func LoadConfig(path string) (*Config, error) {
 			if h.Targets[i].ExpectStatus == 0 {
 				h.Targets[i].ExpectStatus = 200
 			}
+		}
+	}
+	if n := cfg.Checks.NATS; n != nil {
+		if n.Port <= 0 {
+			n.Port = 8222
+		}
+		if n.LagWarn <= 0 {
+			n.LagWarn = 100
+		}
+		if n.LagCrit <= 0 {
+			n.LagCrit = 1000
 		}
 	}
 	return &cfg, nil
