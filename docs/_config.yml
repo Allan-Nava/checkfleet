@@ -1,0 +1,7 @@
+title: checkfleet
+description: A fleet of infrastructure checks in one binary.
+theme: jekyll-theme-cayman
+show_downloads: false
+
+# Rendered by GitHub Pages via .github/workflows/pages.yml (Jekyll build of this
+# docs/ folder). Public URL: https://allan-nava.github.io/checkfleet/

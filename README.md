@@ -4,6 +4,8 @@
 
 checkfleet runs *domain-aware* health checks — the kind that generic monitoring can't express — and reports them as terminal output, an ops-style markdown report, or JSON. One static Go binary, one YAML config, no agents, no server.
 
+📖 **Full documentation: [allan-nava.github.io/checkfleet](https://allan-nava.github.io/checkfleet/)**
+
 ```
 $ checkfleet check all --config checkfleet.yml
 

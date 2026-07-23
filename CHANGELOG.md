@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2
+
+- Docs: sito d'uso in `docs/` (installazione, configurazione, uso, moduli, output, CI, sviluppo) servito via GitHub Pages.
+- CI: workflow `Pages` (`.github/workflows/pages.yml`) che builda `docs/` con Jekyll e pubblica su GitHub Pages.
+- README: link al sito documentazione (`allan-nava.github.io/checkfleet`).
+
 ## 0.1.1
 
 - Backlog: roadmap riorganizzata a milestone (M1 rete/delivery → M2 data layer → M3 piattaforma/host → M4 output → M5 app desktop).
