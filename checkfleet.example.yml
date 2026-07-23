@@ -1,0 +1,21 @@
+# Example configuration — copy to checkfleet.yml and adapt.
+timeout_seconds: 30
+
+checks:
+  certs:
+    warn_days: 30
+    crit_days: 7
+    port: 443
+    targets:
+      - github.com
+      - example.com:443
+    # ansible_inventory: /path/to/inventory   # every host becomes a target on `port`
+
+  http:
+    targets:
+      - url: https://example.com/
+        expect_status: 200
+        max_latency_ms: 2000
+      - url: https://example.com/health
+        expect_status: 200
+        expect_body: "ok"
