@@ -127,6 +127,35 @@ checks:
       - 10.15.20.106:8404
 ```
 
+## `checks.stream`
+
+HLS/DASH stream health from the manifest. See
+[Modules → stream](modules.md#stream).
+
+`checks.stream.targets` is a list of:
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `url` | string | — | Manifest URL: HLS `.m3u8` (master or media) or DASH `.mpd`. Required. |
+| `name` | string | the URL | Display label for the findings. |
+| `min_variants` | int | `0` (skip) | Expected minimum ladder size (variants/representations). |
+| `live` | bool | `false` | Expect a live stream: check live-edge freshness, WARN if it's VOD. |
+| `max_age_warn_seconds` | int | `30` when `live` | Live-edge age → WARN. |
+| `max_age_crit_seconds` | int | `60` when `live` | Live-edge age → BAD. |
+
+```yaml
+checks:
+  stream:
+    targets:
+      - name: canale-live
+        url: https://cdn.example/live/master.m3u8
+        live: true
+        min_variants: 3
+      - name: vod-catalogo
+        url: https://cdn.example/vod/movie/master.m3u8
+        min_variants: 4
+```
+
 ## No secrets in config
 
 Keep credentials out of `checkfleet.yml` — checks never log or echo secrets, and

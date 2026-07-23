@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.0
+
+- Modulo `stream` (CF-3): health HLS/DASH dai manifest (mai i segmenti media).
+  - Manifest irraggiungibile → ERROR; manifest non valido (`.m3u8`/`.mpd`) → BAD.
+  - Ladder: con `min_variants`, meno renditions dell'atteso → WARN, nessuna → BAD.
+  - Freschezza live-edge (`live: true`) via HLS `#EXT-X-PROGRAM-DATE-TIME` (avanzato per durata segmenti) o DASH `publishTime` → WARN/BAD oltre `max_age_warn_seconds`/`max_age_crit_seconds` (default 30/60).
+  - Live atteso ma VOD (`#EXT-X-ENDLIST` o MPD statico) → WARN; freschezza non misurabile senza timestamp → WARN (niente falsi OK).
+  - Per un master HLS live, fetcha la variante a banda più alta per misurare il live-edge.
+  - Config `checks.stream` con target multipli (`url`, `name`, `min_variants`, `live`, soglie età).
+- CLI: `checkfleet check stream`. Docs e config d'esempio aggiornate.
+
 ## 0.3.0
 
 - Modulo `haproxy` (CF-2): health backend/server via CSV stats HTTP (endpoint `;csv`), sola lettura.

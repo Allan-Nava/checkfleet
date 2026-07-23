@@ -45,3 +45,15 @@ checks:
     targets:
       - 10.15.20.106:8404
     # ansible_inventory: /path/to/inventory/haproxy   # every host → stats target
+
+  stream:
+    targets:
+      - name: canale-live             # optional label (defaults to the URL)
+        url: https://cdn.example/live/master.m3u8   # HLS master/media, or DASH .mpd
+        live: true                    # check live-edge freshness, warn if VOD
+        min_variants: 3               # expected ladder size (0 = skip)
+        max_age_warn_seconds: 30      # live-edge age → WARN (default 30 when live)
+        max_age_crit_seconds: 60      # live-edge age → BAD  (default 60 when live)
+      - name: vod-catalogo
+        url: https://cdn.example/vod/movie/master.m3u8
+        min_variants: 4               # VOD: just check reachability + ladder

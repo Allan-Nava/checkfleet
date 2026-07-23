@@ -21,6 +21,7 @@ import (
 	"github.com/Allan-Nava/checkfleet/internal/checks/haproxy"
 	"github.com/Allan-Nava/checkfleet/internal/checks/httpcheck"
 	"github.com/Allan-Nava/checkfleet/internal/checks/nats"
+	"github.com/Allan-Nava/checkfleet/internal/checks/stream"
 	"github.com/Allan-Nava/checkfleet/internal/engine"
 	"github.com/Allan-Nava/checkfleet/internal/output"
 )
@@ -48,7 +49,7 @@ func main() {
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `uso:
-  checkfleet check <all|certs|http|nats|haproxy> --config checkfleet.yml [--output text|markdown|json] [--exit-on-bad]
+  checkfleet check <all|certs|http|nats|haproxy|stream> --config checkfleet.yml [--output text|markdown|json] [--exit-on-bad]
   checkfleet version`)
 }
 
@@ -96,6 +97,9 @@ func runCheck(args []string) error {
 		return err
 	}
 	if err := add("haproxy", func() engine.Check { return haproxy.New(*cfg.Checks.HAProxy) }, cfg.Checks.HAProxy != nil); err != nil {
+		return err
+	}
+	if err := add("stream", func() engine.Check { return stream.New(*cfg.Checks.Stream) }, cfg.Checks.Stream != nil); err != nil {
 		return err
 	}
 	if len(selected) == 0 {

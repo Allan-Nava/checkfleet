@@ -7,9 +7,9 @@ title: Modules
 # Modules
 
 Each module is a self-contained check that knows what "healthy" means for one
-kind of target. Shipping today: `certs`, `http`, `nats`, `haproxy`. The
-[backlog](https://github.com/Allan-Nava/checkfleet/blob/main/BACKLOG.md) tracks
-what's next (`stream`, `patroni`, `postgres`, `consul`, …).
+kind of target. Shipping today: `certs`, `http`, `nats`, `haproxy`, `stream`.
+The [backlog](https://github.com/Allan-Nava/checkfleet/blob/main/BACKLOG.md)
+tracks what's next (`patroni`, `postgres`, `consul`, …).
 
 ## `certs`
 
@@ -78,6 +78,31 @@ auth is supported, with the password read from an env var — never stored in th
 config.
 
 See [Configuration → checks.haproxy](configuration.md#checkshaproxy).
+
+## `stream`
+
+HLS and DASH stream health, read from the manifest — it fetches only manifests,
+never media segments.
+
+- **Reachability / validity**: an unreachable manifest is `ERROR`; a manifest
+  that doesn't parse (bad `.m3u8` / `.mpd`) is `BAD`.
+- **Ladder completeness**: with `min_variants`, a master playlist (HLS) or MPD
+  (DASH) with fewer renditions is `WARN`, with none is `BAD`.
+- **Live-edge freshness** (when `live: true`): the age of the live edge — from
+  HLS `#EXT-X-PROGRAM-DATE-TIME` advanced by segment durations, or DASH
+  `publishTime` — is `WARN`/`BAD` past `max_age_warn_seconds`/`max_age_crit_seconds`.
+  If `live` is set but the manifest is VOD (HLS `#EXT-X-ENDLIST`, or a static
+  MPD), that's a `WARN`.
+- Freshness needs a timestamp in the manifest: an HLS live playlist without
+  `#EXT-X-PROGRAM-DATE-TIME` reports `WARN` ("not measurable") rather than a
+  false OK.
+
+For an HLS **master** playlist with `live: true`, the check fetches the
+highest-bandwidth variant to measure its live edge. Findings are labelled
+`name`, `name [ladder]`, `name [live-edge]`. Format (HLS vs DASH) is detected
+from the `.mpd` extension, the `dash+xml` content-type, or an `<MPD` root.
+
+See [Configuration → checks.stream](configuration.md#checksstream).
 
 ## Ansible inventory as a target source
 

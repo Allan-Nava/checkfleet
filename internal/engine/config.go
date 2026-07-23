@@ -18,6 +18,7 @@ type ChecksConfig struct {
 	HTTP    *HTTPConfig    `yaml:"http"`
 	NATS    *NATSConfig    `yaml:"nats"`
 	HAProxy *HAProxyConfig `yaml:"haproxy"`
+	Stream  *StreamConfig  `yaml:"stream"`
 }
 
 // CertsConfig configures the TLS certificate expiry check.
@@ -68,6 +69,25 @@ type HAProxyConfig struct {
 	// never store it in the config file.
 	AuthUser    string `yaml:"auth_user"`
 	AuthPassEnv string `yaml:"auth_pass_env"`
+}
+
+// StreamConfig configures the HLS/DASH stream health check.
+type StreamConfig struct {
+	Targets []StreamTarget `yaml:"targets"`
+}
+
+type StreamTarget struct {
+	// Manifest URL: an HLS .m3u8 (master or media) or a DASH .mpd.
+	URL string `yaml:"url"`
+	// Optional display label; defaults to the URL.
+	Name string `yaml:"name"`
+	// Expected minimum ladder size (variants/representations). 0 disables.
+	MinVariants int `yaml:"min_variants"`
+	// Expect a live stream: check live-edge freshness and warn if it's VOD.
+	Live bool `yaml:"live"`
+	// Live-edge age thresholds in seconds (WARN/BAD). Applied when Live is set.
+	MaxAgeWarnSeconds int `yaml:"max_age_warn_seconds"`
+	MaxAgeCritSeconds int `yaml:"max_age_crit_seconds"`
 }
 
 // HTTPConfig configures the HTTP probe check.
@@ -130,6 +150,18 @@ func LoadConfig(path string) (*Config, error) {
 		}
 		if hp.Path == "" {
 			hp.Path = "/stats;csv"
+		}
+	}
+	if s := cfg.Checks.Stream; s != nil {
+		for i := range s.Targets {
+			if s.Targets[i].Live {
+				if s.Targets[i].MaxAgeWarnSeconds <= 0 {
+					s.Targets[i].MaxAgeWarnSeconds = 30
+				}
+				if s.Targets[i].MaxAgeCritSeconds <= 0 {
+					s.Targets[i].MaxAgeCritSeconds = 60
+				}
+			}
 		}
 	}
 	return &cfg, nil
