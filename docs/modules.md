@@ -7,9 +7,9 @@ title: Modules
 # Modules
 
 Each module is a self-contained check that knows what "healthy" means for one
-kind of target. Shipping today: `certs`, `http`, `nats`. The
+kind of target. Shipping today: `certs`, `http`, `nats`, `haproxy`. The
 [backlog](https://github.com/Allan-Nava/checkfleet/blob/main/BACKLOG.md) tracks
-what's next (`haproxy`, `stream`, `patroni`, `postgres`, `consul`, …).
+what's next (`stream`, `patroni`, `postgres`, `consul`, …).
 
 ## `certs`
 
@@ -60,14 +60,33 @@ runbook:
 
 See [Configuration → checks.nats](configuration.md#checksnats).
 
+## `haproxy`
+
+Backend/server health from the HAProxy **CSV stats export** over HTTP (the
+`;csv` stats endpoint) — read-only, it never mutates HAProxy.
+
+- Per server: `UP` → `OK`, `DOWN` → `BAD`, `MAINT`/`DRAIN`/`NOLB` → `WARN`.
+- Per backend (the `BACKEND` aggregate row): `DOWN` → `BAD` (no server
+  available).
+- Optional session saturation: with `session_warn_pct`, a server/backend at or
+  above that percent of its session limit (`scur/slim`) is `WARN`.
+- An unreachable stats page is `ERROR`. Frontends are skipped to keep the output
+  signal-dense.
+
+Findings are labelled `backend/server` (e.g. `web/web2`). Optional HTTP basic
+auth is supported, with the password read from an env var — never stored in the
+config.
+
+See [Configuration → checks.haproxy](configuration.md#checkshaproxy).
+
 ## Ansible inventory as a target source
 
-The `certs` and `nats` modules can read a standard Ansible **INI** inventory (a
-file or a directory of files):
+The `certs`, `nats` and `haproxy` modules can read a standard Ansible **INI**
+inventory (a file or a directory of files):
 
 - host lines and their `ansible_host=` value are used;
 - `:vars` and `:children` sections are ignored;
 - hosts are de-duplicated.
 
 Every discovered host becomes a target on the module's `port` (443 for `certs`,
-8222 for `nats`).
+8222 for `nats`, 8404 for `haproxy`).

@@ -14,9 +14,10 @@ type Config struct {
 }
 
 type ChecksConfig struct {
-	Certs *CertsConfig `yaml:"certs"`
-	HTTP  *HTTPConfig  `yaml:"http"`
-	NATS  *NATSConfig  `yaml:"nats"`
+	Certs   *CertsConfig   `yaml:"certs"`
+	HTTP    *HTTPConfig    `yaml:"http"`
+	NATS    *NATSConfig    `yaml:"nats"`
+	HAProxy *HAProxyConfig `yaml:"haproxy"`
 }
 
 // CertsConfig configures the TLS certificate expiry check.
@@ -48,6 +49,25 @@ type NATSConfig struct {
 	// Raft peer lag thresholds (entries). WARN/BAD when a peer is at or above.
 	LagWarn int `yaml:"lag_warn"`
 	LagCrit int `yaml:"lag_crit"`
+}
+
+// HAProxyConfig configures the HAProxy backend/server health check.
+type HAProxyConfig struct {
+	// Stats endpoints as host[:port]; Port applies when a target has none.
+	Targets []string `yaml:"targets"`
+	Port    int      `yaml:"port"`
+	// Scheme (http/https) and path of the CSV stats export.
+	Scheme string `yaml:"scheme"`
+	Path   string `yaml:"path"`
+	// Optional Ansible INI inventory: every host becomes a stats target.
+	AnsibleInventory string `yaml:"ansible_inventory"`
+	// Optional WARN when a server/backend session usage reaches this percent
+	// of its limit (scur/slim). 0 disables the check.
+	SessionWarnPct int `yaml:"session_warn_pct"`
+	// Optional HTTP basic auth. The password is read from the named env var —
+	// never store it in the config file.
+	AuthUser    string `yaml:"auth_user"`
+	AuthPassEnv string `yaml:"auth_pass_env"`
 }
 
 // HTTPConfig configures the HTTP probe check.
@@ -102,6 +122,14 @@ func LoadConfig(path string) (*Config, error) {
 		}
 		if n.LagCrit <= 0 {
 			n.LagCrit = 1000
+		}
+	}
+	if hp := cfg.Checks.HAProxy; hp != nil {
+		if hp.Port <= 0 {
+			hp.Port = 8404
+		}
+		if hp.Path == "" {
+			hp.Path = "/stats;csv"
 		}
 	}
 	return &cfg, nil

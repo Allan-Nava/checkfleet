@@ -7,7 +7,7 @@ Roadmap a milestone: prima **cosa monitorare** (M1→M3), poi **come consegnarlo
 ## M1 — Rete & delivery (~v0.2) — il cuore hiway media
 
 - [x] **CF-1 — Modulo `nats`**: preflight/health cluster NATS via monitor endpoint (`/varz`, `/jsz?meta=1`): meta-leader presente e in posizione, ghost peer, lag peer oltre soglia, versioni miste nel cluster. Codifica il runbook devops_hiway. _(v0.2.0; lag misurato sui peer del raft meta-group)_
-- [ ] **CF-2 — Modulo `haproxy`**: backend/server DOWN via stats socket o API; opzionale drift config running vs file di riferimento.
+- [x] **CF-2 — Modulo `haproxy`**: backend/server DOWN via CSV stats HTTP; MAINT/DRAIN/NOLB → WARN, backend senza server → BAD, saturazione sessioni opzionale, basic-auth con password da env. _(v0.3.0; drift config running vs file rimandato)_
 - [ ] **CF-3 — Modulo `stream`**: HLS/DASH — manifest raggiungibile, freschezza segmenti live, ladder completa, drift del live edge.
 
 ## M2 — Data layer (~v0.3)

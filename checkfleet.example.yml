@@ -34,3 +34,14 @@ checks:
       - 10.21.10.18                  # a JetStream node/gateway (uses `port`)
       - 10.11.10.18:8222
     # ansible_inventory: /path/to/inventory/nats   # every host → monitoring target
+
+  haproxy:
+    port: 8404                       # HAProxy stats listener port
+    scheme: http                     # http | https
+    path: /stats;csv                 # CSV export of the stats page
+    session_warn_pct: 80             # WARN when scur/slim ≥ this % (0 = off)
+    # auth_user: admin               # optional HTTP basic auth
+    # auth_pass_env: HAPROXY_STATS_PASS   # password read from this env var (never inline)
+    targets:
+      - 10.15.20.106:8404
+    # ansible_inventory: /path/to/inventory/haproxy   # every host → stats target

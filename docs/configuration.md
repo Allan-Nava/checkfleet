@@ -99,6 +99,34 @@ checks:
       - 10.11.10.18:8222
 ```
 
+## `checks.haproxy`
+
+HAProxy backend/server health via the CSV stats export. See
+[Modules → haproxy](modules.md#haproxy).
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `targets` | list | — | Stats endpoints as `host` or `host:port`. |
+| `port` | int | `8404` | Default stats port for targets/inventory hosts without one. |
+| `scheme` | string | `http` | `http` or `https`. |
+| `path` | string | `/stats;csv` | Path of the CSV stats export. |
+| `ansible_inventory` | string | — | Ansible INI inventory; every host becomes a stats target on `port`. |
+| `session_warn_pct` | int | `0` (off) | WARN when `scur/slim` reaches this percent. |
+| `auth_user` | string | — | HTTP basic-auth user (optional). |
+| `auth_pass_env` | string | — | Env var holding the basic-auth password. **Never put the password in the config.** |
+
+```yaml
+checks:
+  haproxy:
+    port: 8404
+    path: /stats;csv
+    session_warn_pct: 80
+    auth_user: admin
+    auth_pass_env: HAPROXY_STATS_PASS   # export HAPROXY_STATS_PASS=... in the environment
+    targets:
+      - 10.15.20.106:8404
+```
+
 ## No secrets in config
 
 Keep credentials out of `checkfleet.yml` — checks never log or echo secrets, and
