@@ -20,8 +20,8 @@ Roadmap a milestone: prima **cosa monitorare** (M1→M3), poi **come consegnarlo
 
 ## M3 — Piattaforma & host (~v0.4) — check leggeri, valore di dominio
 
-- [ ] **CF-13 — Modulo `dns`**: i record attesi risolvono, drift vs valore atteso, SOA/serial coerente tra i resolver, TTL sotto soglia.
-- [ ] **CF-14 — Modulo `endpoint`/`disk`**: spazio su path critici e stato host in modalità agentless (SSH), restando fedeli al "no agent". Da valutare vs. delega a node_exporter.
+- [x] **CF-13 — Modulo `dns`**: record risolvono, drift vs valore atteso, SOA/serial coerente tra i resolver, TTL sotto soglia. Client DNS minimale in-tree (zero dip), A/AAAA/CNAME/NS/TXT/SOA. _(v0.8.0)_
+- [x] **CF-14 — Modulo `endpoint`/`disk`**: ~~spazio su path critici e stato host agentless via SSH~~. **Deciso: non fare.** Disco/host si delegano a node_exporter + alerting: SSH agentless tradirebbe il "no agent" e duplicherebbe Prometheus. Se dovesse servire, riaprire con motivazione. _(deciso 2026-07-24)_
 
 ## M4 — Output & integrazione (~v0.5)
 

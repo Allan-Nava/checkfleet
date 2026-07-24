@@ -91,3 +91,13 @@ checks:
       - name: pg-prod-primary
         dsn: "host=10.20.30.11 port=5432 user=monitor dbname=postgres sslmode=require"
         password_env: PG_PROD_PASS    # password from this env var, never inline
+
+  dns:
+    resolvers:                        # empty → system resolvers (/etc/resolv.conf)
+      - 10.20.30.53
+      - 8.8.8.8
+    min_ttl_seconds: 30               # WARN if any answer TTL is below this (0 = off)
+    targets:
+      - {name: hiway.media, type: A, expect: ["203.0.113.10"]}   # drift check
+      - {name: cdn.hiway.media, type: CNAME}
+      - {name: hiway.media, type: SOA}                            # serial drift across resolvers

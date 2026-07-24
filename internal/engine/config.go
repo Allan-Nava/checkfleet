@@ -22,6 +22,7 @@ type ChecksConfig struct {
 	Patroni  *PatroniConfig  `yaml:"patroni"`
 	Consul   *ConsulConfig   `yaml:"consul"`
 	Postgres *PostgresConfig `yaml:"postgres"`
+	DNS      *DNSConfig      `yaml:"dns"`
 }
 
 // CertsConfig configures the TLS certificate expiry check.
@@ -147,6 +148,26 @@ type PostgresTarget struct {
 	DSN string `yaml:"dsn"`
 	// Password read from this env var (never store it in the config).
 	PasswordEnv string `yaml:"password_env"`
+}
+
+// DNSConfig configures the DNS resolution health check.
+type DNSConfig struct {
+	// Resolvers to query as host[:port] (default port 53). Empty → the system
+	// resolvers from /etc/resolv.conf.
+	Resolvers []string `yaml:"resolvers"`
+	// WARN when any answer's TTL is below this many seconds. 0 disables.
+	MinTTLSeconds uint32      `yaml:"min_ttl_seconds"`
+	Targets       []DNSTarget `yaml:"targets"`
+}
+
+type DNSTarget struct {
+	// Domain name to resolve.
+	Name string `yaml:"name"`
+	// Record type: A, AAAA, CNAME, TXT, NS, SOA. Default A.
+	Type string `yaml:"type"`
+	// Optional expected value set; a different answer is BAD (drift). For SOA
+	// this is compared against the serial.
+	Expect []string `yaml:"expect"`
 }
 
 // HTTPConfig configures the HTTP probe check.

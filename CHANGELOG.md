@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.0
+
+- Modulo `dns` (CF-13): health risoluzione DNS con **client DNS minimale in-tree** (zero dipendenze) — query a resolver specifici, TTL e serial SOA.
+  - Nome che nessun resolver risolve → ERROR; nessun record del tipo richiesto → BAD.
+  - Drift vs `expect` (per SOA confronta il serial) → BAD.
+  - Consistenza tra resolver: risposte divergenti o serial SOA diversi (propagazione) → WARN; resolver che non risponde mentre altri sì → WARN.
+  - TTL sotto `min_ttl_seconds` → WARN. Tipi: A, AAAA, CNAME, NS, TXT, SOA; resolver di default da `/etc/resolv.conf`.
+  - Codec wire testato con round-trip; logica testata con `query` finto (nessuna rete nei test).
+- CLI: `checkfleet check dns`. Docs e config d'esempio aggiornate.
+- CF-14 (endpoint/disk) chiuso come **deciso-non-fare**: disco/host si delegano a node_exporter + alerting (coerente con "no agent" e "non rifare Prometheus"). **M3 = solo dns.**
+
 ## 0.7.1
 
 - Docs site: nuovo tema custom (layout + SCSS in-repo), abbandonato `just-the-docs`.

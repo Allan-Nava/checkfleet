@@ -43,8 +43,9 @@ go install github.com/Allan-Nava/checkfleet/cmd/checkfleet@latest
 | `patroni` | Patroni PostgreSQL cluster via the REST API: single leader, replica state, replica lag, timeline divergence |
 | `consul` | Consul cluster via the HTTP API: raft leader & quorum, critical/warning health checks, required KV keys |
 | `postgres` | PostgreSQL via read-only SQL: wraparound risk, connection saturation, inactive replication slots, replica lag |
+| `dns` | DNS resolution via an in-tree client: records resolve, drift from expected, SOA-serial & answer consistency across resolvers, low TTL |
 
-More on the way (see [BACKLOG.md](BACKLOG.md)): `dns`, `endpoint`/`disk`, Slack output, Prometheus exporter mode.
+More on the way (see [BACKLOG.md](BACKLOG.md)): `endpoint`/`disk`, Slack output, Prometheus exporter mode.
 
 ## Configuration
 
@@ -76,6 +77,7 @@ checkfleet check certs --config checkfleet.yml --output markdown  # ops report
 checkfleet check nats  --config checkfleet.yml --output markdown  # NATS cluster health
 checkfleet check patroni --config checkfleet.yml                  # PostgreSQL cluster (Patroni)
 checkfleet check postgres --config checkfleet.yml                 # PostgreSQL (read-only SQL)
+checkfleet check dns   --config checkfleet.yml                    # DNS resolution & drift
 checkfleet check http  --config checkfleet.yml --output json      # machine-readable (includes "worst")
 checkfleet check all   --config checkfleet.yml --exit-on-bad      # exit 2 on BAD/ERROR, for CI gates
 ```

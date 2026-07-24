@@ -19,6 +19,7 @@ import (
 
 	"github.com/Allan-Nava/checkfleet/internal/checks/certs"
 	"github.com/Allan-Nava/checkfleet/internal/checks/consul"
+	"github.com/Allan-Nava/checkfleet/internal/checks/dns"
 	"github.com/Allan-Nava/checkfleet/internal/checks/haproxy"
 	"github.com/Allan-Nava/checkfleet/internal/checks/httpcheck"
 	"github.com/Allan-Nava/checkfleet/internal/checks/nats"
@@ -52,7 +53,7 @@ func main() {
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `uso:
-  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres> --config checkfleet.yml [--output text|markdown|json] [--exit-on-bad]
+  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns> --config checkfleet.yml [--output text|markdown|json] [--exit-on-bad]
   checkfleet version`)
 }
 
@@ -112,6 +113,9 @@ func runCheck(args []string) error {
 		return err
 	}
 	if err := add("postgres", func() engine.Check { return postgres.New(*cfg.Checks.Postgres) }, cfg.Checks.Postgres != nil); err != nil {
+		return err
+	}
+	if err := add("dns", func() engine.Check { return dns.New(*cfg.Checks.DNS) }, cfg.Checks.DNS != nil); err != nil {
 		return err
 	}
 	if len(selected) == 0 {
