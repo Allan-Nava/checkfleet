@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.37.1
+
+- Pianificata la migrazione dell'output in **inglese** (M15 · CF-58..60 nel BACKLOG): CF-58 engine & CLI, CF-59 messaggi dei finding per modulo (uno per release), CF-60 sweep & guardrail. Il desktop è già in inglese (v0.36.1); il CHANGELOG resta in italiano.
+- CLAUDE.md: fissata la convenzione — codice, test e output user-facing in inglese; i nuovi moduli nascono già così.
+
 ## 0.37.0
 
 - Output `webhook` (CF-49): `--output webhook` invia l'output JSON in POST a un URL generico (da `--webhook-env`), per qualsiasi sink che ingerisce JSON. Slack e webhook condividono l'helper `postJSON` (accetta 2xx). Telegram/syslog rimandati. **Chiude M12 (output & sink).**

@@ -109,3 +109,11 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 - [ ] **CF-55 — Immagine Docker**: immagine multi-arch (linux/amd64+arm64) pubblicata su GHCR via goreleaser, con l'exporter come entrypoint. Utile in k8s/nomad.
 - [ ] **CF-56 — Firma & SBOM**: firma delle release con cosign (keyless) + SBOM (goreleaser). Provenienza verificabile.
 - [ ] **CF-57 — Lint & vuln in CI**: `govulncheck` e `golangci-lint` come gate in CI, accanto a vet/test.
+
+## M15 — Output in inglese (i18n) (fase 3)
+
+Direzione stabilita: **tutto l'output user-facing del software è in inglese**. Il desktop è già stato convertito (v0.36.1). Restano CLI + engine + moduli. La convenzione è fissata in `CLAUDE.md` (i nuovi moduli nascono già in inglese). Il **CHANGELOG resta in italiano** (regola Keep a Changelog di progetto); le docs/sito sono già in inglese.
+
+- [ ] **CF-58 — Engine & CLI in inglese**: messaggi top-level e `usage`, errori sistemici (config illeggibile, modulo sconosciuto/non configurato), `validate`, help dei flag, e i renderer di `internal/output` (es. summary `3 check: …`, sezione "Da guardare" del Markdown). Base condivisa da tutto il resto; aggiornare i test che asseriscono sulle stringhe.
+- [ ] **CF-59 — Finding dei moduli in inglese**: convertire i messaggi di ogni modulo check — `certs, http, nats, haproxy, stream, patroni, consul, postgres, dns, redis, keycloak, tcp, tls, ntp, grpc, ldap, kafka, rabbitmq` (+ eventuali nuovi) — con i relativi test. Un modulo per release, per tenere i diff piccoli.
+- [ ] **CF-60 — Sweep & guardrail**: verifica che non resti output italiano (grep mirato, eventualmente un check in CI), aggiornare gli esempi di output nel sito docs, e confermare la convenzione English-output in `CLAUDE.md`. Chiude M15.

@@ -11,6 +11,7 @@
 - **Exit code semantics**: 0 anche con finding WARN/BAD (il check che gira È un successo); ≠0 solo per errori sistemici (config illeggibile, modulo sconosciuto). `--exit-on-bad` per il gating CI. NON cambiare questa semantica.
 - **Niente segreti** in config d'esempio, test, doc o output. I check non loggano mai credenziali.
 - **Todo → `BACKLOG.md`** (sorgente unica, item con id stabile `CF-n`). Non sparpagliare TODO nei commenti.
+- **Lingua = inglese**: codice, commenti, test e **tutto l'output user-facing del software** (messaggi dei finding, `usage`, help dei flag, errori) in **inglese**. I nuovi moduli nascono già in inglese. Il desktop è già convertito; CLI/engine/moduli in migrazione (M15 · CF-58..60). **Eccezione: il `CHANGELOG.md` resta in italiano** (Keep a Changelog di progetto).
 
 ## Comandi
 
