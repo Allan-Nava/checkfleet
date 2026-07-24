@@ -61,6 +61,20 @@ tab (TeamCity, GitHub Actions test reporters).
 checkfleet check all --config checkfleet.yml --output junit > report.xml
 ```
 
+## `prometheus`
+
+The Prometheus text-exposition format (same metrics as `serve`), for a one-shot
+run instead of a scrape. With `--out-file` it's written atomically (temp +
+rename), so it's safe to drop into the node_exporter **textfile collector**:
+
+```bash
+checkfleet check all --config checkfleet.yml --output prometheus \
+  --out-file /var/lib/node_exporter/textfile/checkfleet.prom
+```
+
+`--out-file` works for any printable format (writes to the file instead of
+stdout).
+
 ## `slack`
 
 Posts a [Block Kit](https://api.slack.com/block-kit) message to a Slack incoming

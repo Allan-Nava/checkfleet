@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -65,7 +66,7 @@ func main() {
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `uso:
-  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka> --config checkfleet.yml [--output text|markdown|json|junit|slack] [--only ...] [--min-severity warn] [--target glob] [--exit-on-bad]
+  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka> --config checkfleet.yml [--output text|markdown|json|junit|prometheus|slack] [--out-file PATH] [--only ...] [--min-severity warn] [--target glob] [--exit-on-bad]
   checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s]   # esporta le metriche Prometheus
   checkfleet report-issues --config checkfleet.yml [--dry-run]                 # apre/chiude issue GitHub dai finding BAD
   checkfleet validate --config checkfleet.yml                                  # valida la config senza eseguire i check
@@ -82,7 +83,8 @@ func runCheck(args []string) error {
 	fs := flag.NewFlagSet("check", flag.ExitOnError)
 	configPath := fs.String("config", "checkfleet.yml", "file di configurazione YAML")
 	stack := fs.String("stack", "", "profilo stack: sovrappone checkfleet.<stack>.yml alla base")
-	format := fs.String("output", "text", "formato: text, markdown, json, junit, slack")
+	format := fs.String("output", "text", "formato: text, markdown, json, junit, prometheus, slack")
+	outFile := fs.String("out-file", "", "scrive l'output su questo file (atomico) invece di stdout")
 	webhookEnv := fs.String("webhook-env", "SLACK_WEBHOOK", "env var con l'URL webhook Slack (output slack)")
 	only := fs.String("only", "", "mostra solo questi check (lista separata da virgole)")
 	minSeverity := fs.String("min-severity", "", "mostra solo finding a partire da: ok|warn|bad|error")
@@ -139,24 +141,7 @@ func runCheck(args []string) error {
 	}
 	res.Findings = engine.Filter(res.Findings, filter)
 
-	switch *format {
-	case "text":
-		fmt.Print(output.Text(res))
-	case "markdown":
-		fmt.Print(output.Markdown(res, module))
-	case "json":
-		s, err := output.JSON(res)
-		if err != nil {
-			return err
-		}
-		fmt.Println(s)
-	case "junit":
-		s, err := output.JUnit(res, module)
-		if err != nil {
-			return err
-		}
-		fmt.Println(s)
-	case "slack":
+	if *format == "slack" {
 		payload, err := output.Slack(res, module)
 		if err != nil {
 			return err
@@ -169,8 +154,18 @@ func runCheck(args []string) error {
 			return err
 		}
 		fmt.Println("checkfleet: report inviato a Slack")
-	default:
-		return fmt.Errorf("formato %q sconosciuto", *format)
+	} else {
+		rendered, err := render(*format, res, module)
+		if err != nil {
+			return err
+		}
+		if *outFile != "" {
+			if err := atomicWrite(*outFile, rendered); err != nil {
+				return err
+			}
+		} else {
+			fmt.Print(rendered)
+		}
 	}
 
 	if *exitOnBad {
@@ -180,6 +175,46 @@ func runCheck(args []string) error {
 		}
 	}
 	return nil
+}
+
+// render turns a run into the printable output for a format (not slack).
+func render(format string, res engine.Result, module string) (string, error) {
+	switch format {
+	case "text":
+		return output.Text(res), nil
+	case "markdown":
+		return output.Markdown(res, module), nil
+	case "json":
+		s, err := output.JSON(res)
+		return s + "\n", err
+	case "junit":
+		s, err := output.JUnit(res, module)
+		return s + "\n", err
+	case "prometheus":
+		return output.Prometheus(res), nil
+	default:
+		return "", fmt.Errorf("formato %q sconosciuto", format)
+	}
+}
+
+// atomicWrite writes content to path via a temp file + rename, so a reader
+// (e.g. the node_exporter textfile collector) never sees a partial file.
+func atomicWrite(path, content string) error {
+	tmp, err := os.CreateTemp(filepath.Dir(path), ".checkfleet-*")
+	if err != nil {
+		return err
+	}
+	tmpName := tmp.Name()
+	if _, err := tmp.WriteString(content); err != nil {
+		tmp.Close()
+		os.Remove(tmpName)
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		os.Remove(tmpName)
+		return err
+	}
+	return os.Rename(tmpName, path)
 }
 
 // runValidate checks the config without running any check; exit 1 if invalid.

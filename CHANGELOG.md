@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.35.0
+
+- Output `prometheus` (CF-47): `--output prometheus` emette il formato text-exposition (le stesse metriche di `serve`) per un run one-shot. Nuovo `--out-file` scrive l'output in modo atomico (temp+rename) su file — adatto al textfile collector di node_exporter; vale per ogni formato stampabile.
+
 ## 0.34.0
 
 - Output `junit` (CF-46): `--output junit` produce un report XML JUnit — un testcase per finding, `<failure>` su BAD, `<error>` su ERROR, WARN passante con nota. Per il test tab della CI. Renderer `output.JUnit` testato.
