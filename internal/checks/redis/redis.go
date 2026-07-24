@@ -79,7 +79,7 @@ func (c *Check) Run(ctx context.Context) []engine.Finding {
 func (c *Check) probe(ctx context.Context, target string) []engine.Finding {
 	raw, err := c.fetchInfo(ctx, target)
 	if err != nil {
-		return []engine.Finding{{Check: c.Name(), Target: target, Status: engine.ERROR, Message: fmt.Sprintf("non raggiungibile: %v", err)}}
+		return []engine.Finding{{Check: c.Name(), Target: target, Status: engine.ERROR, Message: fmt.Sprintf("not reachable: %v", err)}}
 	}
 	return c.evaluate(target, parseInfo(raw))
 }
@@ -95,7 +95,7 @@ func (c *Check) evaluate(target string, info map[string]string) []engine.Finding
 	reach := engine.Finding{Check: c.Name(), Target: target, Status: engine.OK,
 		Message: fmt.Sprintf("v%s (%s)", info["redis_version"], role)}
 	if info["loading"] == "1" {
-		reach.Status, reach.Message = engine.WARN, "dataset in caricamento"
+		reach.Status, reach.Message = engine.WARN, "dataset loading"
 	}
 	findings = append(findings, reach)
 
@@ -112,7 +112,7 @@ func (c *Check) memoryFinding(target string, info map[string]string) engine.Find
 	used := atoi(info["used_memory"])
 	max := atoi(info["maxmemory"])
 	if max <= 0 {
-		f.Status, f.Message = engine.OK, fmt.Sprintf("%s usati, nessun maxmemory", humanBytes(used))
+		f.Status, f.Message = engine.OK, fmt.Sprintf("%s used, no maxmemory", humanBytes(used))
 		return f
 	}
 	pct := int(used * 100 / max)
@@ -121,14 +121,14 @@ func (c *Check) memoryFinding(target string, info map[string]string) engine.Find
 	} else {
 		f.Status = engine.OK
 	}
-	f.Message = fmt.Sprintf("%s/%s (%d%% di maxmemory)", humanBytes(used), humanBytes(max), pct)
+	f.Message = fmt.Sprintf("%s/%s (%d%% of maxmemory)", humanBytes(used), humanBytes(max), pct)
 	return f
 }
 
 func (c *Check) replicationFinding(target string, info map[string]string) engine.Finding {
 	f := engine.Finding{Check: c.Name(), Target: target + " [replication]"}
 	if info["master_link_status"] != "up" {
-		f.Status, f.Message = engine.BAD, fmt.Sprintf("link col master %q (non up)", info["master_link_status"])
+		f.Status, f.Message = engine.BAD, fmt.Sprintf("master link %q (not up)", info["master_link_status"])
 		return f
 	}
 	lag := atoi(info["master_repl_offset"]) - atoi(info["slave_repl_offset"])
@@ -137,9 +137,9 @@ func (c *Check) replicationFinding(target string, info map[string]string) engine
 	}
 	switch {
 	case c.cfg.LagCritBytes > 0 && lag >= c.cfg.LagCritBytes:
-		f.Status, f.Message = engine.BAD, fmt.Sprintf("lag replica %s oltre soglia critica (%s)", humanBytes(lag), humanBytes(c.cfg.LagCritBytes))
+		f.Status, f.Message = engine.BAD, fmt.Sprintf("replica lag %s over critical threshold (%s)", humanBytes(lag), humanBytes(c.cfg.LagCritBytes))
 	case c.cfg.LagWarnBytes > 0 && lag >= c.cfg.LagWarnBytes:
-		f.Status, f.Message = engine.WARN, fmt.Sprintf("lag replica %s oltre soglia (%s)", humanBytes(lag), humanBytes(c.cfg.LagWarnBytes))
+		f.Status, f.Message = engine.WARN, fmt.Sprintf("replica lag %s over threshold (%s)", humanBytes(lag), humanBytes(c.cfg.LagWarnBytes))
 	default:
 		f.Status, f.Message = engine.OK, fmt.Sprintf("link up, lag %s", humanBytes(lag))
 	}
@@ -149,11 +149,11 @@ func (c *Check) replicationFinding(target string, info map[string]string) engine
 func (c *Check) persistenceFindings(target string, info map[string]string) []engine.Finding {
 	var findings []engine.Finding
 	if st := info["rdb_last_bgsave_status"]; st != "" && st != "ok" {
-		findings = append(findings, engine.Finding{Check: c.Name(), Target: target + " [persistence]", Status: engine.WARN, Message: "ultimo bgsave RDB fallito: " + st})
+		findings = append(findings, engine.Finding{Check: c.Name(), Target: target + " [persistence]", Status: engine.WARN, Message: "last RDB bgsave failed: " + st})
 	}
 	if info["aof_enabled"] == "1" {
 		if st := info["aof_last_write_status"]; st != "" && st != "ok" {
-			findings = append(findings, engine.Finding{Check: c.Name(), Target: target + " [persistence]", Status: engine.WARN, Message: "ultima scrittura AOF fallita: " + st})
+			findings = append(findings, engine.Finding{Check: c.Name(), Target: target + " [persistence]", Status: engine.WARN, Message: "last AOF write failed: " + st})
 		}
 	}
 	return findings
@@ -235,7 +235,7 @@ func readReply(r *bufio.Reader) (string, error) {
 		}
 		return string(buf[:n]), nil
 	default:
-		return "", fmt.Errorf("prefisso RESP inatteso: %q", prefix)
+		return "", fmt.Errorf("unexpected RESP prefix: %q", prefix)
 	}
 }
 

@@ -73,7 +73,7 @@ func (k *kadmCluster) GroupLag(ctx context.Context, group string) (int64, error)
 	}
 	dl, ok := lags[group]
 	if !ok {
-		return 0, fmt.Errorf("gruppo %q non trovato", group)
+		return 0, fmt.Errorf("group %q not found", group)
 	}
 	if err := dl.Error(); err != nil {
 		return 0, err

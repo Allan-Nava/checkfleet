@@ -86,31 +86,31 @@ func TestHealthyCluster(t *testing.T) {
 	target := serve(t, fakeConsul{leader: "10.0.0.1:8300", peers: []string{"10.0.0.1:8300", "10.0.0.2:8300", "10.0.0.3:8300"}})
 	f := byTarget(run(t, engine.ConsulConfig{Targets: []string{target}, ExpectPeers: 3}))
 	if got := f["raft-leader"]; got.Status != engine.OK {
-		t.Errorf("leader: atteso OK, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("leader: want OK, got %s (%s)", got.Status, got.Message)
 	}
-	if got := f["raft-peers"]; got.Status != engine.OK || !strings.Contains(got.Message, "3 peer") {
-		t.Errorf("peers: atteso OK 3, avuto %s (%s)", got.Status, got.Message)
+	if got := f["raft-peers"]; got.Status != engine.OK || !strings.Contains(got.Message, "3 raft peers") {
+		t.Errorf("peers: want OK 3, got %s (%s)", got.Status, got.Message)
 	}
 }
 
 func TestNoLeaderIsBad(t *testing.T) {
 	target := serve(t, fakeConsul{leader: "", peers: []string{"a", "b", "c"}})
 	if got := byTarget(run(t, engine.ConsulConfig{Targets: []string{target}}))["raft-leader"]; got.Status != engine.BAD {
-		t.Errorf("no leader: atteso BAD, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("no leader: want BAD, got %s (%s)", got.Status, got.Message)
 	}
 }
 
 func TestQuorumLostIsBad(t *testing.T) {
-	target := serve(t, fakeConsul{leader: "x", peers: []string{"a"}}) // 1 di 3 attesi → quorum perso
+	target := serve(t, fakeConsul{leader: "x", peers: []string{"a"}}) // 1 of 3 expected -> quorum lost
 	if got := byTarget(run(t, engine.ConsulConfig{Targets: []string{target}, ExpectPeers: 3}))["raft-peers"]; got.Status != engine.BAD {
-		t.Errorf("quorum perso: atteso BAD, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("quorum lost: want BAD, got %s (%s)", got.Status, got.Message)
 	}
 }
 
 func TestMissingPeerIsWarn(t *testing.T) {
-	target := serve(t, fakeConsul{leader: "x", peers: []string{"a", "b"}}) // 2 di 3 → quorum ok ma manca uno
+	target := serve(t, fakeConsul{leader: "x", peers: []string{"a", "b"}}) // 2 of 3 -> quorum ok but one missing
 	if got := byTarget(run(t, engine.ConsulConfig{Targets: []string{target}, ExpectPeers: 3}))["raft-peers"]; got.Status != engine.WARN {
-		t.Errorf("peer mancante: atteso WARN, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("peer missing: want WARN, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -123,10 +123,10 @@ func TestCriticalAndWarningChecks(t *testing.T) {
 	})
 	f := byTarget(run(t, engine.ConsulConfig{Targets: []string{target}}))
 	if got := f["web@n1"]; got.Status != engine.BAD {
-		t.Errorf("check critical: atteso BAD, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("check critical: want BAD, got %s (%s)", got.Status, got.Message)
 	}
 	if got := f["disk@n2"]; got.Status != engine.WARN {
-		t.Errorf("check warning: atteso WARN, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("check warning: want WARN, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -142,16 +142,16 @@ func TestKVKeysAndToken(t *testing.T) {
 		KVKeys: []string{"config/present", "config/missing"},
 	}))
 	if got := f["kv/config/present"]; got.Status != engine.OK {
-		t.Errorf("kv presente: atteso OK, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("kv present: want OK, got %s (%s)", got.Status, got.Message)
 	}
 	if got := f["kv/config/missing"]; got.Status != engine.BAD {
-		t.Errorf("kv mancante: atteso BAD, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("kv missing: want BAD, got %s (%s)", got.Status, got.Message)
 	}
 }
 
 func TestUnreachableIsError(t *testing.T) {
 	f := run(t, engine.ConsulConfig{Targets: []string{"127.0.0.1:1"}})
 	if len(f) == 0 || f[0].Status != engine.ERROR {
-		t.Errorf("irraggiungibile: atteso ERROR, avuto %v", f)
+		t.Errorf("unreachable: want ERROR, got %v", f)
 	}
 }

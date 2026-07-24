@@ -95,13 +95,13 @@ func TestHealthyChainExpiryProtocol(t *testing.T) {
 	addr := startTLS(t, ca, key, 100, 0)
 	f := run(t, pool, addr)
 	if f[addr+" [chain]"].Status != engine.OK {
-		t.Errorf("catena valida: atteso OK, avuto %s (%s)", f[addr+" [chain]"].Status, f[addr+" [chain]"].Message)
+		t.Errorf("valid chain: want OK, got %s (%s)", f[addr+" [chain]"].Status, f[addr+" [chain]"].Message)
 	}
 	if f[addr+" [expiry]"].Status != engine.OK {
-		t.Errorf("scadenza 100gg: atteso OK, avuto %s", f[addr+" [expiry]"].Status)
+		t.Errorf("expiry 100d: want OK, got %s", f[addr+" [expiry]"].Status)
 	}
 	if f[addr+" [protocol]"].Status != engine.OK {
-		t.Errorf("protocollo moderno: atteso OK, avuto %s (%s)", f[addr+" [protocol]"].Status, f[addr+" [protocol]"].Message)
+		t.Errorf("modern protocol: want OK, got %s (%s)", f[addr+" [protocol]"].Status, f[addr+" [protocol]"].Message)
 	}
 }
 
@@ -109,7 +109,7 @@ func TestExpiringSoonIsBad(t *testing.T) {
 	ca, key, pool := genCA(t)
 	addr := startTLS(t, ca, key, 3, 0) // < crit 7
 	if got := run(t, pool, addr)[addr+" [expiry]"]; got.Status != engine.BAD {
-		t.Errorf("scade tra 3gg: atteso BAD, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("expires in 3d: want BAD, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -118,7 +118,7 @@ func TestUntrustedChainIsBad(t *testing.T) {
 	addr := startTLS(t, ca, key, 100, 0)
 	// Verify against an empty pool → chain untrusted.
 	if got := run(t, x509.NewCertPool(), addr)[addr+" [chain]"]; got.Status != engine.BAD {
-		t.Errorf("catena non fidata: atteso BAD, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("untrusted chain: want BAD, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -126,12 +126,12 @@ func TestWeakProtocolIsWarn(t *testing.T) {
 	ca, key, pool := genCA(t)
 	addr := startTLS(t, ca, key, 100, tls.VersionTLS11) // server max TLS 1.1
 	if got := run(t, pool, addr)[addr+" [protocol]"]; got.Status != engine.WARN {
-		t.Errorf("TLS 1.1: atteso WARN, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("TLS 1.1: want WARN, got %s (%s)", got.Status, got.Message)
 	}
 }
 
 func TestUnreachableIsError(t *testing.T) {
 	if got := run(t, nil, "127.0.0.1:1")["127.0.0.1:1"]; got.Status != engine.ERROR {
-		t.Errorf("irraggiungibile: atteso ERROR, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("unreachable: want ERROR, got %s (%s)", got.Status, got.Message)
 	}
 }

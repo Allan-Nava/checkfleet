@@ -82,23 +82,23 @@ func TestHealthyCluster(t *testing.T) {
 	findings := run(t, engine.NATSConfig{Targets: targets, LagWarn: 100, LagCrit: 1000})
 
 	if w := engine.Worst(findings); w != engine.OK {
-		t.Fatalf("cluster sano: atteso worst OK, avuto %s\n%v", w, findings)
+		t.Fatalf("healthy cluster: want worst OK, got %s\n%v", w, findings)
 	}
 	meta := byTarget(findings)["meta-cluster"]
 	if meta.Status != engine.OK || !strings.Contains(meta.Message, "gw-cl") {
-		t.Errorf("meta-cluster: atteso OK con leader gw-cl, avuto %s (%s)", meta.Status, meta.Message)
+		t.Errorf("meta-cluster: want OK with leader gw-cl, got %s (%s)", meta.Status, meta.Message)
 	}
 }
 
 func TestNoMetaLeaderIsBad(t *testing.T) {
 	nodes := healthyCluster()
 	for i := range nodes {
-		nodes[i].meta.Leader = "" // quorum perso
+		nodes[i].meta.Leader = "" // quorum lost
 	}
 	findings := run(t, engine.NATSConfig{Targets: startCluster(t, nodes...), LagWarn: 100, LagCrit: 1000})
 	meta := byTarget(findings)["meta-cluster"]
 	if meta.Status != engine.BAD {
-		t.Errorf("nessun leader: atteso BAD, avuto %s (%s)", meta.Status, meta.Message)
+		t.Errorf("no leader: want BAD, got %s (%s)", meta.Status, meta.Message)
 	}
 }
 
@@ -118,7 +118,7 @@ func TestOfflinePeerIsBad(t *testing.T) {
 	}
 	findings := run(t, engine.NATSConfig{Targets: startCluster(t, nodes...), LagWarn: 100, LagCrit: 1000})
 	if f := byTarget(findings)["gw-ov"]; f.Status != engine.BAD {
-		t.Errorf("peer offline: atteso BAD, avuto %s (%s)", f.Status, f.Message)
+		t.Errorf("peer offline: want BAD, got %s (%s)", f.Status, f.Message)
 	}
 }
 
@@ -136,30 +136,30 @@ func TestPeerLagThresholds(t *testing.T) {
 	}
 	findings := byTarget(run(t, engine.NATSConfig{Targets: startCluster(t, nodes...), LagWarn: 100, LagCrit: 1000}))
 	if f := findings["gw-sg"]; f.Status != engine.WARN {
-		t.Errorf("lag 250: atteso WARN, avuto %s (%s)", f.Status, f.Message)
+		t.Errorf("lag 250: want WARN, got %s (%s)", f.Status, f.Message)
 	}
 	if f := findings["gw-ov"]; f.Status != engine.BAD {
-		t.Errorf("lag 5000: atteso BAD, avuto %s (%s)", f.Status, f.Message)
+		t.Errorf("lag 5000: want BAD, got %s (%s)", f.Status, f.Message)
 	}
 }
 
 func TestMixedVersionsIsWarn(t *testing.T) {
 	nodes := healthyCluster()
-	nodes[0].varz.Version = "2.10.26" // il resto è 2.14.3
+	nodes[0].varz.Version = "2.10.26" // the rest is 2.14.3
 	findings := byTarget(run(t, engine.NATSConfig{Targets: startCluster(t, nodes...), LagWarn: 100, LagCrit: 1000}))
 	f, ok := findings["cluster"]
-	if !ok || f.Status != engine.WARN || !strings.Contains(f.Message, "versioni miste") {
-		t.Errorf("versioni miste: atteso WARN, avuto %+v", f)
+	if !ok || f.Status != engine.WARN || !strings.Contains(f.Message, "mixed versions") {
+		t.Errorf("mixed versions: want WARN, got %+v", f)
 	}
 }
 
 func TestExpectedMetaLeaderMismatchIsWarn(t *testing.T) {
 	findings := byTarget(run(t, engine.NATSConfig{
 		Targets: startCluster(t, healthyCluster()...), LagWarn: 100, LagCrit: 1000,
-		ExpectMetaLeader: "gw-sg", // reale è gw-cl
+		ExpectMetaLeader: "gw-sg", // actual is gw-cl
 	}))
-	if f := findings["meta-cluster"]; f.Status != engine.WARN || !strings.Contains(f.Message, "atteso gw-sg") {
-		t.Errorf("leader inatteso: atteso WARN, avuto %s (%s)", f.Status, f.Message)
+	if f := findings["meta-cluster"]; f.Status != engine.WARN || !strings.Contains(f.Message, "want gw-sg") {
+		t.Errorf("unexpected leader: want WARN, got %s (%s)", f.Status, f.Message)
 	}
 }
 
@@ -170,17 +170,17 @@ func TestGhostAndMissingPeers(t *testing.T) {
 		ExpectPeers: []string{"gw-sg", "gw-cl", "gw-extra"},
 	}))
 	if f := findings["gw-ov"]; f.Status != engine.WARN || !strings.Contains(f.Message, "ghost") {
-		t.Errorf("gw-ov non atteso: atteso WARN ghost, avuto %s (%s)", f.Status, f.Message)
+		t.Errorf("gw-ov unexpected: want WARN ghost, got %s (%s)", f.Status, f.Message)
 	}
-	if f := findings["gw-extra"]; f.Status != engine.BAD || !strings.Contains(f.Message, "assente") {
-		t.Errorf("gw-extra atteso ma assente: atteso BAD, avuto %s (%s)", f.Status, f.Message)
+	if f := findings["gw-extra"]; f.Status != engine.BAD || !strings.Contains(f.Message, "missing") {
+		t.Errorf("gw-extra expected but missing: want BAD, got %s (%s)", f.Status, f.Message)
 	}
 }
 
 func TestUnreachableNodeIsError(t *testing.T) {
 	findings := run(t, engine.NATSConfig{Targets: []string{"127.0.0.1:1"}, LagWarn: 100, LagCrit: 1000})
 	if len(findings) == 0 || findings[0].Status != engine.ERROR {
-		t.Errorf("nodo irraggiungibile: atteso ERROR, avuto %v", findings)
+		t.Errorf("node unreachable: want ERROR, got %v", findings)
 	}
 }
 

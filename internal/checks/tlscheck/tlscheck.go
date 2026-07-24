@@ -77,7 +77,7 @@ func (c *Check) probe(ctx context.Context, target string) []engine.Finding {
 	d := net.Dialer{}
 	conn, err := d.DialContext(ctx, "tcp", target)
 	if err != nil {
-		return []engine.Finding{{Check: c.Name(), Target: target, Status: engine.ERROR, Message: fmt.Sprintf("connessione fallita: %v", err)}}
+		return []engine.Finding{{Check: c.Name(), Target: target, Status: engine.ERROR, Message: fmt.Sprintf("connection failed: %v", err)}}
 	}
 	defer conn.Close()
 	// InsecureSkipVerify: read the presented chain even if it doesn't validate;
@@ -88,11 +88,11 @@ func (c *Check) probe(ctx context.Context, target string) []engine.Finding {
 		_ = tconn.SetDeadline(dl)
 	}
 	if err := tconn.HandshakeContext(ctx); err != nil {
-		return []engine.Finding{{Check: c.Name(), Target: target, Status: engine.ERROR, Message: fmt.Sprintf("handshake TLS fallito: %v", err)}}
+		return []engine.Finding{{Check: c.Name(), Target: target, Status: engine.ERROR, Message: fmt.Sprintf("TLS handshake failed: %v", err)}}
 	}
 	state := tconn.ConnectionState()
 	if len(state.PeerCertificates) == 0 {
-		return []engine.Finding{{Check: c.Name(), Target: target, Status: engine.ERROR, Message: "nessun certificato presentato"}}
+		return []engine.Finding{{Check: c.Name(), Target: target, Status: engine.ERROR, Message: "no certificate presented"}}
 	}
 
 	return []engine.Finding{
@@ -107,13 +107,13 @@ func (c *Check) expiryFinding(target string, leaf *x509.Certificate) engine.Find
 	days := int(leaf.NotAfter.Sub(c.now()).Hours() / 24)
 	switch {
 	case days < 0:
-		f.Status, f.Message = engine.BAD, fmt.Sprintf("SCADUTO da %d giorni (%s)", -days, leaf.NotAfter.Format("2006-01-02"))
+		f.Status, f.Message = engine.BAD, fmt.Sprintf("EXPIRED %d days ago (%s)", -days, leaf.NotAfter.Format("2006-01-02"))
 	case days < c.cfg.CritDays:
-		f.Status, f.Message = engine.BAD, fmt.Sprintf("scade tra %d giorni (%s)", days, leaf.NotAfter.Format("2006-01-02"))
+		f.Status, f.Message = engine.BAD, fmt.Sprintf("expires in %d days (%s)", days, leaf.NotAfter.Format("2006-01-02"))
 	case days < c.cfg.WarnDays:
-		f.Status, f.Message = engine.WARN, fmt.Sprintf("scade tra %d giorni (%s)", days, leaf.NotAfter.Format("2006-01-02"))
+		f.Status, f.Message = engine.WARN, fmt.Sprintf("expires in %d days (%s)", days, leaf.NotAfter.Format("2006-01-02"))
 	default:
-		f.Status, f.Message = engine.OK, fmt.Sprintf("scade tra %d giorni (%s)", days, leaf.NotAfter.Format("2006-01-02"))
+		f.Status, f.Message = engine.OK, fmt.Sprintf("expires in %d days (%s)", days, leaf.NotAfter.Format("2006-01-02"))
 	}
 	return f
 }
@@ -131,10 +131,10 @@ func (c *Check) chainFinding(target, host string, chain []*x509.Certificate) eng
 		CurrentTime:   c.now(),
 	})
 	if err != nil {
-		f.Status, f.Message = engine.BAD, "catena non valida: "+err.Error()
+		f.Status, f.Message = engine.BAD, "invalid chain: "+err.Error()
 		return f
 	}
-	f.Status, f.Message = engine.OK, fmt.Sprintf("catena valida (CN=%s)", chain[0].Subject.CommonName)
+	f.Status, f.Message = engine.OK, fmt.Sprintf("valid chain (CN=%s)", chain[0].Subject.CommonName)
 	return f
 }
 
@@ -142,7 +142,7 @@ func (c *Check) protocolFinding(target string, version uint16) engine.Finding {
 	f := engine.Finding{Check: c.Name(), Target: target + " [protocol]"}
 	name := tlsVersionName(version)
 	if version < tls.VersionTLS12 {
-		f.Status, f.Message = engine.WARN, "versione TLS debole negoziata: "+name
+		f.Status, f.Message = engine.WARN, "weak TLS version negotiated: "+name
 	} else {
 		f.Status, f.Message = engine.OK, name
 	}

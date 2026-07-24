@@ -51,7 +51,7 @@ func (c *Check) probe(ctx context.Context, t engine.TCPTarget) engine.Finding {
 	start := c.now()
 	conn, err := c.dial(ctx, t)
 	if err != nil {
-		f.Status, f.Message = engine.ERROR, fmt.Sprintf("connessione fallita: %v", err)
+		f.Status, f.Message = engine.ERROR, fmt.Sprintf("connection failed: %v", err)
 		return f
 	}
 	defer conn.Close()
@@ -64,15 +64,15 @@ func (c *Check) probe(ctx context.Context, t engine.TCPTarget) engine.Finding {
 		buf := make([]byte, 512)
 		n, _ := conn.Read(buf)
 		if !strings.Contains(string(buf[:n]), t.ExpectBanner) {
-			f.Status, f.Message = engine.BAD, fmt.Sprintf("banner atteso %q non trovato", t.ExpectBanner)
+			f.Status, f.Message = engine.BAD, fmt.Sprintf("expected banner %q not found", t.ExpectBanner)
 			return f
 		}
 	}
 	if t.MaxLatencyMS > 0 && latency > time.Duration(t.MaxLatencyMS)*time.Millisecond {
-		f.Status, f.Message = engine.WARN, fmt.Sprintf("connesso in %s (oltre %dms)", latency.Round(time.Millisecond), t.MaxLatencyMS)
+		f.Status, f.Message = engine.WARN, fmt.Sprintf("connected in %s (over %dms)", latency.Round(time.Millisecond), t.MaxLatencyMS)
 		return f
 	}
-	f.Status, f.Message = engine.OK, fmt.Sprintf("connesso in %s", latency.Round(time.Millisecond))
+	f.Status, f.Message = engine.OK, fmt.Sprintf("connected in %s", latency.Round(time.Millisecond))
 	return f
 }
 

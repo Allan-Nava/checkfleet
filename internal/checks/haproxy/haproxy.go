@@ -84,7 +84,7 @@ func (c *Check) probe(ctx context.Context, target string) []engine.Finding {
 	if err != nil {
 		return []engine.Finding{{
 			Check: c.Name(), Target: target, Status: engine.ERROR,
-			Message: fmt.Sprintf("stats non raggiungibili: %v", err),
+			Message: fmt.Sprintf("stats not reachable: %v", err),
 		}}
 	}
 	var findings []engine.Finding
@@ -98,7 +98,7 @@ func (c *Check) probe(ctx context.Context, target string) []engine.Finding {
 	if len(findings) == 0 {
 		findings = append(findings, engine.Finding{
 			Check: c.Name(), Target: target, Status: engine.WARN,
-			Message: "nessun backend/server nelle stats",
+			Message: "no backend/server in the stats",
 		})
 	}
 	return findings
@@ -111,26 +111,26 @@ func (c *Check) rowFinding(target, pxname, svname string, row map[string]string)
 
 	switch {
 	case svname == "BACKEND" && strings.HasPrefix(status, "DOWN"):
-		f.Status, f.Message = engine.BAD, "backend DOWN: nessun server disponibile"
+		f.Status, f.Message = engine.BAD, "backend DOWN: no server available"
 		return f
 	case strings.HasPrefix(status, "DOWN"):
 		f.Status, f.Message = engine.BAD, "server DOWN"
 		return f
 	case strings.HasPrefix(status, "MAINT"):
-		f.Status, f.Message = engine.WARN, "server in MAINT (manutenzione)"
+		f.Status, f.Message = engine.WARN, "server in MAINT (maintenance)"
 		return f
 	case strings.HasPrefix(status, "DRAIN"):
 		f.Status, f.Message = engine.WARN, "server in DRAIN"
 		return f
 	case strings.HasPrefix(status, "NOLB"):
-		f.Status, f.Message = engine.WARN, "server NOLB (fuori dal load balancing)"
+		f.Status, f.Message = engine.WARN, "server NOLB (out of load balancing)"
 		return f
 	}
 
 	// Healthy (UP / OPEN / no check): optionally warn on session saturation.
 	if pct, ok := c.sessionUsage(row); ok && c.cfg.SessionWarnPct > 0 && pct >= c.cfg.SessionWarnPct {
 		f.Status = engine.WARN
-		f.Message = fmt.Sprintf("%s, sessioni al %d%% del limite (%s/%s)", statusOrUp(status), pct, row["scur"], row["slim"])
+		f.Message = fmt.Sprintf("%s, sessions at %d%% of the limit (%s/%s)", statusOrUp(status), pct, row["scur"], row["slim"])
 		return f
 	}
 	f.Status, f.Message = engine.OK, statusOrUp(status)
@@ -177,7 +177,7 @@ func parseCSV(r io.Reader) ([]map[string]string, error) {
 		return nil, err
 	}
 	if len(records) == 0 {
-		return nil, fmt.Errorf("CSV vuoto")
+		return nil, fmt.Errorf("empty CSV")
 	}
 	header := records[0]
 	if len(header) > 0 {

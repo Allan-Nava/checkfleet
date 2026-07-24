@@ -64,34 +64,34 @@ func TestServerAndBackendStatuses(t *testing.T) {
 	}
 	for label, want := range cases {
 		if got := f[label].Status; got != want {
-			t.Errorf("%s: atteso %s, avuto %s (%s)", label, want, got, f[label].Message)
+			t.Errorf("%s: want %s, got %s (%s)", label, want, got, f[label].Message)
 		}
 	}
 	if _, ok := f["stats/FRONTEND"]; ok {
-		t.Errorf("i FRONTEND dovrebbero essere ignorati, trovato: %v", f["stats/FRONTEND"])
+		t.Errorf("FRONTEND rows should be ignored, found: %v", f["stats/FRONTEND"])
 	}
 }
 
 func TestBackendDownMessage(t *testing.T) {
 	csv := statsHeader + "api,BACKEND,0,50,DOWN,\n"
 	f := byTarget(run(t, engine.HAProxyConfig{Targets: []string{startStats(t, csv)}}))
-	if got := f["api/BACKEND"]; got.Status != engine.BAD || !strings.Contains(got.Message, "nessun server") {
-		t.Errorf("backend down: atteso BAD 'nessun server', avuto %s (%s)", got.Status, got.Message)
+	if got := f["api/BACKEND"]; got.Status != engine.BAD || !strings.Contains(got.Message, "no server") {
+		t.Errorf("backend down: want BAD no-server, got %s (%s)", got.Status, got.Message)
 	}
 }
 
 func TestSessionUsageWarn(t *testing.T) {
 	csv := statsHeader +
-		"web,web1,90,100,UP,\n" + // 90% → oltre soglia 80
+		"web,web1,90,100,UP,\n" + // 90% -> over threshold 80
 		"web,web2,10,100,UP,\n" // 10% → ok
 	f := byTarget(run(t, engine.HAProxyConfig{
 		Targets: []string{startStats(t, csv)}, SessionWarnPct: 80,
 	}))
-	if got := f["web/web1"]; got.Status != engine.WARN || !strings.Contains(got.Message, "sessioni") {
-		t.Errorf("web1 90%%: atteso WARN sessioni, avuto %s (%s)", got.Status, got.Message)
+	if got := f["web/web1"]; got.Status != engine.WARN || !strings.Contains(got.Message, "sessions") {
+		t.Errorf("web1 90%%: want WARN sessions, got %s (%s)", got.Status, got.Message)
 	}
 	if got := f["web/web2"]; got.Status != engine.OK {
-		t.Errorf("web2 10%%: atteso OK, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("web2 10%%: want OK, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -110,21 +110,21 @@ func TestBasicAuth(t *testing.T) {
 
 	// Senza credenziali → 401 → ERROR.
 	if f := run(t, engine.HAProxyConfig{Targets: []string{target}}); f[0].Status != engine.ERROR {
-		t.Errorf("senza auth: atteso ERROR, avuto %s (%s)", f[0].Status, f[0].Message)
+		t.Errorf("without auth: want ERROR, got %s (%s)", f[0].Status, f[0].Message)
 	}
 	// Con credenziali (password da env) → OK.
 	f := byTarget(run(t, engine.HAProxyConfig{
 		Targets: []string{target}, AuthUser: "admin", AuthPassEnv: "HAPROXY_PASS",
 	}))
 	if got := f["web/web1"]; got.Status != engine.OK {
-		t.Errorf("con auth: atteso OK, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("with auth: want OK, got %s (%s)", got.Status, got.Message)
 	}
 }
 
 func TestUnreachableIsError(t *testing.T) {
 	f := run(t, engine.HAProxyConfig{Targets: []string{"127.0.0.1:1"}})
 	if len(f) == 0 || f[0].Status != engine.ERROR {
-		t.Errorf("irraggiungibile: atteso ERROR, avuto %v", f)
+		t.Errorf("unreachable: want ERROR, got %v", f)
 	}
 }
 

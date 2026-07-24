@@ -62,7 +62,7 @@ func (c *Check) probe(ctx context.Context, t engine.StreamTarget) []engine.Findi
 	}
 	body, ctype, err := c.fetch(ctx, t.URL)
 	if err != nil {
-		return []engine.Finding{{Check: c.Name(), Target: label, Status: engine.ERROR, Message: fmt.Sprintf("manifest non raggiungibile: %v", err)}}
+		return []engine.Finding{{Check: c.Name(), Target: label, Status: engine.ERROR, Message: fmt.Sprintf("manifest not reachable: %v", err)}}
 	}
 	if isDASH(t.URL, ctype, body) {
 		return c.probeDASH(label, t, body)
@@ -75,14 +75,14 @@ func (c *Check) probe(ctx context.Context, t engine.StreamTarget) []engine.Findi
 func (c *Check) probeHLS(ctx context.Context, label string, t engine.StreamTarget, body string) []engine.Finding {
 	pl, err := parseM3U8(body, t.URL)
 	if err != nil {
-		return []engine.Finding{{Check: c.Name(), Target: label, Status: engine.BAD, Message: "manifest HLS non valido: " + err.Error()}}
+		return []engine.Finding{{Check: c.Name(), Target: label, Status: engine.BAD, Message: "invalid HLS manifest: " + err.Error()}}
 	}
 	var findings []engine.Finding
 
 	if pl.master {
 		findings = append(findings, engine.Finding{
 			Check: c.Name(), Target: label, Status: engine.OK,
-			Message: fmt.Sprintf("master HLS, %d varianti", len(pl.variants)),
+			Message: fmt.Sprintf("HLS master, %d variants", len(pl.variants)),
 		})
 		findings = append(findings, c.ladderFinding(label, t, len(pl.variants))...)
 		if t.Live {
@@ -107,7 +107,7 @@ func (c *Check) probeHLS(ctx context.Context, label string, t engine.StreamTarge
 	}
 	findings = append(findings, engine.Finding{
 		Check: c.Name(), Target: label, Status: engine.OK,
-		Message: fmt.Sprintf("%s, %d segmenti", kind, len(pl.segments)),
+		Message: fmt.Sprintf("%s, %d segments", kind, len(pl.segments)),
 	})
 	if t.Live {
 		findings = append(findings, c.liveEdgeFinding(label, t, pl))
@@ -122,30 +122,30 @@ func (c *Check) ladderFinding(label string, t engine.StreamTarget, n int) []engi
 	target := label + " [ladder]"
 	switch {
 	case n == 0:
-		return []engine.Finding{{Check: c.Name(), Target: target, Status: engine.BAD, Message: "nessuna variante nel master playlist"}}
+		return []engine.Finding{{Check: c.Name(), Target: target, Status: engine.BAD, Message: "no variant in the master playlist"}}
 	case n < t.MinVariants:
-		return []engine.Finding{{Check: c.Name(), Target: target, Status: engine.WARN, Message: fmt.Sprintf("ladder incompleta: %d/%d varianti attese", n, t.MinVariants)}}
+		return []engine.Finding{{Check: c.Name(), Target: target, Status: engine.WARN, Message: fmt.Sprintf("incomplete ladder: %d/%d expected variants", n, t.MinVariants)}}
 	default:
-		return []engine.Finding{{Check: c.Name(), Target: target, Status: engine.OK, Message: fmt.Sprintf("ladder completa: %d varianti", n)}}
+		return []engine.Finding{{Check: c.Name(), Target: target, Status: engine.OK, Message: fmt.Sprintf("complete ladder: %d variants", n)}}
 	}
 }
 
 func (c *Check) liveEdgeFinding(label string, t engine.StreamTarget, pl playlist) engine.Finding {
 	target := label + " [live-edge]"
 	if pl.endList {
-		return engine.Finding{Check: c.Name(), Target: target, Status: engine.WARN, Message: "atteso live ma il manifest è VOD (#EXT-X-ENDLIST presente)"}
+		return engine.Finding{Check: c.Name(), Target: target, Status: engine.WARN, Message: "expected live but the manifest is VOD (#EXT-X-ENDLIST present)"}
 	}
 	edge, ok := pl.liveEdge()
 	if !ok {
-		return engine.Finding{Check: c.Name(), Target: target, Status: engine.WARN, Message: "freschezza non misurabile: nessun #EXT-X-PROGRAM-DATE-TIME"}
+		return engine.Finding{Check: c.Name(), Target: target, Status: engine.WARN, Message: "freshness not measurable: no #EXT-X-PROGRAM-DATE-TIME"}
 	}
 	age := int(c.now().Sub(edge).Seconds())
-	msg := fmt.Sprintf("live-edge vecchio di %ds", age)
+	msg := fmt.Sprintf("live-edge %ds old", age)
 	switch {
 	case t.MaxAgeCritSeconds > 0 && age >= t.MaxAgeCritSeconds:
-		return engine.Finding{Check: c.Name(), Target: target, Status: engine.BAD, Message: msg + fmt.Sprintf(" (soglia crit %ds): stream fermo?", t.MaxAgeCritSeconds)}
+		return engine.Finding{Check: c.Name(), Target: target, Status: engine.BAD, Message: msg + fmt.Sprintf(" (crit threshold %ds): stream stalled?", t.MaxAgeCritSeconds)}
 	case t.MaxAgeWarnSeconds > 0 && age >= t.MaxAgeWarnSeconds:
-		return engine.Finding{Check: c.Name(), Target: target, Status: engine.WARN, Message: msg + fmt.Sprintf(" (soglia %ds)", t.MaxAgeWarnSeconds)}
+		return engine.Finding{Check: c.Name(), Target: target, Status: engine.WARN, Message: msg + fmt.Sprintf(" (threshold %ds)", t.MaxAgeWarnSeconds)}
 	default:
 		return engine.Finding{Check: c.Name(), Target: target, Status: engine.OK, Message: msg}
 	}
@@ -168,7 +168,7 @@ type mpd struct {
 func (c *Check) probeDASH(label string, t engine.StreamTarget, body string) []engine.Finding {
 	var m mpd
 	if err := xml.Unmarshal([]byte(body), &m); err != nil {
-		return []engine.Finding{{Check: c.Name(), Target: label, Status: engine.BAD, Message: "manifest DASH (MPD) non valido: " + err.Error()}}
+		return []engine.Finding{{Check: c.Name(), Target: label, Status: engine.BAD, Message: "invalid DASH (MPD) manifest: " + err.Error()}}
 	}
 	reps := 0
 	for _, p := range m.Periods {
@@ -190,20 +190,20 @@ func (c *Check) probeDASH(label string, t engine.StreamTarget, body string) []en
 	if t.Live {
 		target := label + " [live-edge]"
 		if !live {
-			findings = append(findings, engine.Finding{Check: c.Name(), Target: target, Status: engine.WARN, Message: "atteso live ma MPD è statico (type != dynamic)"})
+			findings = append(findings, engine.Finding{Check: c.Name(), Target: target, Status: engine.WARN, Message: "expected live but MPD is static (type != dynamic)"})
 		} else if pub, err := time.Parse(time.RFC3339, m.PublishTime); err == nil {
 			age := int(c.now().Sub(pub).Seconds())
-			msg := fmt.Sprintf("publishTime vecchio di %ds", age)
+			msg := fmt.Sprintf("publishTime %ds old", age)
 			switch {
 			case t.MaxAgeCritSeconds > 0 && age >= t.MaxAgeCritSeconds:
-				findings = append(findings, engine.Finding{Check: c.Name(), Target: target, Status: engine.BAD, Message: msg + fmt.Sprintf(" (soglia crit %ds)", t.MaxAgeCritSeconds)})
+				findings = append(findings, engine.Finding{Check: c.Name(), Target: target, Status: engine.BAD, Message: msg + fmt.Sprintf(" (crit threshold %ds)", t.MaxAgeCritSeconds)})
 			case t.MaxAgeWarnSeconds > 0 && age >= t.MaxAgeWarnSeconds:
-				findings = append(findings, engine.Finding{Check: c.Name(), Target: target, Status: engine.WARN, Message: msg + fmt.Sprintf(" (soglia %ds)", t.MaxAgeWarnSeconds)})
+				findings = append(findings, engine.Finding{Check: c.Name(), Target: target, Status: engine.WARN, Message: msg + fmt.Sprintf(" (threshold %ds)", t.MaxAgeWarnSeconds)})
 			default:
 				findings = append(findings, engine.Finding{Check: c.Name(), Target: target, Status: engine.OK, Message: msg})
 			}
 		} else {
-			findings = append(findings, engine.Finding{Check: c.Name(), Target: target, Status: engine.WARN, Message: "freschezza non misurabile: publishTime assente/illeggibile"})
+			findings = append(findings, engine.Finding{Check: c.Name(), Target: target, Status: engine.WARN, Message: "freshness not measurable: publishTime missing/unreadable"})
 		}
 	}
 	return findings
@@ -325,7 +325,7 @@ func parseM3U8(body, baseURL string) (playlist, error) {
 		return pl, err
 	}
 	if !pl.master && len(pl.segments) == 0 {
-		return pl, fmt.Errorf("né varianti né segmenti trovati")
+		return pl, fmt.Errorf("neither variants nor segments found")
 	}
 	return pl, nil
 }

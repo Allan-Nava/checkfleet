@@ -59,11 +59,11 @@ func TestHealthyPrimary(t *testing.T) {
 	}}, nil)
 	f := run(t, c)
 	if got := f["db1"]; got.Status != engine.OK || !strings.Contains(got.Message, "primary") {
-		t.Errorf("reachability: atteso OK primary, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("reachability: want OK primary, got %s (%s)", got.Status, got.Message)
 	}
 	for _, k := range []string{"db1 [wraparound]", "db1 [connections]", "db1 [repl:10.0.0.2]"} {
 		if f[k].Status != engine.OK {
-			t.Errorf("%s: atteso OK, avuto %s (%s)", k, f[k].Status, f[k].Message)
+			t.Errorf("%s: want OK, got %s (%s)", k, f[k].Status, f[k].Message)
 		}
 	}
 }
@@ -79,7 +79,7 @@ func TestWraparoundThresholds(t *testing.T) {
 	} {
 		c := checkWith(defaults(), fakeCollector{m: metrics{WraparoundAge: tc.age, MaxConnections: 100}}, nil)
 		if got := run(t, c)["db1 [wraparound]"]; got.Status != tc.want {
-			t.Errorf("age %d: atteso %s, avuto %s (%s)", tc.age, tc.want, got.Status, got.Message)
+			t.Errorf("age %d: want %s, got %s (%s)", tc.age, tc.want, got.Status, got.Message)
 		}
 	}
 }
@@ -87,7 +87,7 @@ func TestWraparoundThresholds(t *testing.T) {
 func TestConnectionsSaturation(t *testing.T) {
 	c := checkWith(defaults(), fakeCollector{m: metrics{Connections: 85, MaxConnections: 100}}, nil)
 	if got := run(t, c)["db1 [connections]"]; got.Status != engine.WARN || !strings.Contains(got.Message, "85%") {
-		t.Errorf("85/100: atteso WARN 85%%, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("85/100: want WARN 85%%, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -95,16 +95,16 @@ func TestInactiveSlotThresholds(t *testing.T) {
 	c := checkWith(defaults(), fakeCollector{m: metrics{
 		MaxConnections: 100,
 		InactiveSlots: []slot{
-			{Name: "small", RetainedBytes: 100 << 20}, // < warn 512MiB → WARN (inattivo)
+			{Name: "small", RetainedBytes: 100 << 20}, // < warn 512MiB → WARN (inactive)
 			{Name: "huge", RetainedBytes: 3 << 30},    // > crit 2GiB → BAD
 		},
 	}}, nil)
 	f := run(t, c)
 	if got := f["db1 [slot:small]"]; got.Status != engine.WARN {
-		t.Errorf("slot piccolo inattivo: atteso WARN, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("small inactive slot: want WARN, got %s (%s)", got.Status, got.Message)
 	}
 	if got := f["db1 [slot:huge]"]; got.Status != engine.BAD {
-		t.Errorf("slot enorme: atteso BAD, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("huge slot: want BAD, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -118,10 +118,10 @@ func TestReplicaLagThresholds(t *testing.T) {
 	}}, nil)
 	f := run(t, c)
 	if f["db1 [repl:warn]"].Status != engine.WARN {
-		t.Errorf("lag 64MiB: atteso WARN, avuto %+v", f["db1 [repl:warn]"])
+		t.Errorf("lag 64MiB: want WARN, got %+v", f["db1 [repl:warn]"])
 	}
 	if f["db1 [repl:bad]"].Status != engine.BAD {
-		t.Errorf("lag 256MiB: atteso BAD, avuto %+v", f["db1 [repl:bad]"])
+		t.Errorf("lag 256MiB: want BAD, got %+v", f["db1 [repl:bad]"])
 	}
 }
 
@@ -129,7 +129,7 @@ func TestReplicaInRecoverySkipsReplicaChecks(t *testing.T) {
 	c := checkWith(defaults(), fakeCollector{m: metrics{InRecovery: true, MaxConnections: 100}}, nil)
 	f := run(t, c)
 	if got := f["db1"]; !strings.Contains(got.Message, "replica") {
-		t.Errorf("reachability su replica: atteso ruolo replica, avuto %s", got.Message)
+		t.Errorf("reachability on replica: want replica role, got %s", got.Message)
 	}
 	for k := range f {
 		if strings.Contains(k, "[repl:") {
@@ -141,13 +141,13 @@ func TestReplicaInRecoverySkipsReplicaChecks(t *testing.T) {
 func TestConnectErrorIsError(t *testing.T) {
 	c := checkWith(defaults(), nil, errors.New("connection refused"))
 	if got := run(t, c)["db1"]; got.Status != engine.ERROR {
-		t.Errorf("connect fallita: atteso ERROR, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("connect failed: want ERROR, got %s (%s)", got.Status, got.Message)
 	}
 }
 
 func TestCollectErrorIsError(t *testing.T) {
 	c := checkWith(defaults(), fakeCollector{err: errors.New("permission denied")}, nil)
 	if got := run(t, c)["db1"]; got.Status != engine.ERROR || !strings.Contains(got.Message, "query") {
-		t.Errorf("query fallita: atteso ERROR, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("query failed: want ERROR, got %s (%s)", got.Status, got.Message)
 	}
 }

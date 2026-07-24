@@ -116,10 +116,10 @@ func TestHealthyMaster(t *testing.T) {
 	f := run(t, cfg(startFakeRedis(t, masterInfo, "")))
 	addr := firstKey(f)
 	if got := f[addr]; got.Status != engine.OK || !strings.Contains(got.Message, "master") {
-		t.Errorf("reachability: atteso OK master, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("reachability: want OK master, got %s (%s)", got.Status, got.Message)
 	}
 	if got := f[addr+" [memory]"]; got.Status != engine.OK {
-		t.Errorf("memoria 10%%: atteso OK, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("memory 10%%: want OK, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -127,7 +127,7 @@ func TestMemoryHighIsWarn(t *testing.T) {
 	info := "# Server\r\nredis_version:7.2\r\n# Memory\r\nused_memory:9000000\r\nmaxmemory:10000000\r\n# Replication\r\nrole:master\r\n"
 	f := run(t, cfg(startFakeRedis(t, info, "")))
 	if got := f[firstKey(f)+" [memory]"]; got.Status != engine.WARN {
-		t.Errorf("memoria 90%%: atteso WARN, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("memory 90%%: want WARN, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -135,7 +135,7 @@ func TestReplicaLinkDownIsBad(t *testing.T) {
 	info := "redis_version:7.2\r\nrole:slave\r\nmaster_link_status:down\r\n"
 	f := run(t, cfg(startFakeRedis(t, info, "")))
 	if got := f[firstKey(f)+" [replication]"]; got.Status != engine.BAD {
-		t.Errorf("link master down: atteso BAD, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("master link down: want BAD, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -143,7 +143,7 @@ func TestReplicaLagIsBad(t *testing.T) {
 	info := "redis_version:7.2\r\nrole:slave\r\nmaster_link_status:up\r\nmaster_repl_offset:300000000\r\nslave_repl_offset:100000000\r\n"
 	f := run(t, cfg(startFakeRedis(t, info, "")))
 	if got := f[firstKey(f)+" [replication]"]; got.Status != engine.BAD {
-		t.Errorf("lag replica enorme: atteso BAD, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("huge replica lag: want BAD, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -151,15 +151,15 @@ func TestPersistenceFailIsWarn(t *testing.T) {
 	info := "redis_version:7.2\r\nrole:master\r\nrdb_last_bgsave_status:err\r\n"
 	f := run(t, cfg(startFakeRedis(t, info, "")))
 	if got := f[firstKey(f)+" [persistence]"]; got.Status != engine.WARN {
-		t.Errorf("bgsave fallito: atteso WARN, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("bgsave failed: want WARN, got %s (%s)", got.Status, got.Message)
 	}
 }
 
 func TestLoadingIsWarn(t *testing.T) {
 	info := "redis_version:7.2\r\nrole:master\r\nloading:1\r\n"
 	f := run(t, cfg(startFakeRedis(t, info, "")))
-	if got := f[firstKey(f)]; got.Status != engine.WARN || !strings.Contains(got.Message, "caricamento") {
-		t.Errorf("loading: atteso WARN, avuto %s (%s)", got.Status, got.Message)
+	if got := f[firstKey(f)]; got.Status != engine.WARN || !strings.Contains(got.Message, "loading") {
+		t.Errorf("loading: want WARN, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -169,7 +169,7 @@ func TestAuthFromEnv(t *testing.T) {
 	c.PasswordEnv = "REDIS_PASS"
 	f := run(t, c)
 	if got := f[firstKey(f)]; got.Status != engine.OK {
-		t.Errorf("con auth corretta: atteso OK, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("with correct auth: want OK, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -177,7 +177,7 @@ func TestUnreachableIsError(t *testing.T) {
 	f := run(t, cfg("127.0.0.1:1"))
 	for _, v := range f {
 		if v.Status != engine.ERROR {
-			t.Errorf("irraggiungibile: atteso ERROR, avuto %s (%s)", v.Status, v.Message)
+			t.Errorf("unreachable: want ERROR, got %s (%s)", v.Status, v.Message)
 		}
 	}
 }

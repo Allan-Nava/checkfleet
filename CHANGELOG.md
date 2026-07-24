@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.39.0
+
+- Output in inglese — finding di **tutti i 18 moduli** (CF-59, M15): `certs, http, nats, haproxy, stream, patroni, consul, postgres, dns, redis, keycloak, tcp, tls, ntp, grpc, ldap, kafka, rabbitmq`. Tradotti i messaggi dei finding (reachability, soglie, lag, drift, ecc.) e aggiornati i test, incluse le asserzioni `strings.Contains` sul contenuto del messaggio. Neutralizzati alcuni realm/host aziendali nei test (keycloak). Con CF-58 (v0.38.0) l'intero output del CLI è ora in inglese. Chiude di fatto la migrazione lato CLI; resta il guardrail CF-60. CHANGELOG resta in italiano.
+
 ## 0.38.0
 
 - Output in inglese — engine & CLI (CF-58, M15): tradotti `usage`, help dei flag, errori sistemici (`unknown module`, `module %q is not configured`, `no module selected`…), messaggi di `validate` (`… is valid ✅`, `N problem(s):`), i problemi di `engine.Validate` (`no target`, `has no url/dsn`, `should be >=`…), il finding di flapping, i messaggi di `serve`/`report-issues`, e i renderer `internal/output`: summary `N checks: …`, sezioni Markdown `Needs attention`/`All results` (header tabella `Status/Check/Target/Detail`), nota Slack `All green`/`…and N more problems`. Test aggiornati. I **messaggi dei finding dei moduli** restano da tradurre (CF-59, uno per release). CHANGELOG resta in italiano.

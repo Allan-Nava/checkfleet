@@ -84,13 +84,13 @@ func (c *Check) probe(ctx context.Context, t engine.PostgresTarget) []engine.Fin
 	}
 	coll, err := c.connect(ctx, t)
 	if err != nil {
-		return []engine.Finding{{Check: c.Name(), Target: label, Status: engine.ERROR, Message: fmt.Sprintf("connessione fallita: %v", err)}}
+		return []engine.Finding{{Check: c.Name(), Target: label, Status: engine.ERROR, Message: fmt.Sprintf("connection failed: %v", err)}}
 	}
 	defer coll.Close(ctx)
 
 	m, err := coll.Collect(ctx)
 	if err != nil {
-		return []engine.Finding{{Check: c.Name(), Target: label, Status: engine.ERROR, Message: fmt.Sprintf("query fallita: %v", err)}}
+		return []engine.Finding{{Check: c.Name(), Target: label, Status: engine.ERROR, Message: fmt.Sprintf("query failed: %v", err)}}
 	}
 	return c.evaluate(label, m)
 }
@@ -103,7 +103,7 @@ func (c *Check) evaluate(label string, m metrics) []engine.Finding {
 	}
 	findings := []engine.Finding{{
 		Check: c.Name(), Target: label, Status: engine.OK,
-		Message: fmt.Sprintf("raggiungibile (%s)", role),
+		Message: fmt.Sprintf("reachable (%s)", role),
 	}}
 
 	findings = append(findings, c.wraparoundFinding(label, m.WraparoundAge))
@@ -119,9 +119,9 @@ func (c *Check) wraparoundFinding(label string, age int64) engine.Finding {
 	f := engine.Finding{Check: c.Name(), Target: label + " [wraparound]"}
 	switch {
 	case c.cfg.WraparoundCritAge > 0 && age >= c.cfg.WraparoundCritAge:
-		f.Status, f.Message = engine.BAD, fmt.Sprintf("age(datfrozenxid) %d oltre soglia critica (%d): rischio wraparound", age, c.cfg.WraparoundCritAge)
+		f.Status, f.Message = engine.BAD, fmt.Sprintf("age(datfrozenxid) %d over critical threshold (%d): wraparound risk", age, c.cfg.WraparoundCritAge)
 	case c.cfg.WraparoundWarnAge > 0 && age >= c.cfg.WraparoundWarnAge:
-		f.Status, f.Message = engine.WARN, fmt.Sprintf("age(datfrozenxid) %d oltre soglia (%d): vacuum in ritardo?", age, c.cfg.WraparoundWarnAge)
+		f.Status, f.Message = engine.WARN, fmt.Sprintf("age(datfrozenxid) %d over threshold (%d): vacuum behind?", age, c.cfg.WraparoundWarnAge)
 	default:
 		f.Status, f.Message = engine.OK, fmt.Sprintf("age(datfrozenxid) %d", age)
 	}
@@ -131,7 +131,7 @@ func (c *Check) wraparoundFinding(label string, age int64) engine.Finding {
 func (c *Check) connectionsFinding(label string, m metrics) engine.Finding {
 	f := engine.Finding{Check: c.Name(), Target: label + " [connections]"}
 	if m.MaxConnections <= 0 {
-		f.Status, f.Message = engine.OK, fmt.Sprintf("%d connessioni", m.Connections)
+		f.Status, f.Message = engine.OK, fmt.Sprintf("%d connections", m.Connections)
 		return f
 	}
 	pct := m.Connections * 100 / m.MaxConnections
@@ -140,7 +140,7 @@ func (c *Check) connectionsFinding(label string, m metrics) engine.Finding {
 	} else {
 		f.Status = engine.OK
 	}
-	f.Message = fmt.Sprintf("%d/%d connessioni (%d%%)", m.Connections, m.MaxConnections, pct)
+	f.Message = fmt.Sprintf("%d/%d connections (%d%%)", m.Connections, m.MaxConnections, pct)
 	return f
 }
 
@@ -150,11 +150,11 @@ func (c *Check) slotFindings(label string, slots []slot) []engine.Finding {
 		f := engine.Finding{Check: c.Name(), Target: label + " [slot:" + s.Name + "]"}
 		switch {
 		case c.cfg.SlotCritBytes > 0 && s.RetainedBytes >= c.cfg.SlotCritBytes:
-			f.Status, f.Message = engine.BAD, fmt.Sprintf("slot inattivo trattiene %s di WAL (soglia crit %s)", humanBytes(s.RetainedBytes), humanBytes(c.cfg.SlotCritBytes))
+			f.Status, f.Message = engine.BAD, fmt.Sprintf("inactive slot retaining %s of WAL (crit threshold %s)", humanBytes(s.RetainedBytes), humanBytes(c.cfg.SlotCritBytes))
 		case c.cfg.SlotWarnBytes > 0 && s.RetainedBytes >= c.cfg.SlotWarnBytes:
-			f.Status, f.Message = engine.WARN, fmt.Sprintf("slot inattivo trattiene %s di WAL (soglia %s)", humanBytes(s.RetainedBytes), humanBytes(c.cfg.SlotWarnBytes))
+			f.Status, f.Message = engine.WARN, fmt.Sprintf("inactive slot retaining %s of WAL (threshold %s)", humanBytes(s.RetainedBytes), humanBytes(c.cfg.SlotWarnBytes))
 		default:
-			f.Status, f.Message = engine.WARN, fmt.Sprintf("slot inattivo (%s di WAL trattenuto)", humanBytes(s.RetainedBytes))
+			f.Status, f.Message = engine.WARN, fmt.Sprintf("inactive slot (%s of WAL retained)", humanBytes(s.RetainedBytes))
 		}
 		findings = append(findings, f)
 	}
@@ -167,11 +167,11 @@ func (c *Check) replicaFindings(label string, replicas []replica) []engine.Findi
 		f := engine.Finding{Check: c.Name(), Target: label + " [repl:" + r.Client + "]"}
 		switch {
 		case c.cfg.LagCritBytes > 0 && r.LagBytes >= c.cfg.LagCritBytes:
-			f.Status, f.Message = engine.BAD, fmt.Sprintf("lag %s oltre soglia critica (%s), stato %s", humanBytes(r.LagBytes), humanBytes(c.cfg.LagCritBytes), r.State)
+			f.Status, f.Message = engine.BAD, fmt.Sprintf("lag %s over critical threshold (%s), state %s", humanBytes(r.LagBytes), humanBytes(c.cfg.LagCritBytes), r.State)
 		case c.cfg.LagWarnBytes > 0 && r.LagBytes >= c.cfg.LagWarnBytes:
-			f.Status, f.Message = engine.WARN, fmt.Sprintf("lag %s oltre soglia (%s), stato %s", humanBytes(r.LagBytes), humanBytes(c.cfg.LagWarnBytes), r.State)
+			f.Status, f.Message = engine.WARN, fmt.Sprintf("lag %s over threshold (%s), state %s", humanBytes(r.LagBytes), humanBytes(c.cfg.LagWarnBytes), r.State)
 		default:
-			f.Status, f.Message = engine.OK, fmt.Sprintf("lag %s, stato %s", humanBytes(r.LagBytes), r.State)
+			f.Status, f.Message = engine.OK, fmt.Sprintf("lag %s, state %s", humanBytes(r.LagBytes), r.State)
 		}
 		findings = append(findings, f)
 	}

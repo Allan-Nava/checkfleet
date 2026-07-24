@@ -90,7 +90,7 @@ func TestParseSOASerial(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(recs) != 1 || recs[0].Value != "2026072401" {
-		t.Errorf("serial SOA inatteso: %+v", recs)
+		t.Errorf("unexpected SOA serial: %+v", recs)
 	}
 }
 
@@ -101,6 +101,6 @@ func TestParseRcodeNXDomain(t *testing.T) {
 		t.Fatal(err)
 	}
 	if rcode != 3 || len(recs) != 0 {
-		t.Errorf("atteso NXDOMAIN senza record, avuto rcode=%d recs=%+v", rcode, recs)
+		t.Errorf("want NXDOMAIN with no records, got rcode=%d recs=%+v", rcode, recs)
 	}
 }

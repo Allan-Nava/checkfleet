@@ -55,7 +55,7 @@ func TestHealthy(t *testing.T) {
 	f := run(t, checkWith(baseCfg(), cl, nil))
 	for _, k := range []string{"cluster", "partitions", "group/g1"} {
 		if f[k].Status != engine.OK {
-			t.Errorf("%s: atteso OK, avuto %s (%s)", k, f[k].Status, f[k].Message)
+			t.Errorf("%s: want OK, got %s (%s)", k, f[k].Status, f[k].Message)
 		}
 	}
 }
@@ -63,21 +63,21 @@ func TestHealthy(t *testing.T) {
 func TestNoControllerIsBad(t *testing.T) {
 	cl := &fakeCluster{meta: metadata{Brokers: 2, ControllerPresent: false}, lags: map[string]int64{}}
 	if got := run(t, checkWith(baseCfg(), cl, nil))["cluster"]; got.Status != engine.BAD {
-		t.Errorf("no controller: atteso BAD, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("no controller: want BAD, got %s (%s)", got.Status, got.Message)
 	}
 }
 
 func TestFewBrokersIsWarn(t *testing.T) {
 	cl := &fakeCluster{meta: metadata{Brokers: 2, ControllerPresent: true}, lags: map[string]int64{}}
 	if got := run(t, checkWith(baseCfg(), cl, nil))["cluster"]; got.Status != engine.WARN {
-		t.Errorf("2/3 broker: atteso WARN, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("2/3 brokers: want WARN, got %s (%s)", got.Status, got.Message)
 	}
 }
 
 func TestUnderReplicatedIsBad(t *testing.T) {
 	cl := &fakeCluster{meta: metadata{Brokers: 3, ControllerPresent: true, UnderReplicated: 4}, lags: map[string]int64{}}
 	if got := run(t, checkWith(baseCfg(), cl, nil))["partitions"]; got.Status != engine.BAD {
-		t.Errorf("under-replicated: atteso BAD, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("under-replicated: want BAD, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -87,22 +87,22 @@ func TestGroupLagThresholds(t *testing.T) {
 	cl := &fakeCluster{meta: metadata{Brokers: 3, ControllerPresent: true}, lags: map[string]int64{"warn": 5000, "bad": 200000}}
 	f := run(t, checkWith(cfg, cl, nil))
 	if f["group/warn"].Status != engine.WARN {
-		t.Errorf("lag 5000: atteso WARN, avuto %s", f["group/warn"].Status)
+		t.Errorf("lag 5000: want WARN, got %s", f["group/warn"].Status)
 	}
 	if f["group/bad"].Status != engine.BAD {
-		t.Errorf("lag 200000: atteso BAD, avuto %s", f["group/bad"].Status)
+		t.Errorf("lag 200000: want BAD, got %s", f["group/bad"].Status)
 	}
 }
 
 func TestConnectErrorIsError(t *testing.T) {
 	if got := run(t, checkWith(baseCfg(), nil, errors.New("no brokers")))["cluster"]; got.Status != engine.ERROR {
-		t.Errorf("connessione fallita: atteso ERROR, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("connection failed: want ERROR, got %s (%s)", got.Status, got.Message)
 	}
 }
 
 func TestMetadataErrorIsError(t *testing.T) {
 	cl := &fakeCluster{metaErr: errors.New("timeout")}
 	if got := run(t, checkWith(baseCfg(), cl, nil))["cluster"]; got.Status != engine.ERROR || !strings.Contains(got.Message, "metadata") {
-		t.Errorf("metadata fallito: atteso ERROR, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("metadata failed: want ERROR, got %s (%s)", got.Status, got.Message)
 	}
 }

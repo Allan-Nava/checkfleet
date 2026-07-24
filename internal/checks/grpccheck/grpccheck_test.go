@@ -42,38 +42,38 @@ func run(t *testing.T, addr, service string) engine.Finding {
 	defer cancel()
 	f := c.Run(ctx)
 	if len(f) != 1 {
-		t.Fatalf("atteso 1 finding, avuto %d", len(f))
+		t.Fatalf("want 1 finding, got %d", len(f))
 	}
 	return f[0]
 }
 
 func TestServingIsOK(t *testing.T) {
 	if got := run(t, startGRPC(t, statusServing, "0"), ""); got.Status != engine.OK {
-		t.Errorf("SERVING: atteso OK, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("SERVING: want OK, got %s (%s)", got.Status, got.Message)
 	}
 }
 
 func TestNotServingIsBad(t *testing.T) {
 	if got := run(t, startGRPC(t, statusNotServing, "0"), "mysvc"); got.Status != engine.BAD {
-		t.Errorf("NOT_SERVING: atteso BAD, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("NOT_SERVING: want BAD, got %s (%s)", got.Status, got.Message)
 	}
 }
 
 func TestUnimplementedIsWarn(t *testing.T) {
 	if got := run(t, startGRPC(t, 0, "12"), ""); got.Status != engine.WARN {
-		t.Errorf("UNIMPLEMENTED: atteso WARN, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("UNIMPLEMENTED: want WARN, got %s (%s)", got.Status, got.Message)
 	}
 }
 
 func TestServiceUnknownIsBad(t *testing.T) {
 	if got := run(t, startGRPC(t, 0, "5"), "ghost"); got.Status != engine.BAD {
-		t.Errorf("NOT_FOUND: atteso BAD, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("NOT_FOUND: want BAD, got %s (%s)", got.Status, got.Message)
 	}
 }
 
 func TestUnreachableIsError(t *testing.T) {
 	if got := run(t, "127.0.0.1:1", ""); got.Status != engine.ERROR {
-		t.Errorf("irraggiungibile: atteso ERROR, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("unreachable: want ERROR, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -84,6 +84,6 @@ func TestEncodeDecodeRoundTrip(t *testing.T) {
 		t.Errorf("encode request errato: %v", req)
 	}
 	if s, ok := decodeHealthResponse(grpcFrame([]byte{0x08, statusServing})); !ok || s != statusServing {
-		t.Errorf("decode response: atteso %d, avuto %d ok=%v", statusServing, s, ok)
+		t.Errorf("decode response: want %d, got %d ok=%v", statusServing, s, ok)
 	}
 }

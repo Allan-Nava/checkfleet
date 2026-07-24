@@ -107,7 +107,7 @@ func (c *Check) Run(ctx context.Context) []engine.Finding {
 		if r.err != nil {
 			findings = append(findings, engine.Finding{
 				Check: c.Name(), Target: r.target, Status: engine.ERROR,
-				Message: fmt.Sprintf("monitoring non raggiungibile: %v", r.err),
+				Message: fmt.Sprintf("monitoring not reachable: %v", r.err),
 			})
 			continue
 		}
@@ -132,7 +132,7 @@ func (c *Check) Run(ctx context.Context) []engine.Finding {
 	if len(versions) > 1 {
 		findings = append(findings, engine.Finding{
 			Check: c.Name(), Target: "cluster", Status: engine.WARN,
-			Message: "versioni miste nel cluster: " + describeVersions(versions),
+			Message: "mixed versions in the cluster: " + describeVersions(versions),
 		})
 	}
 
@@ -223,19 +223,19 @@ func (c *Check) analyzeMeta(views []metaView) []engine.Finding {
 	case len(leaders) == 0:
 		findings = append(findings, engine.Finding{
 			Check: c.Name(), Target: "meta-cluster", Status: engine.BAD,
-			Message: "nessun meta-leader eletto (quorum perso?)",
+			Message: "no meta-leader elected (quorum lost?)",
 		})
 	case len(leaders) > 1:
 		findings = append(findings, engine.Finding{
 			Check: c.Name(), Target: "meta-cluster", Status: engine.WARN,
-			Message: "meta-leader incoerente tra i nodi: " + joinSorted(leaders),
+			Message: "inconsistent meta-leader across nodes: " + joinSorted(leaders),
 		})
 	default:
 		leader := joinSorted(leaders)
 		status, msg := engine.OK, "meta-leader: "+leader
 		if c.cfg.ExpectMetaLeader != "" && leader != c.cfg.ExpectMetaLeader {
 			status = engine.WARN
-			msg = fmt.Sprintf("meta-leader %s, atteso %s", leader, c.cfg.ExpectMetaLeader)
+			msg = fmt.Sprintf("meta-leader %s, want %s", leader, c.cfg.ExpectMetaLeader)
 		}
 		findings = append(findings, engine.Finding{
 			Check: c.Name(), Target: "meta-cluster", Status: status, Message: msg,
@@ -289,11 +289,11 @@ func (c *Check) peerFinding(name string, p peerInfo) engine.Finding {
 	case p.Offline:
 		f.Status, f.Message = engine.BAD, "peer OFFLINE"
 	case !p.Current:
-		f.Status, f.Message = engine.WARN, fmt.Sprintf("peer non current (lag %d)", p.Lag)
+		f.Status, f.Message = engine.WARN, fmt.Sprintf("peer not current (lag %d)", p.Lag)
 	case c.cfg.LagCrit > 0 && p.Lag >= uint64(c.cfg.LagCrit):
-		f.Status, f.Message = engine.BAD, fmt.Sprintf("lag %d oltre soglia critica (%d)", p.Lag, c.cfg.LagCrit)
+		f.Status, f.Message = engine.BAD, fmt.Sprintf("lag %d over critical threshold (%d)", p.Lag, c.cfg.LagCrit)
 	case c.cfg.LagWarn > 0 && p.Lag >= uint64(c.cfg.LagWarn):
-		f.Status, f.Message = engine.WARN, fmt.Sprintf("lag %d oltre soglia (%d)", p.Lag, c.cfg.LagWarn)
+		f.Status, f.Message = engine.WARN, fmt.Sprintf("lag %d over threshold (%d)", p.Lag, c.cfg.LagWarn)
 	default:
 		f.Status, f.Message = engine.OK, fmt.Sprintf("current, lag %d", p.Lag)
 	}
@@ -315,7 +315,7 @@ func (c *Check) ghostFindings(members map[string]bool) []engine.Finding {
 		if !expected[name] {
 			findings = append(findings, engine.Finding{
 				Check: c.Name(), Target: name, Status: engine.WARN,
-				Message: "peer non atteso nel meta-cluster (ghost?)",
+				Message: "unexpected peer in the meta-cluster (ghost?)",
 			})
 		}
 	}
@@ -323,7 +323,7 @@ func (c *Check) ghostFindings(members map[string]bool) []engine.Finding {
 		if !members[name] {
 			findings = append(findings, engine.Finding{
 				Check: c.Name(), Target: name, Status: engine.BAD,
-				Message: "peer atteso assente dal meta-cluster",
+				Message: "expected peer missing from the meta-cluster",
 			})
 		}
 	}

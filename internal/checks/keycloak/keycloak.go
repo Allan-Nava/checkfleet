@@ -50,12 +50,12 @@ func (c *Check) healthFinding(ctx context.Context) engine.Finding {
 	f := engine.Finding{Check: c.Name(), Target: "health"}
 	body, _, err := c.get(ctx, c.cfg.HealthURL)
 	if err != nil {
-		f.Status, f.Message = engine.ERROR, fmt.Sprintf("health non raggiungibile: %v", err)
+		f.Status, f.Message = engine.ERROR, fmt.Sprintf("health not reachable: %v", err)
 		return f
 	}
 	var h healthResp
 	if err := json.Unmarshal(body, &h); err != nil {
-		f.Status, f.Message = engine.BAD, "risposta health non valida"
+		f.Status, f.Message = engine.BAD, "invalid health response"
 		return f
 	}
 	if !strings.EqualFold(h.Status, "UP") {
@@ -71,25 +71,25 @@ func (c *Check) realmFinding(ctx context.Context, base, realm string) engine.Fin
 	url := base + "/realms/" + realm + "/.well-known/openid-configuration"
 	body, code, err := c.get(ctx, url)
 	if err != nil {
-		f.Status, f.Message = engine.ERROR, fmt.Sprintf("discovery non raggiungibile: %v", err)
+		f.Status, f.Message = engine.ERROR, fmt.Sprintf("discovery not reachable: %v", err)
 		return f
 	}
 	if code != http.StatusOK {
-		f.Status, f.Message = engine.BAD, fmt.Sprintf("discovery HTTP %d (realm assente?)", code)
+		f.Status, f.Message = engine.BAD, fmt.Sprintf("discovery HTTP %d (realm missing?)", code)
 		return f
 	}
 	var oidc oidcConfig
 	if err := json.Unmarshal(body, &oidc); err != nil || oidc.TokenEndpoint == "" {
-		f.Status, f.Message = engine.BAD, "discovery OIDC non valida o senza token_endpoint"
+		f.Status, f.Message = engine.BAD, "invalid OIDC discovery or missing token_endpoint"
 		return f
 	}
 	// The issuer should end with /realms/<realm>; a mismatch usually means a
 	// proxy/frontend-URL misconfiguration.
 	if !strings.HasSuffix(strings.TrimRight(oidc.Issuer, "/"), "/realms/"+realm) {
-		f.Status, f.Message = engine.WARN, fmt.Sprintf("issuer inatteso: %s (atteso .../realms/%s)", oidc.Issuer, realm)
+		f.Status, f.Message = engine.WARN, fmt.Sprintf("unexpected issuer: %s (want .../realms/%s)", oidc.Issuer, realm)
 		return f
 	}
-	f.Status, f.Message = engine.OK, "OIDC ok, token_endpoint presente"
+	f.Status, f.Message = engine.OK, "OIDC ok, token_endpoint present"
 	return f
 }
 

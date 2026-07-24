@@ -53,7 +53,7 @@ func cfgFor(target string) engine.PatroniConfig {
 func TestHealthyCluster(t *testing.T) {
 	f := byTarget(run(t, cfgFor(serveCluster(t, healthy))))
 	if got := f["pgcluster"]; got.Status != engine.OK || !strings.Contains(got.Message, "pg1") {
-		t.Errorf("leader: atteso OK pg1, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("leader: want OK pg1, got %s (%s)", got.Status, got.Message)
 	}
 	if f["pg2"].Status != engine.OK || f["pg3"].Status != engine.OK {
 		t.Errorf("repliche sane attese OK: %+v %+v", f["pg2"], f["pg3"])
@@ -65,7 +65,7 @@ func TestNoLeaderIsBad(t *testing.T) {
 	  {"name":"pg2","role":"replica","state":"running","timeline":5},
 	  {"name":"pg3","role":"replica","state":"running","timeline":5}]}`
 	if got := byTarget(run(t, cfgFor(serveCluster(t, body))))["c"]; got.Status != engine.BAD {
-		t.Errorf("nessun leader: atteso BAD, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("no leader: want BAD, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -74,7 +74,7 @@ func TestSplitBrainIsWarn(t *testing.T) {
 	  {"name":"pg1","role":"leader","state":"running","timeline":5},
 	  {"name":"pg2","role":"leader","state":"running","timeline":6}]}`
 	if got := byTarget(run(t, cfgFor(serveCluster(t, body))))["c"]; got.Status != engine.WARN {
-		t.Errorf("due leader: atteso WARN, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("two leaders: want WARN, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -85,10 +85,10 @@ func TestLagThresholds(t *testing.T) {
 	  {"name":"bad","role":"replica","state":"streaming","timeline":5,"lag":268435456}]}`
 	f := byTarget(run(t, cfgFor(serveCluster(t, body))))
 	if f["warn"].Status != engine.WARN {
-		t.Errorf("lag 64MiB: atteso WARN, avuto %s (%s)", f["warn"].Status, f["warn"].Message)
+		t.Errorf("lag 64MiB: want WARN, got %s (%s)", f["warn"].Status, f["warn"].Message)
 	}
 	if f["bad"].Status != engine.BAD {
-		t.Errorf("lag 256MiB: atteso BAD, avuto %s (%s)", f["bad"].Status, f["bad"].Message)
+		t.Errorf("lag 256MiB: want BAD, got %s (%s)", f["bad"].Status, f["bad"].Message)
 	}
 }
 
@@ -99,10 +99,10 @@ func TestBadReplicaStateAndTimeline(t *testing.T) {
 	  {"name":"oldtl","role":"replica","state":"streaming","timeline":5,"lag":0}]}`
 	f := byTarget(run(t, cfgFor(serveCluster(t, body))))
 	if f["stopped"].Status != engine.BAD {
-		t.Errorf("replica stopped: atteso BAD, avuto %s (%s)", f["stopped"].Status, f["stopped"].Message)
+		t.Errorf("replica stopped: want BAD, got %s (%s)", f["stopped"].Status, f["stopped"].Message)
 	}
 	if f["oldtl"].Status != engine.WARN || !strings.Contains(f["oldtl"].Message, "timeline") {
-		t.Errorf("timeline divergente: atteso WARN, avuto %s (%s)", f["oldtl"].Status, f["oldtl"].Message)
+		t.Errorf("timeline divergence: want WARN, got %s (%s)", f["oldtl"].Status, f["oldtl"].Message)
 	}
 }
 
@@ -110,15 +110,15 @@ func TestUnknownLagIsOK(t *testing.T) {
 	body := `{"scope":"c","members":[
 	  {"name":"pg1","role":"leader","state":"running","timeline":5},
 	  {"name":"pg2","role":"replica","state":"streaming","timeline":5,"lag":"unknown"}]}`
-	if got := byTarget(run(t, cfgFor(serveCluster(t, body))))["pg2"]; got.Status != engine.OK || !strings.Contains(got.Message, "sconosciuto") {
-		t.Errorf("lag unknown: atteso OK con nota, avuto %s (%s)", got.Status, got.Message)
+	if got := byTarget(run(t, cfgFor(serveCluster(t, body))))["pg2"]; got.Status != engine.OK || !strings.Contains(got.Message, "unknown") {
+		t.Errorf("lag unknown: want OK with note, got %s (%s)", got.Status, got.Message)
 	}
 }
 
 func TestUnreachableIsError(t *testing.T) {
 	f := run(t, cfgFor("127.0.0.1:1"))
 	if len(f) == 0 || f[0].Status != engine.ERROR {
-		t.Errorf("irraggiungibile: atteso ERROR, avuto %v", f)
+		t.Errorf("unreachable: want ERROR, got %v", f)
 	}
 }
 

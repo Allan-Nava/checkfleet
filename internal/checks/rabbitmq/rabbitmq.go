@@ -54,7 +54,7 @@ func (c *Check) Run(ctx context.Context) []engine.Finding {
 		target := withDefaultPort(t, c.cfg.Port)
 		var ov overview
 		if err := c.get(ctx, target, "/api/overview", &ov); err != nil {
-			findings = append(findings, engine.Finding{Check: c.Name(), Target: target, Status: engine.ERROR, Message: fmt.Sprintf("management API non raggiungibile: %v", err)})
+			findings = append(findings, engine.Finding{Check: c.Name(), Target: target, Status: engine.ERROR, Message: fmt.Sprintf("management API not reachable: %v", err)})
 			continue
 		}
 		if base == "" {
@@ -80,11 +80,11 @@ func (c *Check) nodeFindings(ctx context.Context, base string) []engine.Finding 
 		f := engine.Finding{Check: c.Name(), Target: "node/" + shortNode(n.Name)}
 		switch {
 		case !n.Running:
-			f.Status, f.Message = engine.BAD, "nodo non running"
+			f.Status, f.Message = engine.BAD, "node not running"
 		case n.MemAlarm:
-			f.Status, f.Message = engine.BAD, "memory alarm attivo"
+			f.Status, f.Message = engine.BAD, "memory alarm active"
 		case n.DiskFreeAlarm:
-			f.Status, f.Message = engine.BAD, "disk free alarm attivo"
+			f.Status, f.Message = engine.BAD, "disk free alarm active"
 		default:
 			f.Status, f.Message = engine.OK, "running"
 		}
@@ -107,13 +107,13 @@ func (c *Check) queueFindings(ctx context.Context, base string) []engine.Finding
 		f := engine.Finding{Check: c.Name(), Target: label}
 		switch {
 		case c.cfg.QueueCritDepth > 0 && q.Messages >= c.cfg.QueueCritDepth:
-			f.Status, f.Message = engine.BAD, fmt.Sprintf("%d messaggi in coda (oltre %d)", q.Messages, c.cfg.QueueCritDepth)
+			f.Status, f.Message = engine.BAD, fmt.Sprintf("%d messages queued (over %d)", q.Messages, c.cfg.QueueCritDepth)
 		case c.cfg.QueueWarnDepth > 0 && q.Messages >= c.cfg.QueueWarnDepth:
-			f.Status, f.Message = engine.WARN, fmt.Sprintf("%d messaggi in coda (oltre %d)", q.Messages, c.cfg.QueueWarnDepth)
+			f.Status, f.Message = engine.WARN, fmt.Sprintf("%d messages queued (over %d)", q.Messages, c.cfg.QueueWarnDepth)
 		case q.Messages > 0 && q.Consumers == 0:
-			f.Status, f.Message = engine.WARN, fmt.Sprintf("%d messaggi ma nessun consumer", q.Messages)
+			f.Status, f.Message = engine.WARN, fmt.Sprintf("%d messages but no consumer", q.Messages)
 		default:
-			f.Status, f.Message = engine.OK, fmt.Sprintf("%d messaggi, %d consumer", q.Messages, q.Consumers)
+			f.Status, f.Message = engine.OK, fmt.Sprintf("%d messages, %d consumers", q.Messages, q.Consumers)
 		}
 		findings = append(findings, f)
 	}

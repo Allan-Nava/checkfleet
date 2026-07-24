@@ -52,7 +52,7 @@ func (c *Check) probe(ctx context.Context, t engine.HTTPTarget) engine.Finding {
 	start := time.Now()
 	res, err := c.client.Do(req)
 	if err != nil {
-		return engine.Finding{Check: c.Name(), Target: t.URL, Status: engine.ERROR, Message: fmt.Sprintf("richiesta fallita: %v", err)}
+		return engine.Finding{Check: c.Name(), Target: t.URL, Status: engine.ERROR, Message: fmt.Sprintf("request failed: %v", err)}
 	}
 	defer res.Body.Close()
 	body, _ := io.ReadAll(io.LimitReader(res.Body, 1<<20))
@@ -61,19 +61,19 @@ func (c *Check) probe(ctx context.Context, t engine.HTTPTarget) engine.Finding {
 	if res.StatusCode != t.ExpectStatus {
 		return engine.Finding{
 			Check: c.Name(), Target: t.URL, Status: engine.BAD,
-			Message: fmt.Sprintf("HTTP %d (atteso %d), %dms", res.StatusCode, t.ExpectStatus, latency.Milliseconds()),
+			Message: fmt.Sprintf("HTTP %d (want %d), %dms", res.StatusCode, t.ExpectStatus, latency.Milliseconds()),
 		}
 	}
 	if t.ExpectBody != "" && !strings.Contains(string(body), t.ExpectBody) {
 		return engine.Finding{
 			Check: c.Name(), Target: t.URL, Status: engine.BAD,
-			Message: fmt.Sprintf("body senza %q (HTTP %d, %dms)", t.ExpectBody, res.StatusCode, latency.Milliseconds()),
+			Message: fmt.Sprintf("body missing %q (HTTP %d, %dms)", t.ExpectBody, res.StatusCode, latency.Milliseconds()),
 		}
 	}
 	if t.MaxLatencyMS > 0 && latency.Milliseconds() > int64(t.MaxLatencyMS) {
 		return engine.Finding{
 			Check: c.Name(), Target: t.URL, Status: engine.WARN,
-			Message: fmt.Sprintf("lento: %dms (soglia %dms), HTTP %d", latency.Milliseconds(), t.MaxLatencyMS, res.StatusCode),
+			Message: fmt.Sprintf("slow: %dms (threshold %dms), HTTP %d", latency.Milliseconds(), t.MaxLatencyMS, res.StatusCode),
 		}
 	}
 	return engine.Finding{

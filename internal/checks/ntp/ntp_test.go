@@ -19,7 +19,7 @@ func run(t *testing.T, c *Check) engine.Finding {
 	t.Helper()
 	f := c.Run(context.Background())
 	if len(f) != 1 {
-		t.Fatalf("atteso 1 finding, avuto %d", len(f))
+		t.Fatalf("want 1 finding, got %d", len(f))
 	}
 	return f[0]
 }
@@ -36,23 +36,23 @@ func TestOffsetThresholds(t *testing.T) {
 	}
 	for _, tc := range cases {
 		if got := run(t, check(result{Offset: tc.off, Stratum: 3}, nil)); got.Status != tc.want {
-			t.Errorf("offset %s: atteso %s, avuto %s (%s)", tc.off, tc.want, got.Status, got.Message)
+			t.Errorf("offset %s: want %s, got %s (%s)", tc.off, tc.want, got.Status, got.Message)
 		}
 	}
 }
 
 func TestUnsyncedStratumIsBad(t *testing.T) {
 	if got := run(t, check(result{Offset: 0, Stratum: 16}, nil)); got.Status != engine.BAD {
-		t.Errorf("stratum 16: atteso BAD, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("stratum 16: want BAD, got %s (%s)", got.Status, got.Message)
 	}
 	if got := run(t, check(result{Offset: 0, Stratum: 0}, nil)); got.Status != engine.BAD {
-		t.Errorf("stratum 0 (KoD): atteso BAD, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("stratum 0 (KoD): want BAD, got %s (%s)", got.Status, got.Message)
 	}
 }
 
 func TestQueryErrorIsError(t *testing.T) {
 	if got := run(t, check(result{}, errors.New("timeout"))); got.Status != engine.ERROR {
-		t.Errorf("query fallita: atteso ERROR, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("query failed: want ERROR, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -62,6 +62,6 @@ func TestNTPTimestampConversion(t *testing.T) {
 	var ts uint64 = uint64(want.Unix()+ntpEpochOffset) << 32
 	got := ntpToTime(ts).UTC()
 	if got.Unix() != want.Unix() {
-		t.Errorf("conversione NTP: atteso %v, avuto %v", want, got)
+		t.Errorf("NTP conversion: want %v, got %v", want, got)
 	}
 }

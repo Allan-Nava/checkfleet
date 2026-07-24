@@ -66,10 +66,10 @@ func TestMasterLadderComplete(t *testing.T) {
 
 	f := byTarget(run(t, engine.StreamTarget{Name: "ch1", URL: srv.URL + "/master.m3u8", MinVariants: 3}))
 	if got := f["ch1"]; got.Status != engine.OK {
-		t.Errorf("master: atteso OK, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("master: want OK, got %s (%s)", got.Status, got.Message)
 	}
 	if got := f["ch1 [ladder]"]; got.Status != engine.OK {
-		t.Errorf("ladder 3/3: atteso OK, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("ladder 3/3: want OK, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -78,7 +78,7 @@ func TestLadderIncompleteIsWarn(t *testing.T) {
 	srv := serveManifests(t, map[string]string{"/m.m3u8": master})
 	f := byTarget(run(t, engine.StreamTarget{Name: "ch", URL: srv.URL + "/m.m3u8", MinVariants: 3}))
 	if got := f["ch [ladder]"]; got.Status != engine.WARN {
-		t.Errorf("ladder 1/3: atteso WARN, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("ladder 1/3: want WARN, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -98,7 +98,7 @@ func TestLiveEdgeFreshOKWarnBad(t *testing.T) {
 			MaxAgeWarnSeconds: 30, MaxAgeCritSeconds: 60,
 		}))
 		if got := f["live [live-edge]"]; got.Status != tc.want {
-			t.Errorf("age %ds: atteso %s, avuto %s (%s)", tc.age, tc.want, got.Status, got.Message)
+			t.Errorf("age %ds: want %s, got %s (%s)", tc.age, tc.want, got.Status, got.Message)
 		}
 	}
 }
@@ -108,7 +108,7 @@ func TestLiveButVODIsWarn(t *testing.T) {
 	srv := serveManifests(t, map[string]string{"/vod.m3u8": vod})
 	f := byTarget(run(t, engine.StreamTarget{Name: "v", URL: srv.URL + "/vod.m3u8", Live: true, MaxAgeWarnSeconds: 30, MaxAgeCritSeconds: 60}))
 	if got := f["v [live-edge]"]; got.Status != engine.WARN {
-		t.Errorf("live ma VOD: atteso WARN, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("live but VOD: want WARN, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -127,7 +127,7 @@ func TestMasterFetchesVariantForFreshness(t *testing.T) {
 	}))
 	// It must pick the top-bandwidth variant (high.m3u8, stale) → BAD.
 	if got := f["ch [live-edge]"]; got.Status != engine.BAD {
-		t.Errorf("freschezza dalla variante top: atteso BAD, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("freshness from top variant: want BAD, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -136,7 +136,7 @@ func TestNoPDTNotMeasurable(t *testing.T) {
 	srv := serveManifests(t, map[string]string{"/l.m3u8": live})
 	f := byTarget(run(t, engine.StreamTarget{Name: "l", URL: srv.URL + "/l.m3u8", Live: true, MaxAgeWarnSeconds: 30, MaxAgeCritSeconds: 60}))
 	if got := f["l [live-edge]"]; got.Status != engine.WARN {
-		t.Errorf("senza PDT: atteso WARN non misurabile, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("without PDT: want WARN not-measurable, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -154,20 +154,20 @@ func TestDASHDynamicFresh(t *testing.T) {
 	srv := serveManifests(t, map[string]string{"/live.mpd": mpd})
 	f := byTarget(run(t, engine.StreamTarget{Name: "d", URL: srv.URL + "/live.mpd", Live: true, MinVariants: 2, MaxAgeWarnSeconds: 30, MaxAgeCritSeconds: 60}))
 	if got := f["d"]; got.Status != engine.OK {
-		t.Errorf("MPD dynamic: atteso OK, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("MPD dynamic: want OK, got %s (%s)", got.Status, got.Message)
 	}
 	if got := f["d [live-edge]"]; got.Status != engine.OK {
-		t.Errorf("publishTime fresco: atteso OK, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("publishTime fresh: want OK, got %s (%s)", got.Status, got.Message)
 	}
 	if got := f["d [ladder]"]; got.Status != engine.OK {
-		t.Errorf("2 representation: atteso OK ladder, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("2 representations: want OK ladder, got %s (%s)", got.Status, got.Message)
 	}
 }
 
 func TestUnreachableIsError(t *testing.T) {
 	f := run(t, engine.StreamTarget{Name: "x", URL: "http://127.0.0.1:1/x.m3u8"})
 	if len(f) == 0 || f[0].Status != engine.ERROR {
-		t.Errorf("irraggiungibile: atteso ERROR, avuto %v", f)
+		t.Errorf("unreachable: want ERROR, got %v", f)
 	}
 }
 
@@ -175,6 +175,6 @@ func TestInvalidManifestIsBad(t *testing.T) {
 	srv := serveManifests(t, map[string]string{"/bad.m3u8": "not a playlist\n"})
 	f := run(t, engine.StreamTarget{Name: "b", URL: srv.URL + "/bad.m3u8"})
 	if len(f) == 0 || f[0].Status != engine.BAD {
-		t.Errorf("manifest invalido: atteso BAD, avuto %v", f)
+		t.Errorf("invalid manifest: want BAD, got %v", f)
 	}
 }

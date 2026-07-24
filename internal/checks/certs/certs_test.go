@@ -73,13 +73,13 @@ func TestCertExpiryStatuses(t *testing.T) {
 	badAddr := startTLSServer(t, 2)
 
 	if f := findingFor(t, cfg, okAddr); f.Status != engine.OK {
-		t.Errorf("100 giorni: atteso OK, avuto %s (%s)", f.Status, f.Message)
+		t.Errorf("100 days: want OK, got %s (%s)", f.Status, f.Message)
 	}
 	if f := findingFor(t, cfg, warnAddr); f.Status != engine.WARN {
-		t.Errorf("10 giorni: atteso WARN, avuto %s (%s)", f.Status, f.Message)
+		t.Errorf("10 days: want WARN, got %s (%s)", f.Status, f.Message)
 	}
 	if f := findingFor(t, cfg, badAddr); f.Status != engine.BAD {
-		t.Errorf("2 giorni: atteso BAD, avuto %s (%s)", f.Status, f.Message)
+		t.Errorf("2 days: want BAD, got %s (%s)", f.Status, f.Message)
 	}
 }
 
@@ -87,7 +87,7 @@ func TestConnectionRefusedIsError(t *testing.T) {
 	cfg := engine.CertsConfig{WarnDays: 30, CritDays: 7}
 	f := findingFor(t, cfg, "127.0.0.1:1") // porta chiusa
 	if f.Status != engine.ERROR {
-		t.Errorf("atteso ERROR, avuto %s (%s)", f.Status, f.Message)
+		t.Errorf("want ERROR, got %s (%s)", f.Status, f.Message)
 	}
 }
 

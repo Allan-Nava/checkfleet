@@ -74,7 +74,7 @@ func encodeName(name string) ([]byte, error) {
 	if name != "" {
 		for _, label := range strings.Split(name, ".") {
 			if len(label) == 0 || len(label) > 63 {
-				return nil, fmt.Errorf("label non valida in %q", name)
+				return nil, fmt.Errorf("invalid label in %q", name)
 			}
 			b = append(b, byte(len(label)))
 			b = append(b, label...)
@@ -86,7 +86,7 @@ func encodeName(name string) ([]byte, error) {
 // parseMessage returns the DNS rcode and the answer records.
 func parseMessage(msg []byte, want uint16) (rcode int, answers []record, err error) {
 	if len(msg) < 12 {
-		return 0, nil, fmt.Errorf("risposta troppo corta")
+		return 0, nil, fmt.Errorf("response too short")
 	}
 	rcode = int(msg[3] & 0x0F)
 	qd := int(binary.BigEndian.Uint16(msg[4:]))

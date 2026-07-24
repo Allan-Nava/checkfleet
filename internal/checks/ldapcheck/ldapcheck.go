@@ -57,13 +57,13 @@ func (c *Check) probe(ctx context.Context, t engine.LDAPTarget) engine.Finding {
 
 	sess, err := c.dial(ctx, t)
 	if err != nil {
-		f.Status, f.Message = engine.ERROR, fmt.Sprintf("connessione fallita: %v", err)
+		f.Status, f.Message = engine.ERROR, fmt.Sprintf("connection failed: %v", err)
 		return f
 	}
 	defer sess.Close()
 
 	if err := sess.Bind(t.BindDN, password(t)); err != nil {
-		f.Status, f.Message = engine.BAD, fmt.Sprintf("bind fallito: %v", err)
+		f.Status, f.Message = engine.BAD, fmt.Sprintf("bind failed: %v", err)
 		return f
 	}
 
@@ -73,20 +73,20 @@ func (c *Check) probe(ctx context.Context, t engine.LDAPTarget) engine.Finding {
 	}
 	n, err := sess.Search(t.BaseDN, t.Filter)
 	if err != nil {
-		f.Status, f.Message = engine.BAD, fmt.Sprintf("search fallita: %v", err)
+		f.Status, f.Message = engine.BAD, fmt.Sprintf("search failed: %v", err)
 		return f
 	}
 	if n < t.MinEntries {
-		f.Status, f.Message = engine.BAD, fmt.Sprintf("search: %d risultati (attesi ≥ %d)", n, t.MinEntries)
+		f.Status, f.Message = engine.BAD, fmt.Sprintf("search: %d results (want ≥ %d)", n, t.MinEntries)
 		return f
 	}
-	f.Status, f.Message = engine.OK, fmt.Sprintf("%s, %d risultati", bindDesc(t), n)
+	f.Status, f.Message = engine.OK, fmt.Sprintf("%s, %d results", bindDesc(t), n)
 	return f
 }
 
 func bindDesc(t engine.LDAPTarget) string {
 	if t.BindDN == "" {
-		return "bind anonimo"
+		return "anonymous bind"
 	}
 	return "bind " + t.BindDN
 }

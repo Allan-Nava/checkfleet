@@ -77,7 +77,7 @@ func (c *Check) probe(ctx context.Context, target string) engine.Finding {
 	dialer := &net.Dialer{}
 	conn, err := dialer.DialContext(ctx, "tcp", target)
 	if err != nil {
-		return engine.Finding{Check: c.Name(), Target: target, Status: engine.ERROR, Message: fmt.Sprintf("connessione fallita: %v", err)}
+		return engine.Finding{Check: c.Name(), Target: target, Status: engine.ERROR, Message: fmt.Sprintf("connection failed: %v", err)}
 	}
 	defer conn.Close()
 
@@ -88,21 +88,21 @@ func (c *Check) probe(ctx context.Context, target string) engine.Finding {
 		_ = tlsConn.SetDeadline(deadline)
 	}
 	if err := tlsConn.HandshakeContext(ctx); err != nil {
-		return engine.Finding{Check: c.Name(), Target: target, Status: engine.ERROR, Message: fmt.Sprintf("handshake TLS fallito: %v", err)}
+		return engine.Finding{Check: c.Name(), Target: target, Status: engine.ERROR, Message: fmt.Sprintf("TLS handshake failed: %v", err)}
 	}
 	certs := tlsConn.ConnectionState().PeerCertificates
 	if len(certs) == 0 {
-		return engine.Finding{Check: c.Name(), Target: target, Status: engine.ERROR, Message: "nessun certificato presentato"}
+		return engine.Finding{Check: c.Name(), Target: target, Status: engine.ERROR, Message: "no certificate presented"}
 	}
 	leaf := certs[0]
 	days := int(leaf.NotAfter.Sub(c.now()).Hours() / 24)
-	msg := fmt.Sprintf("scade tra %d giorni (%s, CN=%s)", days, leaf.NotAfter.Format("2006-01-02"), leaf.Subject.CommonName)
+	msg := fmt.Sprintf("expires in %d days (%s, CN=%s)", days, leaf.NotAfter.Format("2006-01-02"), leaf.Subject.CommonName)
 
 	status := engine.OK
 	switch {
 	case days < 0:
 		status = engine.BAD
-		msg = fmt.Sprintf("SCADUTO da %d giorni (%s, CN=%s)", -days, leaf.NotAfter.Format("2006-01-02"), leaf.Subject.CommonName)
+		msg = fmt.Sprintf("EXPIRED %d days ago (%s, CN=%s)", -days, leaf.NotAfter.Format("2006-01-02"), leaf.Subject.CommonName)
 	case days < c.cfg.CritDays:
 		status = engine.BAD
 	case days < c.cfg.WarnDays:

@@ -52,13 +52,13 @@ func run(t *testing.T, cfg engine.KeycloakConfig) map[string]engine.Finding {
 }
 
 func TestHealthyAndRealm(t *testing.T) {
-	srv := fakeKeycloak(t, "UP", map[string]bool{"hiway": true})
-	f := run(t, engine.KeycloakConfig{BaseURL: srv.URL, HealthURL: srv.URL + "/health/ready", Realms: []string{"hiway"}})
+	srv := fakeKeycloak(t, "UP", map[string]bool{"main": true})
+	f := run(t, engine.KeycloakConfig{BaseURL: srv.URL, HealthURL: srv.URL + "/health/ready", Realms: []string{"main"}})
 	if f["health"].Status != engine.OK {
-		t.Errorf("health: atteso OK, avuto %s (%s)", f["health"].Status, f["health"].Message)
+		t.Errorf("health: want OK, got %s (%s)", f["health"].Status, f["health"].Message)
 	}
-	if f["realm/hiway"].Status != engine.OK {
-		t.Errorf("realm: atteso OK, avuto %s (%s)", f["realm/hiway"].Status, f["realm/hiway"].Message)
+	if f["realm/main"].Status != engine.OK {
+		t.Errorf("realm: want OK, got %s (%s)", f["realm/main"].Status, f["realm/main"].Message)
 	}
 }
 
@@ -66,33 +66,33 @@ func TestHealthDown(t *testing.T) {
 	srv := fakeKeycloak(t, "DOWN", nil)
 	f := run(t, engine.KeycloakConfig{BaseURL: srv.URL, HealthURL: srv.URL + "/health/ready"})
 	if f["health"].Status != engine.BAD {
-		t.Errorf("health DOWN: atteso BAD, avuto %s (%s)", f["health"].Status, f["health"].Message)
+		t.Errorf("health DOWN: want BAD, got %s (%s)", f["health"].Status, f["health"].Message)
 	}
 }
 
 func TestMissingRealmIsBad(t *testing.T) {
-	srv := fakeKeycloak(t, "UP", map[string]bool{"hiway": true})
-	f := run(t, engine.KeycloakConfig{BaseURL: srv.URL, Realms: []string{"assente"}})
-	if f["realm/assente"].Status != engine.BAD {
-		t.Errorf("realm assente: atteso BAD, avuto %s (%s)", f["realm/assente"].Status, f["realm/assente"].Message)
+	srv := fakeKeycloak(t, "UP", map[string]bool{"main": true})
+	f := run(t, engine.KeycloakConfig{BaseURL: srv.URL, Realms: []string{"missing"}})
+	if f["realm/missing"].Status != engine.BAD {
+		t.Errorf("missing realm: want BAD, got %s (%s)", f["realm/missing"].Status, f["realm/missing"].Message)
 	}
 }
 
 func TestIssuerDriftIsWarn(t *testing.T) {
 	// Server whose discovery issuer points to a different host (proxy misconfig).
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `{"issuer":"https://wrong.example/realms/hiway","token_endpoint":"https://wrong.example/t"}`)
+		fmt.Fprint(w, `{"issuer":"https://wrong.example/realms/main","token_endpoint":"https://wrong.example/t"}`)
 	}))
 	t.Cleanup(srv.Close)
-	f := run(t, engine.KeycloakConfig{BaseURL: srv.URL, Realms: []string{"altro"}})
-	if f["realm/altro"].Status != engine.WARN || !strings.Contains(f["realm/altro"].Message, "issuer") {
-		t.Errorf("issuer drift: atteso WARN, avuto %s (%s)", f["realm/altro"].Status, f["realm/altro"].Message)
+	f := run(t, engine.KeycloakConfig{BaseURL: srv.URL, Realms: []string{"other"}})
+	if f["realm/other"].Status != engine.WARN || !strings.Contains(f["realm/other"].Message, "issuer") {
+		t.Errorf("issuer drift: want WARN, got %s (%s)", f["realm/other"].Status, f["realm/other"].Message)
 	}
 }
 
 func TestUnreachableIsError(t *testing.T) {
-	f := run(t, engine.KeycloakConfig{BaseURL: "http://127.0.0.1:1", Realms: []string{"hiway"}})
-	if f["realm/hiway"].Status != engine.ERROR {
-		t.Errorf("irraggiungibile: atteso ERROR, avuto %s (%s)", f["realm/hiway"].Status, f["realm/hiway"].Message)
+	f := run(t, engine.KeycloakConfig{BaseURL: "http://127.0.0.1:1", Realms: []string{"main"}})
+	if f["realm/main"].Status != engine.ERROR {
+		t.Errorf("unreachable: want ERROR, got %s (%s)", f["realm/main"].Status, f["realm/main"].Message)
 	}
 }

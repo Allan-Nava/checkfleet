@@ -42,10 +42,10 @@ func TestHealthy(t *testing.T) {
 		`[{"name":"work","vhost":"/","messages":5,"consumers":2}]`)
 	f := run(t, target)
 	if f["node/n1"].Status != engine.OK {
-		t.Errorf("nodo running: atteso OK, avuto %s (%s)", f["node/n1"].Status, f["node/n1"].Message)
+		t.Errorf("node running: want OK, got %s (%s)", f["node/n1"].Status, f["node/n1"].Message)
 	}
 	if f["queue/work"].Status != engine.OK {
-		t.Errorf("coda ok: atteso OK, avuto %s (%s)", f["queue/work"].Status, f["queue/work"].Message)
+		t.Errorf("queue ok: want OK, got %s (%s)", f["queue/work"].Status, f["queue/work"].Message)
 	}
 }
 
@@ -55,10 +55,10 @@ func TestNodeAlarmsAndDown(t *testing.T) {
 		`[]`)
 	f := run(t, target)
 	if f["node/n1"].Status != engine.BAD {
-		t.Errorf("nodo down: atteso BAD, avuto %s", f["node/n1"].Status)
+		t.Errorf("node down: want BAD, got %s", f["node/n1"].Status)
 	}
 	if got := f["node/n2"]; got.Status != engine.BAD || !strings.Contains(got.Message, "memory") {
-		t.Errorf("mem alarm: atteso BAD, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("mem alarm: want BAD, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -70,13 +70,13 @@ func TestQueueDepthAndNoConsumer(t *testing.T) {
 		  {"name":"warn","vhost":"/","messages":2000,"consumers":1}]`)
 	f := run(t, target)
 	if f["queue/big"].Status != engine.BAD {
-		t.Errorf("coda 60k: atteso BAD, avuto %s (%s)", f["queue/big"].Status, f["queue/big"].Message)
+		t.Errorf("queue 60k: want BAD, got %s (%s)", f["queue/big"].Status, f["queue/big"].Message)
 	}
-	if got := f["queue/stuck"]; got.Status != engine.WARN || !strings.Contains(got.Message, "nessun consumer") {
-		t.Errorf("coda senza consumer: atteso WARN, avuto %s (%s)", got.Status, got.Message)
+	if got := f["queue/stuck"]; got.Status != engine.WARN || !strings.Contains(got.Message, "no consumer") {
+		t.Errorf("queue without consumer: want WARN, got %s (%s)", got.Status, got.Message)
 	}
 	if f["queue/warn"].Status != engine.WARN {
-		t.Errorf("coda 2000: atteso WARN, avuto %s (%s)", f["queue/warn"].Status, f["queue/warn"].Message)
+		t.Errorf("queue 2000: want WARN, got %s (%s)", f["queue/warn"].Status, f["queue/warn"].Message)
 	}
 }
 
@@ -84,7 +84,7 @@ func TestUnreachableIsError(t *testing.T) {
 	f := run(t, "127.0.0.1:1")
 	for _, v := range f {
 		if v.Status != engine.ERROR {
-			t.Errorf("irraggiungibile: atteso ERROR, avuto %s", v.Status)
+			t.Errorf("unreachable: want ERROR, got %s", v.Status)
 		}
 	}
 }

@@ -72,7 +72,7 @@ func (c *Check) Run(ctx context.Context) []engine.Finding {
 	results := c.fetchAll(ctx, targets)
 	for i, target := range targets {
 		if results[i].err != nil {
-			findings = append(findings, engine.Finding{Check: c.Name(), Target: target, Status: engine.ERROR, Message: fmt.Sprintf("API Patroni non raggiungibile: %v", results[i].err)})
+			findings = append(findings, engine.Finding{Check: c.Name(), Target: target, Status: engine.ERROR, Message: fmt.Sprintf("Patroni API not reachable: %v", results[i].err)})
 			continue
 		}
 		if view == nil {
@@ -148,11 +148,11 @@ func (c *Check) analyze(cl cluster) []engine.Finding {
 	}
 	switch len(leaders) {
 	case 0:
-		findings = append(findings, engine.Finding{Check: c.Name(), Target: scope, Status: engine.BAD, Message: "nessun leader nel cluster (failover in corso o quorum perso?)"})
+		findings = append(findings, engine.Finding{Check: c.Name(), Target: scope, Status: engine.BAD, Message: "no leader in the cluster (failover in progress or quorum lost?)"})
 	case 1:
 		findings = append(findings, engine.Finding{Check: c.Name(), Target: scope, Status: engine.OK, Message: "leader: " + leaders[0].Name})
 	default:
-		findings = append(findings, engine.Finding{Check: c.Name(), Target: scope, Status: engine.WARN, Message: "più di un leader (split-brain?): " + memberNames(leaders)})
+		findings = append(findings, engine.Finding{Check: c.Name(), Target: scope, Status: engine.WARN, Message: "more than one leader (split-brain?): " + memberNames(leaders)})
 	}
 
 	leaderTimeline := 0
@@ -174,24 +174,24 @@ func (c *Check) memberFinding(m member, leaderTimeline int) engine.Finding {
 
 	// Replica: state, then lag, then timeline — keep the worst.
 	if s := replicaState(m.State); s != engine.OK {
-		f.Status, f.Message = s, fmt.Sprintf("stato %q", m.State)
+		f.Status, f.Message = s, fmt.Sprintf("state %q", m.State)
 		return f
 	}
 	if lag, ok := parseLag(m.Lag); ok {
 		if c.cfg.LagCritBytes > 0 && lag >= c.cfg.LagCritBytes {
-			f.Status, f.Message = engine.BAD, fmt.Sprintf("lag %s oltre soglia critica (%s)", humanBytes(lag), humanBytes(c.cfg.LagCritBytes))
+			f.Status, f.Message = engine.BAD, fmt.Sprintf("lag %s over critical threshold (%s)", humanBytes(lag), humanBytes(c.cfg.LagCritBytes))
 			return f
 		}
 		if c.cfg.LagWarnBytes > 0 && lag >= c.cfg.LagWarnBytes {
-			f.Status, f.Message = engine.WARN, fmt.Sprintf("lag %s oltre soglia (%s)", humanBytes(lag), humanBytes(c.cfg.LagWarnBytes))
+			f.Status, f.Message = engine.WARN, fmt.Sprintf("lag %s over threshold (%s)", humanBytes(lag), humanBytes(c.cfg.LagWarnBytes))
 			return f
 		}
 	}
 	if leaderTimeline > 0 && m.Timeline > 0 && m.Timeline != leaderTimeline {
-		f.Status, f.Message = engine.WARN, fmt.Sprintf("timeline %d diversa dal leader (%d)", m.Timeline, leaderTimeline)
+		f.Status, f.Message = engine.WARN, fmt.Sprintf("timeline %d differs from the leader (%d)", m.Timeline, leaderTimeline)
 		return f
 	}
-	lagMsg := "lag sconosciuto"
+	lagMsg := "unknown lag"
 	if lag, ok := parseLag(m.Lag); ok {
 		lagMsg = "lag " + humanBytes(lag)
 	}

@@ -65,10 +65,10 @@ func (c *Check) probe(ctx context.Context, t engine.DNSTarget, resolvers []strin
 	label := t.Name + "/" + typ
 	qtype, ok := typeNumber(typ)
 	if !ok {
-		return []engine.Finding{{Check: c.Name(), Target: label, Status: engine.ERROR, Message: "tipo record non supportato: " + typ}}
+		return []engine.Finding{{Check: c.Name(), Target: label, Status: engine.ERROR, Message: "unsupported record type: " + typ}}
 	}
 	if len(resolvers) == 0 {
-		return []engine.Finding{{Check: c.Name(), Target: label, Status: engine.ERROR, Message: "nessun resolver configurato o di sistema"}}
+		return []engine.Finding{{Check: c.Name(), Target: label, Status: engine.ERROR, Message: "no configured or system resolver"}}
 	}
 
 	// Query every resolver; keep each one's value set (records of the wanted
@@ -97,7 +97,7 @@ func (c *Check) probe(ctx context.Context, t engine.DNSTarget, resolvers []strin
 		}
 	}
 	if okCount == 0 {
-		return []engine.Finding{{Check: c.Name(), Target: label, Status: engine.ERROR, Message: fmt.Sprintf("nessun resolver ha risposto: %v", firstErr)}}
+		return []engine.Finding{{Check: c.Name(), Target: label, Status: engine.ERROR, Message: fmt.Sprintf("no resolver responded: %v", firstErr)}}
 	}
 
 	var findings []engine.Finding
@@ -120,15 +120,15 @@ func (c *Check) resolutionFinding(label, typ string, expect []string, values map
 		for r, got := range values {
 			if !equal(got, want) {
 				f.Status = engine.BAD
-				f.Message = fmt.Sprintf("drift: atteso [%s], da %s [%s]", strings.Join(want, " "), r, strings.Join(got, " "))
+				f.Message = fmt.Sprintf("drift: want [%s], from %s [%s]", strings.Join(want, " "), r, strings.Join(got, " "))
 				return f
 			}
 		}
-		f.Status, f.Message = engine.OK, "come atteso: "+strings.Join(want, " ")
+		f.Status, f.Message = engine.OK, "as expected: "+strings.Join(want, " ")
 		return f
 	}
 	if len(rep) == 0 {
-		f.Status, f.Message = engine.BAD, "nessun record "+typ
+		f.Status, f.Message = engine.BAD, "no record "+typ
 		return f
 	}
 	f.Status, f.Message = engine.OK, typ+" = "+strings.Join(rep, " ")
@@ -148,11 +148,11 @@ func (c *Check) consistencyFinding(label string, values map[string][]string, tot
 			parts = append(parts, fmt.Sprintf("%s→[%s]", strings.Join(rs, ","), val))
 		}
 		sort.Strings(parts)
-		f.Message = "risposte divergenti tra resolver: " + strings.Join(parts, " ; ")
+		f.Message = "diverging answers across resolvers: " + strings.Join(parts, " ; ")
 		return f, true
 	}
 	if okCount < total {
-		f.Message = fmt.Sprintf("%d/%d resolver non hanno risposto", total-okCount, total)
+		f.Message = fmt.Sprintf("%d/%d resolvers did not respond", total-okCount, total)
 		return f, true
 	}
 	return engine.Finding{}, false
@@ -165,10 +165,10 @@ func (c *Check) ttlFinding(label string, minTTL uint32, haveTTL bool) (engine.Fi
 	f := engine.Finding{Check: c.Name(), Target: label + " [ttl]"}
 	if minTTL < c.cfg.MinTTLSeconds {
 		f.Status = engine.WARN
-		f.Message = fmt.Sprintf("TTL minimo %ds sotto la soglia (%ds)", minTTL, c.cfg.MinTTLSeconds)
+		f.Message = fmt.Sprintf("min TTL %ds below the threshold (%ds)", minTTL, c.cfg.MinTTLSeconds)
 	} else {
 		f.Status = engine.OK
-		f.Message = fmt.Sprintf("TTL minimo %ds", minTTL)
+		f.Message = fmt.Sprintf("min TTL %ds", minTTL)
 	}
 	return f, true
 }

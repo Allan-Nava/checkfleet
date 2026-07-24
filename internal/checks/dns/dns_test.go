@@ -49,7 +49,7 @@ func TestResolvesAndExpectMatch(t *testing.T) {
 		"10.0.0.53:53": {"example.com": {aRec("1.2.3.4", 300)}},
 	}}
 	if got := run(t, checkWith(cfg, f))["example.com/A"]; got.Status != engine.OK {
-		t.Errorf("match atteso: atteso OK, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("expected match: want OK, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -62,7 +62,7 @@ func TestDriftIsBad(t *testing.T) {
 		"10.0.0.53:53": {"example.com": {aRec("9.9.9.9", 300)}},
 	}}
 	if got := run(t, checkWith(cfg, f))["example.com/A"]; got.Status != engine.BAD || !strings.Contains(got.Message, "drift") {
-		t.Errorf("drift: atteso BAD, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("drift: want BAD, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -70,7 +70,7 @@ func TestNoRecordIsBad(t *testing.T) {
 	cfg := engine.DNSConfig{Resolvers: []string{"r"}, Targets: []engine.DNSTarget{{Name: "empty.example", Type: "A"}}}
 	f := fakeDNS{byResolver: map[string]map[string][]record{"r:53": {"empty.example": nil}}}
 	if got := run(t, checkWith(cfg, f))["empty.example/A"]; got.Status != engine.BAD {
-		t.Errorf("nessun record: atteso BAD, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("no record: want BAD, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -84,7 +84,7 @@ func TestResolverDivergenceIsWarn(t *testing.T) {
 		"r2:53": {"example.com": {aRec("5.6.7.8", 300)}},
 	}}
 	if got := run(t, checkWith(cfg, f))["example.com/A [consistency]"]; got.Status != engine.WARN {
-		t.Errorf("divergenza resolver: atteso WARN, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("resolver divergence: want WARN, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -98,7 +98,7 @@ func TestSOASerialDivergenceIsWarn(t *testing.T) {
 		"r2:53": {"example.com": {{Type: "SOA", Value: "2026072399", TTL: 3600}}},
 	}}
 	if got := run(t, checkWith(cfg, f))["example.com/SOA [consistency]"]; got.Status != engine.WARN {
-		t.Errorf("serial SOA divergente: atteso WARN, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("SOA serial divergence: want WARN, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -110,7 +110,7 @@ func TestLowTTLIsWarn(t *testing.T) {
 	}
 	f := fakeDNS{byResolver: map[string]map[string][]record{"r:53": {"example.com": {aRec("1.2.3.4", 10)}}}}
 	if got := run(t, checkWith(cfg, f))["example.com/A [ttl]"]; got.Status != engine.WARN {
-		t.Errorf("TTL basso: atteso WARN, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("low TTL: want WARN, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -118,7 +118,7 @@ func TestAllResolversFailIsError(t *testing.T) {
 	cfg := engine.DNSConfig{Resolvers: []string{"r"}, Targets: []engine.DNSTarget{{Name: "x.example"}}}
 	f := fakeDNS{errs: map[string]error{"r:53": errors.New("timeout")}}
 	if got := run(t, checkWith(cfg, f))["x.example/A"]; got.Status != engine.ERROR {
-		t.Errorf("tutti falliti: atteso ERROR, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("all failed: want ERROR, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -133,16 +133,16 @@ func TestPartialResolverFailureIsWarn(t *testing.T) {
 	}
 	res := run(t, checkWith(cfg, f))
 	if got := res["example.com/A"]; got.Status != engine.OK {
-		t.Errorf("un resolver ok: risoluzione attesa OK, avuto %s", got.Status)
+		t.Errorf("one resolver ok: want OK resolution, got %s", got.Status)
 	}
-	if got := res["example.com/A [consistency]"]; got.Status != engine.WARN || !strings.Contains(got.Message, "non hanno risposto") {
-		t.Errorf("fallimento parziale: atteso WARN, avuto %s (%s)", got.Status, got.Message)
+	if got := res["example.com/A [consistency]"]; got.Status != engine.WARN || !strings.Contains(got.Message, "did not respond") {
+		t.Errorf("partial failure: want WARN, got %s (%s)", got.Status, got.Message)
 	}
 }
 
 func TestUnsupportedTypeIsError(t *testing.T) {
 	cfg := engine.DNSConfig{Resolvers: []string{"r"}, Targets: []engine.DNSTarget{{Name: "x", Type: "MX"}}}
 	if got := run(t, checkWith(cfg, fakeDNS{}))["x/MX"]; got.Status != engine.ERROR {
-		t.Errorf("tipo non supportato: atteso ERROR, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("unsupported type: want ERROR, got %s (%s)", got.Status, got.Message)
 	}
 }

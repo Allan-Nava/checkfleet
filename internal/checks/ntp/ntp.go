@@ -56,11 +56,11 @@ func (c *Check) probe(ctx context.Context, target string) engine.Finding {
 	f := engine.Finding{Check: c.Name(), Target: target}
 	res, err := c.query(ctx, target)
 	if err != nil {
-		f.Status, f.Message = engine.ERROR, fmt.Sprintf("query NTP fallita: %v", err)
+		f.Status, f.Message = engine.ERROR, fmt.Sprintf("NTP query failed: %v", err)
 		return f
 	}
 	if res.Stratum == 0 || res.Stratum >= 16 {
-		f.Status, f.Message = engine.BAD, fmt.Sprintf("server non sincronizzato (stratum %d)", res.Stratum)
+		f.Status, f.Message = engine.BAD, fmt.Sprintf("server not synchronized (stratum %d)", res.Stratum)
 		return f
 	}
 	absMS := res.Offset.Milliseconds()
@@ -70,9 +70,9 @@ func (c *Check) probe(ctx context.Context, target string) engine.Finding {
 	msg := fmt.Sprintf("offset %s, stratum %d", res.Offset.Round(time.Millisecond), res.Stratum)
 	switch {
 	case c.cfg.OffsetCritMS > 0 && absMS >= int64(c.cfg.OffsetCritMS):
-		f.Status, f.Message = engine.BAD, msg+fmt.Sprintf(" (oltre %dms)", c.cfg.OffsetCritMS)
+		f.Status, f.Message = engine.BAD, msg+fmt.Sprintf(" (over %dms)", c.cfg.OffsetCritMS)
 	case c.cfg.OffsetWarnMS > 0 && absMS >= int64(c.cfg.OffsetWarnMS):
-		f.Status, f.Message = engine.WARN, msg+fmt.Sprintf(" (oltre %dms)", c.cfg.OffsetWarnMS)
+		f.Status, f.Message = engine.WARN, msg+fmt.Sprintf(" (over %dms)", c.cfg.OffsetWarnMS)
 	default:
 		f.Status, f.Message = engine.OK, msg
 	}

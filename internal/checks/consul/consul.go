@@ -66,7 +66,7 @@ func (c *Check) Run(ctx context.Context) []engine.Finding {
 	base := ""
 	for _, target := range targets {
 		if _, _, err := c.get(ctx, target, "/v1/status/leader"); err != nil {
-			findings = append(findings, engine.Finding{Check: c.Name(), Target: target, Status: engine.ERROR, Message: fmt.Sprintf("API Consul non raggiungibile: %v", err)})
+			findings = append(findings, engine.Finding{Check: c.Name(), Target: target, Status: engine.ERROR, Message: fmt.Sprintf("Consul API not reachable: %v", err)})
 			continue
 		}
 		if base == "" {
@@ -92,7 +92,7 @@ func (c *Check) leaderFinding(ctx context.Context, base string) engine.Finding {
 	var leader string
 	_ = json.Unmarshal(body, &leader)
 	if strings.TrimSpace(leader) == "" {
-		f.Status, f.Message = engine.BAD, "nessun leader raft eletto"
+		f.Status, f.Message = engine.BAD, "no raft leader elected"
 		return f
 	}
 	f.Status, f.Message = engine.OK, "leader: "+leader
@@ -111,13 +111,13 @@ func (c *Check) peersFinding(ctx context.Context, base string) []engine.Finding 
 	switch {
 	case c.cfg.ExpectPeers > 0 && n < (c.cfg.ExpectPeers/2+1):
 		f.Status = engine.BAD
-		f.Message = fmt.Sprintf("%d peer raft: quorum perso (attesi %d)", n, c.cfg.ExpectPeers)
+		f.Message = fmt.Sprintf("%d raft peers: quorum lost (want %d)", n, c.cfg.ExpectPeers)
 	case c.cfg.ExpectPeers > 0 && n < c.cfg.ExpectPeers:
 		f.Status = engine.WARN
-		f.Message = fmt.Sprintf("%d/%d peer raft (uno o più mancanti)", n, c.cfg.ExpectPeers)
+		f.Message = fmt.Sprintf("%d/%d raft peers (one or more missing)", n, c.cfg.ExpectPeers)
 	default:
 		f.Status = engine.OK
-		f.Message = fmt.Sprintf("%d peer raft", n)
+		f.Message = fmt.Sprintf("%d raft peers", n)
 	}
 	return []engine.Finding{f}
 }
@@ -140,7 +140,7 @@ func (c *Check) stateFindings(ctx context.Context, base, state string, status en
 	for _, hc := range checks {
 		findings = append(findings, engine.Finding{
 			Check: c.Name(), Target: checkLabel(hc), Status: status,
-			Message: fmt.Sprintf("check %s in stato %s", nonEmpty(hc.Name, hc.CheckID), state),
+			Message: fmt.Sprintf("check %s in state %s", nonEmpty(hc.Name, hc.CheckID), state),
 		})
 	}
 	return findings
@@ -155,9 +155,9 @@ func (c *Check) kvFindings(ctx context.Context, base string) []engine.Finding {
 		case err != nil:
 			f.Status, f.Message = engine.ERROR, err.Error()
 		case code == http.StatusNotFound:
-			f.Status, f.Message = engine.BAD, "chiave KV mancante"
+			f.Status, f.Message = engine.BAD, "KV key missing"
 		default:
-			f.Status, f.Message = engine.OK, "presente"
+			f.Status, f.Message = engine.OK, "present"
 		}
 		findings = append(findings, f)
 	}

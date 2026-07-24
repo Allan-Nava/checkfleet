@@ -46,23 +46,23 @@ func run(t *testing.T, targets ...engine.TCPTarget) map[string]engine.Finding {
 func TestConnectOK(t *testing.T) {
 	addr := startServer(t, "")
 	if got := run(t, engine.TCPTarget{Address: addr})[addr]; got.Status != engine.OK {
-		t.Errorf("connect ok: atteso OK, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("connect ok: want OK, got %s (%s)", got.Status, got.Message)
 	}
 }
 
 func TestBannerMatchAndMismatch(t *testing.T) {
 	addr := startServer(t, "SSH-2.0-OpenSSH_9.6\r\n")
 	if got := run(t, engine.TCPTarget{Name: "ssh", Address: addr, ExpectBanner: "SSH-2.0"})["ssh"]; got.Status != engine.OK {
-		t.Errorf("banner match: atteso OK, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("banner match: want OK, got %s (%s)", got.Status, got.Message)
 	}
 	if got := run(t, engine.TCPTarget{Name: "ssh", Address: addr, ExpectBanner: "FTP"})["ssh"]; got.Status != engine.BAD {
-		t.Errorf("banner mismatch: atteso BAD, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("banner mismatch: want BAD, got %s (%s)", got.Status, got.Message)
 	}
 }
 
 func TestUnreachableIsError(t *testing.T) {
 	if got := run(t, engine.TCPTarget{Address: "127.0.0.1:1"})["127.0.0.1:1"]; got.Status != engine.ERROR {
-		t.Errorf("irraggiungibile: atteso ERROR, avuto %s (%s)", got.Status, got.Message)
+		t.Errorf("unreachable: want ERROR, got %s (%s)", got.Status, got.Message)
 	}
 }
 
@@ -81,6 +81,6 @@ func TestLatencyWarn(t *testing.T) {
 	}
 	f := c.Run(context.Background())
 	if f[0].Status != engine.WARN {
-		t.Errorf("latenza alta: atteso WARN, avuto %s (%s)", f[0].Status, f[0].Message)
+		t.Errorf("high latency: want WARN, got %s (%s)", f[0].Status, f[0].Message)
 	}
 }

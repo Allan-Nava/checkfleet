@@ -43,7 +43,7 @@ func TestStatusLatencyAndBody(t *testing.T) {
 	want := []engine.Status{engine.OK, engine.BAD, engine.WARN, engine.BAD, engine.ERROR}
 	for i, w := range want {
 		if findings[i].Status != w {
-			t.Errorf("target %d: atteso %s, avuto %s (%s)", i, w, findings[i].Status, findings[i].Message)
+			t.Errorf("target %d: want %s, got %s (%s)", i, w, findings[i].Status, findings[i].Message)
 		}
 	}
 }

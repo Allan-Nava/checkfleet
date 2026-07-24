@@ -76,7 +76,7 @@ func (c *Check) probe(ctx context.Context, t engine.GRPCTarget) engine.Finding {
 
 	resp, err := c.client(t.InsecureSkipVerify, hostOf(t.Address)).Do(req)
 	if err != nil {
-		f.Status, f.Message = engine.ERROR, fmt.Sprintf("connessione gRPC fallita: %v", err)
+		f.Status, f.Message = engine.ERROR, fmt.Sprintf("gRPC connection failed: %v", err)
 		return f
 	}
 	defer resp.Body.Close()
@@ -86,9 +86,9 @@ func (c *Check) probe(ctx context.Context, t engine.GRPCTarget) engine.Finding {
 	if gs := firstNonEmpty(resp.Trailer.Get("Grpc-Status"), resp.Header.Get("Grpc-Status")); gs != "" && gs != "0" {
 		switch gs {
 		case "12": // UNIMPLEMENTED
-			f.Status, f.Message = engine.WARN, "health service non implementato (grpc-status 12)"
+			f.Status, f.Message = engine.WARN, "health service not implemented (grpc-status 12)"
 		case "5": // NOT_FOUND
-			f.Status, f.Message = engine.BAD, "servizio sconosciuto (grpc-status 5)"
+			f.Status, f.Message = engine.BAD, "unknown service (grpc-status 5)"
 		default:
 			f.Status, f.Message = engine.ERROR, "grpc-status "+gs
 		}
@@ -97,7 +97,7 @@ func (c *Check) probe(ctx context.Context, t engine.GRPCTarget) engine.Finding {
 
 	status, ok := decodeHealthResponse(payload)
 	if !ok {
-		f.Status, f.Message = engine.ERROR, "risposta gRPC non decodificabile"
+		f.Status, f.Message = engine.ERROR, "gRPC response could not be decoded"
 		return f
 	}
 	switch status {
