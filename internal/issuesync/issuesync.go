@@ -107,7 +107,7 @@ func Reconcile(ctx context.Context, c Client, findings []engine.Finding, dryRun 
 		if dryRun {
 			continue
 		}
-		if err := c.Close(ctx, open[key].Number, "Rientrato: checkfleet non riporta più questo problema."); err != nil {
+		if err := c.Close(ctx, open[key].Number, "Recovered: checkfleet no longer reports this problem."); err != nil {
 			return rep, err
 		}
 	}

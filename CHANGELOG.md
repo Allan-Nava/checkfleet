@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.40.0
+
+- Guardrail English-output + sweep finale (CF-60, **chiude M15**):
+  - Nuovo `scripts/check-english.sh` — fallisce se trova vocali accentate o parole italiane distintive nei `.go` di `cmd/`+`internal/`. Aggiunto come step di `ci.yml` (anti-regressione).
+  - Il guardrail ha scovato italiano rimasto fuori da CF-58/59: tradotti i test di `engine` (filter/engine/stack/config), `history`, `issuesync`, `backlog`, `output/prometheus` e il tool `cmd/backlog-sync` (messaggi + body delle issue). Ora `go test ./...` e il guardrail sono verdi.
+  - Sito docs e README: esempi di output portati in inglese (`want`/`expires in`/`N checks:`/`Needs attention`); neutralizzati gli host/realm aziendali rimasti negli esempi (`hiway.media`→`example.com`, `prod-cologno`→`prod`).
+- Con CF-58/59/60 la migrazione i18n è completa: tutto l'output e i test del progetto sono in inglese (CHANGELOG escluso, per convenzione).
+
 ## 0.39.0
 
 - Output in inglese — finding di **tutti i 18 moduli** (CF-59, M15): `certs, http, nats, haproxy, stream, patroni, consul, postgres, dns, redis, keycloak, tcp, tls, ntp, grpc, ldap, kafka, rabbitmq`. Tradotti i messaggi dei finding (reachability, soglie, lag, drift, ecc.) e aggiornati i test, incluse le asserzioni `strings.Contains` sul contenuto del messaggio. Neutralizzati alcuni realm/host aziendali nei test (keycloak). Con CF-58 (v0.38.0) l'intero output del CLI è ora in inglese. Chiude di fatto la migrazione lato CLI; resta il guardrail CF-60. CHANGELOG resta in italiano.

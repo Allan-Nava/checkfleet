@@ -62,19 +62,19 @@ func TestDedupExistingStaysOpen(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(c.created) != 0 || rep.Unchanged != 1 {
-		t.Errorf("problema già tracciato: niente create, unchanged=1; avuto created=%v unchanged=%d", c.created, rep.Unchanged)
+		t.Errorf("problem already tracked: no create, unchanged=1; got created=%v unchanged=%d", c.created, rep.Unchanged)
 	}
 }
 
 func TestClosesRecovered(t *testing.T) {
 	c := &fakeClient{existing: []Issue{{Number: 9, Key: "http/a"}}}
-	// Nessun problema corrente → l'issue va chiusa.
+	// No current problem -> the issue must be closed.
 	rep, err := Reconcile(context.Background(), c, []engine.Finding{find("http", "a", engine.OK)}, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(c.closed) != 1 || c.closed[0] != 9 || len(rep.Closed) != 1 {
-		t.Errorf("recovery: attesa chiusura #9, avuto closed=%v", c.closed)
+		t.Errorf("recovery: want close of #9, got closed=%v", c.closed)
 	}
 }
 
@@ -85,7 +85,7 @@ func TestDryRunTouchesNothing(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(c.created) != 0 || len(c.closed) != 0 {
-		t.Errorf("dry-run non deve chiamare Create/Close, avuto created=%v closed=%v", c.created, c.closed)
+		t.Errorf("dry-run must not call Create/Close, got created=%v closed=%v", c.created, c.closed)
 	}
 	if len(rep.Created) != 1 || len(rep.Closed) != 1 {
 		t.Errorf("dry-run deve comunque riportare le azioni: %+v", rep)

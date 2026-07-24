@@ -89,8 +89,8 @@ NATS JetStream cluster health via the monitoring endpoints. See
 checks:
   nats:
     port: 8222
-    expect_meta_leader: c0-nats-gw-01
-    expect_peers: [sg-nats-gw-01, c0-nats-gw-01, ov-nats-gw-01]
+    expect_meta_leader: nats-gw-01
+    expect_peers: [nats-gw-01, nats-gw-02, nats-gw-03]
     lag_warn: 100
     lag_crit: 1000
     targets:
@@ -269,16 +269,16 @@ checks:
     resolvers: [10.20.30.53, 8.8.8.8]
     min_ttl_seconds: 30
     targets:
-      - {name: hiway.media, type: A, expect: ["203.0.113.10"]}
-      - {name: hiway.media, type: SOA}
+      - {name: example.com, type: A, expect: ["203.0.113.10"]}
+      - {name: example.com, type: SOA}
 ```
 
 ## Multi-stack profiles
 
 `--stack <name>` overlays a per-stack file on the base config, so you can keep
 one set of defaults and a small override per environment. Given
-`--config checkfleet.yml --stack prod-cologno`, checkfleet loads
-`checkfleet.yml` then overlays `checkfleet.prod-cologno.yml` (same directory).
+`--config checkfleet.yml --stack prod`, checkfleet loads
+`checkfleet.yml` then overlays `checkfleet.prod.yml` (same directory).
 
 The merge is **per module**: a module present in the stack file replaces the
 base's module entirely (so the module gets its own defaults again); a module
@@ -287,15 +287,15 @@ overridden only if the stack sets it. `--stack` works with both `check` and
 `serve`.
 
 ```bash
-checkfleet check all  --config checkfleet.yml --stack prod-cologno
-checkfleet serve      --config checkfleet.yml --stack prod-cologno
+checkfleet check all  --config checkfleet.yml --stack prod
+checkfleet serve      --config checkfleet.yml --stack prod
 ```
 
 ```yaml
-# checkfleet.prod-cologno.yml — overrides only what differs from the base
+# checkfleet.prod.yml — overrides only what differs from the base
 checks:
   certs:
-    targets: [edge.cologno.hiway.media]
+    targets: [edge.example.com]
 ```
 
 ## `checks.redis`
@@ -338,9 +338,9 @@ Keycloak health via HTTP. See [Modules → keycloak](modules.md#keycloak).
 ```yaml
 checks:
   keycloak:
-    base_url: https://auth.hiway.media
-    health_url: https://auth.hiway.media:9000/health/ready
-    realms: [hiway, partners]
+    base_url: https://auth.example.com
+    health_url: https://auth.example.com:9000/health/ready
+    realms: [main, partners]
 ```
 
 ## `checks.tcp`
@@ -362,7 +362,7 @@ checks:
   tcp:
     targets:
       - {name: ssh, address: 10.20.30.9:22, expect_banner: "SSH-2.0"}
-      - {name: rtmp, address: ingest.hiway.media:1935}
+      - {name: rtmp, address: ingest.example.com:1935}
 ```
 
 ## `checks.tls`
@@ -380,7 +380,7 @@ Deep TLS check. See [Modules → tls](modules.md#tls).
 ```yaml
 checks:
   tls:
-    targets: [auth.hiway.media, api.hiway.media:8443]
+    targets: [auth.example.com, api.example.com:8443]
 ```
 
 ## `checks.ntp`
@@ -397,7 +397,7 @@ NTP clock offset. See [Modules → ntp](modules.md#ntp).
 ```yaml
 checks:
   ntp:
-    targets: [time.hiway.media, 0.pool.ntp.org]
+    targets: [time.example.com, 0.pool.ntp.org]
 ```
 
 ## `checks.rabbitmq`
@@ -439,7 +439,7 @@ gRPC health checking (TLS/h2). See [Modules → grpc](modules.md#grpc).
 checks:
   grpc:
     targets:
-      - {name: api, address: api.hiway.media:443, service: hiway.api.v1.API}
+      - {name: api, address: api.example.com:443, service: example.api.v1.API}
 ```
 
 ## `checks.ldap`

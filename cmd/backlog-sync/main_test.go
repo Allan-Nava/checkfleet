@@ -11,16 +11,16 @@ func TestIDFromTitle(t *testing.T) {
 	}
 	for title, want := range cases {
 		if got := idFromTitle(title); got != want {
-			t.Errorf("idFromTitle(%q): atteso %q, avuto %q", title, want, got)
+			t.Errorf("idFromTitle(%q): want %q, got %q", title, want, got)
 		}
 	}
 }
 
 func TestLastPathInt(t *testing.T) {
 	if n := lastPathInt("https://github.com/Allan-Nava/checkfleet/issues/42\n"); n != 42 {
-		t.Errorf("URL issue: atteso 42, avuto %d", n)
+		t.Errorf("issue URL: want 42, got %d", n)
 	}
-	if n := lastPathInt("nessun numero"); n != 0 {
-		t.Errorf("stringa senza numero: atteso 0, avuto %d", n)
+	if n := lastPathInt("no number"); n != 0 {
+		t.Errorf("string without a number: want 0, got %d", n)
 	}
 }

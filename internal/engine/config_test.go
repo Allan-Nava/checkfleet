@@ -48,16 +48,16 @@ checks:
 	}
 
 	if cfg.TimeoutSeconds != 30 {
-		t.Errorf("timeout default: atteso 30, avuto %d", cfg.TimeoutSeconds)
+		t.Errorf("timeout default: want 30, got %d", cfg.TimeoutSeconds)
 	}
 	if cfg.Retries != 0 {
-		t.Errorf("retries default: atteso 0, avuto %d", cfg.Retries)
+		t.Errorf("retries default: want 0, got %d", cfg.Retries)
 	}
 	if c := cfg.Checks.Certs; c.WarnDays != 30 || c.CritDays != 7 || c.Port != 443 {
 		t.Errorf("certs default: %+v", c)
 	}
 	if cfg.Checks.HTTP.Targets[0].ExpectStatus != 200 {
-		t.Errorf("http expect_status default: atteso 200, avuto %d", cfg.Checks.HTTP.Targets[0].ExpectStatus)
+		t.Errorf("http expect_status default: want 200, got %d", cfg.Checks.HTTP.Targets[0].ExpectStatus)
 	}
 	if n := cfg.Checks.NATS; n.Port != 8222 || n.LagWarn != 100 || n.LagCrit != 1000 {
 		t.Errorf("nats default: %+v", n)
@@ -107,7 +107,7 @@ checks:
 	}
 	// retries>0 senza backoff esplicito → default 500ms.
 	if c2, _ := LoadConfig(writeConfig(t, "retries: 2\nchecks:\n  certs:\n    targets: [x]\n")); c2.RetryBackoffMS != 500 {
-		t.Errorf("retry_backoff default con retries>0: atteso 500, avuto %d", c2.RetryBackoffMS)
+		t.Errorf("retry_backoff default with retries>0: want 500, got %d", c2.RetryBackoffMS)
 	}
 	if n := cfg.Checks.NATS; n.Port != 9999 || n.LagWarn != 7 || n.LagCrit != 42 {
 		t.Errorf("nats espliciti persi: %+v", n)
@@ -129,9 +129,9 @@ func TestLoadConfigAbsentModulesAreNil(t *testing.T) {
 
 func TestLoadConfigErrors(t *testing.T) {
 	if _, err := LoadConfig(filepath.Join(t.TempDir(), "missing.yml")); err == nil {
-		t.Error("config mancante: atteso errore")
+		t.Error("missing config: want error")
 	}
 	if _, err := LoadConfig(writeConfig(t, "checks: [not a map]\n")); err == nil {
-		t.Error("YAML invalido: atteso errore")
+		t.Error("invalid YAML: want error")
 	}
 }

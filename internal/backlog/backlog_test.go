@@ -29,7 +29,7 @@ func TestParseCountAndOrder(t *testing.T) {
 	}
 	for i, id := range wantIDs {
 		if items[i].ID != id {
-			t.Errorf("posizione %d: atteso %s, avuto %s", i, id, items[i].ID)
+			t.Errorf("position %d: want %s, got %s", i, id, items[i].ID)
 		}
 	}
 }

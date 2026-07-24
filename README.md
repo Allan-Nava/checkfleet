@@ -22,11 +22,11 @@ checkfleet runs *domain-aware* health checks — the kind that generic monitorin
 ```
 $ checkfleet check all --config checkfleet.yml
 
-🔴 BAD   http     https://example.com/health   HTTP 404 (atteso 200), 151ms
-🟢 OK    certs    example.com:443              scade tra 41 giorni (2026-09-02, CN=*.example.com)
+🔴 BAD   http     https://example.com/health   HTTP 404 (want 200), 151ms
+🟢 OK    certs    example.com:443              expires in 41 days (2026-09-02, CN=*.example.com)
 🟢 OK    http     https://example.com/         HTTP 200, 168ms
 
-3 check: 2 OK, 0 WARN, 1 BAD, 0 ERROR (in 227ms)
+3 checks: 2 OK, 0 WARN, 1 BAD, 0 ERROR (in 227ms)
 ```
 
 ## Philosophy

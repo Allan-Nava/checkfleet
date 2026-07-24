@@ -14,7 +14,7 @@ func TestStackPath(t *testing.T) {
 	}
 	for base, want := range cases {
 		if got := StackPath(base, "prod"); got != want {
-			t.Errorf("StackPath(%q): atteso %q, avuto %q", base, want, got)
+			t.Errorf("StackPath(%q): want %q, got %q", base, want, got)
 		}
 	}
 }
@@ -49,18 +49,18 @@ checks:
 		t.Fatal(err)
 	}
 	if cfg.TimeoutSeconds != 45 {
-		t.Errorf("timeout: lo stack deve vincere, avuto %d", cfg.TimeoutSeconds)
+		t.Errorf("timeout: the stack must win, got %d", cfg.TimeoutSeconds)
 	}
 	// certs replaced by the stack (base's warn_days=20 is gone → default 30).
 	if got := cfg.Checks.Certs; len(got.Targets) != 1 || got.Targets[0] != "prod.example" {
-		t.Errorf("certs: atteso target dello stack, avuto %+v", got.Targets)
+		t.Errorf("certs: want stack target, got %+v", got.Targets)
 	}
 	if cfg.Checks.Certs.WarnDays != 30 {
-		t.Errorf("certs warn_days: modulo sostituito → default 30, avuto %d", cfg.Checks.Certs.WarnDays)
+		t.Errorf("certs warn_days: module replaced -> default 30, got %d", cfg.Checks.Certs.WarnDays)
 	}
 	// http untouched by the stack → inherited from base.
 	if cfg.Checks.HTTP == nil || len(cfg.Checks.HTTP.Targets) != 1 {
-		t.Errorf("http: doveva restare quello della base, avuto %+v", cfg.Checks.HTTP)
+		t.Errorf("http: should have stayed the base one, got %+v", cfg.Checks.HTTP)
 	}
 }
 
@@ -68,7 +68,7 @@ func TestOverlayTimeoutOnlyWhenSet(t *testing.T) {
 	base := &Config{TimeoutSeconds: 10}
 	base.overlay(&Config{TimeoutSeconds: 0}) // stack non imposta il timeout
 	if base.TimeoutSeconds != 10 {
-		t.Errorf("timeout base non deve essere sovrascritto da uno stack senza timeout, avuto %d", base.TimeoutSeconds)
+		t.Errorf("base timeout must not be overwritten by a stack without a timeout, got %d", base.TimeoutSeconds)
 	}
 }
 
@@ -77,6 +77,6 @@ func TestLoadConfigStackMissingFileErrors(t *testing.T) {
 	base := filepath.Join(dir, "checkfleet.yml")
 	_ = os.WriteFile(base, []byte("checks: {certs: {targets: [x]}}\n"), 0o644)
 	if _, err := LoadConfigStack(base, "assente"); err == nil {
-		t.Error("stack inesistente: atteso errore")
+		t.Error("nonexistent stack: want error")
 	}
 }

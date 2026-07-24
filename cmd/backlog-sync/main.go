@@ -35,7 +35,7 @@ func main() {
 	}
 	items := backlog.Parse(string(raw))
 	if len(items) == 0 {
-		fatal(fmt.Errorf("nessun item CF-n in %s", *path))
+		fatal(fmt.Errorf("no CF-n item in %s", *path))
 	}
 
 	s := &syncer{dryRun: *dryRun}
@@ -107,7 +107,7 @@ func (s *syncer) createIssue(it backlog.Item) error {
 		// A done item is recorded as a closed issue for full history.
 		if it.Done {
 			if n := lastPathInt(out); n > 0 {
-				return ghVoid("issue", "close", strconv.Itoa(n), "--comment", "Item già completato in BACKLOG.md.")
+				return ghVoid("issue", "close", strconv.Itoa(n), "--comment", "Item already completed in BACKLOG.md.")
 			}
 		}
 		return nil
@@ -128,7 +128,7 @@ func (s *syncer) ensureLabel() {
 	if s.dryRun {
 		return
 	}
-	_, _ = gh("label", "create", "backlog", "--color", "5319e7", "--description", "Item del BACKLOG.md (CF-n), sincronizzato da backlog-sync")
+	_, _ = gh("label", "create", "backlog", "--color", "5319e7", "--description", "BACKLOG.md item (CF-n), synced by backlog-sync")
 }
 
 func (s *syncer) ensureMilestones(items []backlog.Item) error {
@@ -178,9 +178,9 @@ func (s *syncer) listIssues() (map[string]*ghIssue, error) {
 }
 
 func issueBody(it backlog.Item) string {
-	return fmt.Sprintf("%s\n\n---\nTracciata da `BACKLOG.md` (**%s**) · milestone _%s_.\n\n"+
-		"Gestita da `cmd/backlog-sync`: modifica il **BACKLOG**, non questa issue. "+
-		"Spunta l'item (`[x]`) e la issue verrà chiusa al prossimo sync.", it.Description, it.ID, it.Milestone)
+	return fmt.Sprintf("%s\n\n---\nTracked in `BACKLOG.md` (**%s**) · milestone _%s_.\n\n"+
+		"Managed by `cmd/backlog-sync`: edit the **BACKLOG**, not this issue. "+
+		"Check the item (`[x]`) and the issue will be closed on the next sync.", it.Description, it.ID, it.Milestone)
 }
 
 // idFromTitle returns the leading "CF-n" token of an issue title, or "".

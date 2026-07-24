@@ -39,7 +39,7 @@ func TestPrometheusDedupWorstWins(t *testing.T) {
 	})
 	out := Prometheus(res)
 	if c := strings.Count(out, `checkfleet_finding_status{check="nats",target="gw"}`); c != 1 {
-		t.Fatalf("serie duplicata: attesa 1, avute %d\n%s", c, out)
+		t.Fatalf("duplicate series: want 1, got %d\n%s", c, out)
 	}
 	if !strings.Contains(out, `checkfleet_finding_status{check="nats",target="gw"} 2`) {
 		t.Errorf("dedup dovrebbe tenere il worst (BAD=2):\n%s", out)
