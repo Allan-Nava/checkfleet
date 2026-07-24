@@ -79,7 +79,7 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 
 - [x] **CF-38 — Modulo `tcp`**: connect a `host:port` (opz. TLS) + banner opzionale (substring), latenza. Reachability generica; stdlib `net`, zero dip. _(v0.22.0)_
 - [x] **CF-39 — Modulo `tls`** (profondo): validità della catena, scadenza di ogni cert, protocolli/cipher deboli (TLS<1.2), hostname mismatch, OCSP se disponibile. Completa `certs` (che fa solo scadenza leaf). Stdlib `crypto/tls`.
-- [ ] **CF-40 — Modulo `ntp`**: offset dell'orologio oltre soglia, stratum, root dispersion. Query NTP a mano (UDP 123), zero dip. Il drift rompe TLS e token JWT.
+- [x] **CF-40 — Modulo `ntp`**: offset dell'orologio oltre soglia, stratum, root dispersion. Query NTP a mano (UDP 123), zero dip. Il drift rompe TLS e token JWT.
 - [ ] **CF-41 — Modulo `grpc`**: gRPC Health Checking Protocol (`grpc.health.v1.Health/Check`) → SERVING. Valutare dip (`google.golang.org/grpc`) vs richiesta HTTP/2 a mano.
 - [ ] **CF-42 — Modulo `ldap`**: bind (anonimo o con credenziali da env) + search di sanity su una base DN. Valutare dip (`go-ldap`) vs protocollo a mano.
 

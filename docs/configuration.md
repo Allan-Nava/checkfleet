@@ -383,6 +383,23 @@ checks:
     targets: [auth.hiway.media, api.hiway.media:8443]
 ```
 
+## `checks.ntp`
+
+NTP clock offset. See [Modules → ntp](modules.md#ntp).
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `targets` | list | — | `host` or `host:port` (default 123). |
+| `port` | int | `123` | Default port. |
+| `offset_warn_ms` | int | `100` | \|offset\| → WARN. |
+| `offset_crit_ms` | int | `1000` | \|offset\| → BAD. |
+
+```yaml
+checks:
+  ntp:
+    targets: [time.hiway.media, 0.pool.ntp.org]
+```
+
 ## No secrets in config
 
 Keep credentials out of `checkfleet.yml` — checks never log or echo secrets, and

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.24.0
+
+- Modulo `ntp` (CF-40): offset dell'orologio via query SNTP a mano (UDP, zero dip); WARN/BAD oltre `offset_warn_ms`/`offset_crit_ms`, BAD se server non sincronizzato (stratum 0/≥16). Query isolata dietro funzione per test deterministici delle soglie.
+- Refactor: registro dei moduli spostato in `internal/registry` (`Modules`/`Configured`), condiviso da CLI e (futura) app desktop — aggiungere un modulo ora si fa in un solo punto.
+
 ## 0.23.0
 
 - Modulo `tls` (CF-39): TLS "profondo" che completa `certs`. Verifica catena vs trust store (BAD se non fidata/hostname mismatch), scadenza leaf (WARN/BAD), versione protocollo negoziata (< TLS 1.2 → WARN; si connette permissivo per poterlo segnalare). Zero-dip; testato con CA/leaf generati al volo. Etichette `[chain]`/`[expiry]`/`[protocol]`.

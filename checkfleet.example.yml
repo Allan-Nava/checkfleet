@@ -123,6 +123,13 @@ checks:
       - hiway
       - partners
 
+  ntp:
+    offset_warn_ms: 100
+    offset_crit_ms: 1000
+    targets:
+      - time.hiway.media
+      - 0.pool.ntp.org
+
   tls:
     warn_days: 30
     crit_days: 7

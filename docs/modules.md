@@ -5,9 +5,9 @@ nav_order: 5
 
 Each module is a self-contained check that knows what "healthy" means for one
 kind of target. Shipping today: `certs`, `http`, `nats`, `haproxy`, `stream`,
-`patroni`, `consul`, `postgres`, `dns`, `redis`, `keycloak`, `tcp`, `tls`. The
+`patroni`, `consul`, `postgres`, `dns`, `redis`, `keycloak`, `tcp`, `tls`, `ntp`. The
 [backlog](https://github.com/Allan-Nava/checkfleet/blob/main/BACKLOG.md) tracks
-what's next (`ntp`, `grpc`, `ldap`, `kafka`, `mongodb`, `rabbitmq`, …).
+what's next (`grpc`, `ldap`, `kafka`, `mongodb`, `rabbitmq`, …).
 
 ## `certs`
 
@@ -245,6 +245,17 @@ Deep TLS check — complements `certs` (which only reads leaf expiry).
 Findings are labelled `target [chain]`, `target [expiry]`, `target [protocol]`.
 
 See [Configuration → checks.tls](configuration.md#checkstls).
+
+## `ntp`
+
+NTP clock-offset check via a hand-rolled SNTP query (UDP, zero dependency).
+Clock drift silently breaks TLS validation and JWT expiry.
+
+- Estimated clock offset past `offset_warn_ms`/`offset_crit_ms` → `WARN`/`BAD`.
+- An unsynchronized server (stratum 0 kiss-o'-death, or ≥16) → `BAD`.
+- Unreachable / no reply → `ERROR`.
+
+See [Configuration → checks.ntp](configuration.md#checksntp).
 
 ## Ansible inventory as a target source
 

@@ -12,6 +12,7 @@ import (
 
 	"github.com/Allan-Nava/checkfleet/internal/engine"
 	"github.com/Allan-Nava/checkfleet/internal/issuesync"
+	"github.com/Allan-Nava/checkfleet/internal/registry"
 )
 
 const issueLabel = "checkfleet-finding"
@@ -33,7 +34,7 @@ func runReportIssues(args []string) error {
 	if err != nil {
 		return err
 	}
-	checks := configuredChecks(cfg)
+	checks := registry.Configured(cfg)
 	if len(checks) == 0 {
 		return fmt.Errorf("nessun modulo configurato in %s", *configPath)
 	}

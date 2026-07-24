@@ -64,8 +64,9 @@ See [Installation](https://allan-nava.github.io/checkfleet/installation/) for al
 | `keycloak` | Keycloak via HTTP: health endpoint UP, per-realm OIDC discovery (token endpoint present, issuer coherent) |
 | `tcp` | Generic TCP reachability: connect (optionally TLS), latency, optional banner match |
 | `tls` | Deep TLS: chain validity, certificate expiry, weak negotiated protocol version |
+| `ntp` | NTP clock offset & stratum via a hand-rolled SNTP query (drift breaks TLS/JWT) |
 
-More modules on the roadmap (see [BACKLOG.md](BACKLOG.md)): `ntp`, `grpc`, `ldap`, `kafka`, `mongodb`, `rabbitmq`, plus more alerting outputs.
+More modules on the roadmap (see [BACKLOG.md](BACKLOG.md)): `grpc`, `ldap`, `kafka`, `mongodb`, `rabbitmq`, plus more alerting outputs.
 
 ## Configuration
 

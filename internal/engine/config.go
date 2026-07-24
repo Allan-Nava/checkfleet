@@ -31,6 +31,7 @@ type ChecksConfig struct {
 	Keycloak *KeycloakConfig `yaml:"keycloak"`
 	TCP      *TCPConfig      `yaml:"tcp"`
 	TLS      *TLSConfig      `yaml:"tls"`
+	NTP      *NTPConfig      `yaml:"ntp"`
 }
 
 // CertsConfig configures the TLS certificate expiry check.
@@ -234,6 +235,14 @@ type TLSConfig struct {
 	AnsibleInventory string   `yaml:"ansible_inventory"`
 }
 
+// NTPConfig configures the NTP clock-offset check.
+type NTPConfig struct {
+	Targets      []string `yaml:"targets"`
+	Port         int      `yaml:"port"`
+	OffsetWarnMS int      `yaml:"offset_warn_ms"`
+	OffsetCritMS int      `yaml:"offset_crit_ms"`
+}
+
 // HTTPConfig configures the HTTP probe check.
 type HTTPConfig struct {
 	Targets []HTTPTarget `yaml:"targets"`
@@ -340,6 +349,17 @@ func applyDefaults(cfg *Config) {
 		}
 		if t.CritDays <= 0 {
 			t.CritDays = 7
+		}
+	}
+	if n := cfg.Checks.NTP; n != nil {
+		if n.Port <= 0 {
+			n.Port = 123
+		}
+		if n.OffsetWarnMS <= 0 {
+			n.OffsetWarnMS = 100
+		}
+		if n.OffsetCritMS <= 0 {
+			n.OffsetCritMS = 1000
 		}
 	}
 	if r := cfg.Checks.Redis; r != nil {

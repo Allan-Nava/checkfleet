@@ -21,22 +21,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Allan-Nava/checkfleet/internal/checks/certs"
-	"github.com/Allan-Nava/checkfleet/internal/checks/consul"
-	"github.com/Allan-Nava/checkfleet/internal/checks/dns"
-	"github.com/Allan-Nava/checkfleet/internal/checks/haproxy"
-	"github.com/Allan-Nava/checkfleet/internal/checks/httpcheck"
-	"github.com/Allan-Nava/checkfleet/internal/checks/keycloak"
-	"github.com/Allan-Nava/checkfleet/internal/checks/nats"
-	"github.com/Allan-Nava/checkfleet/internal/checks/patroni"
-	"github.com/Allan-Nava/checkfleet/internal/checks/postgres"
-	"github.com/Allan-Nava/checkfleet/internal/checks/redis"
-	"github.com/Allan-Nava/checkfleet/internal/checks/stream"
-	"github.com/Allan-Nava/checkfleet/internal/checks/tcp"
-	"github.com/Allan-Nava/checkfleet/internal/checks/tlscheck"
 	"github.com/Allan-Nava/checkfleet/internal/engine"
 	"github.com/Allan-Nava/checkfleet/internal/history"
 	"github.com/Allan-Nava/checkfleet/internal/output"
+	"github.com/Allan-Nava/checkfleet/internal/registry"
 )
 
 var version = "dev" // injected at build time via -ldflags
@@ -77,7 +65,7 @@ func main() {
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `uso:
-  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls> --config checkfleet.yml [--output text|markdown|json|slack] [--only ...] [--min-severity warn] [--target glob] [--exit-on-bad]
+  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp> --config checkfleet.yml [--output text|markdown|json|slack] [--only ...] [--min-severity warn] [--target glob] [--exit-on-bad]
   checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s]   # esporta le metriche Prometheus
   checkfleet report-issues --config checkfleet.yml [--dry-run]                 # apre/chiude issue GitHub dai finding BAD
   checkfleet validate --config checkfleet.yml                                  # valida la config senza eseguire i check
@@ -118,21 +106,21 @@ func runCheck(args []string) error {
 		return err
 	}
 
-	specs := modules(cfg)
+	specs := registry.Modules(cfg)
 	var selected []engine.Check
 	known := module == "all"
 	for _, s := range specs {
-		if module != "all" && module != s.name {
+		if module != "all" && module != s.Name {
 			continue
 		}
 		known = true
-		if !s.configured {
-			if module == s.name {
-				return fmt.Errorf("modulo %q non configurato in %s", s.name, *configPath)
+		if !s.Configured {
+			if module == s.Name {
+				return fmt.Errorf("modulo %q non configurato in %s", s.Name, *configPath)
 			}
 			continue
 		}
-		selected = append(selected, s.build())
+		selected = append(selected, s.Build())
 	}
 	if !known {
 		return fmt.Errorf("modulo %q sconosciuto", module)
@@ -271,45 +259,6 @@ func loadConfig(path, stack string) (*engine.Config, error) {
 	return engine.LoadConfig(path)
 }
 
-// moduleSpec ties a module name to whether it's configured and how to build it.
-type moduleSpec struct {
-	name       string
-	configured bool
-	build      func() engine.Check
-}
-
-// modules is the single registry of check modules, shared by `check` and
-// `serve` so the wiring lives in one place.
-func modules(cfg *engine.Config) []moduleSpec {
-	c := cfg.Checks
-	return []moduleSpec{
-		{"certs", c.Certs != nil, func() engine.Check { return certs.New(*c.Certs) }},
-		{"http", c.HTTP != nil, func() engine.Check { return httpcheck.New(*c.HTTP) }},
-		{"nats", c.NATS != nil, func() engine.Check { return nats.New(*c.NATS) }},
-		{"haproxy", c.HAProxy != nil, func() engine.Check { return haproxy.New(*c.HAProxy) }},
-		{"stream", c.Stream != nil, func() engine.Check { return stream.New(*c.Stream) }},
-		{"patroni", c.Patroni != nil, func() engine.Check { return patroni.New(*c.Patroni) }},
-		{"consul", c.Consul != nil, func() engine.Check { return consul.New(*c.Consul) }},
-		{"postgres", c.Postgres != nil, func() engine.Check { return postgres.New(*c.Postgres) }},
-		{"dns", c.DNS != nil, func() engine.Check { return dns.New(*c.DNS) }},
-		{"redis", c.Redis != nil, func() engine.Check { return redis.New(*c.Redis) }},
-		{"keycloak", c.Keycloak != nil, func() engine.Check { return keycloak.New(*c.Keycloak) }},
-		{"tcp", c.TCP != nil, func() engine.Check { return tcp.New(*c.TCP) }},
-		{"tls", c.TLS != nil, func() engine.Check { return tlscheck.New(*c.TLS) }},
-	}
-}
-
-// configuredChecks builds every configured module (used by `serve`).
-func configuredChecks(cfg *engine.Config) []engine.Check {
-	var checks []engine.Check
-	for _, s := range modules(cfg) {
-		if s.configured {
-			checks = append(checks, s.build())
-		}
-	}
-	return checks
-}
-
 // runServe exposes the findings as Prometheus metrics, re-running the checks on
 // an interval. checkfleet serve --config … --listen :9876 --interval 60s
 func runServe(args []string) error {
@@ -325,7 +274,7 @@ func runServe(args []string) error {
 	if err != nil {
 		return err
 	}
-	checks := configuredChecks(cfg)
+	checks := registry.Configured(cfg)
 	if len(checks) == 0 {
 		return fmt.Errorf("nessun modulo configurato in %s", *configPath)
 	}
