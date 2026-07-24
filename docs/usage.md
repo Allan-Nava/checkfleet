@@ -158,3 +158,12 @@ checkfleet completion fish > ~/.config/fish/completions/checkfleet.fish
 
 Completes subcommands, module names (after `check`/`explain`) and `--output`
 formats.
+
+## Live watch
+
+`--watch <interval>` re-runs the checks on a timer and redraws a live terminal
+view (text output), handy during an incident. Ctrl-C to stop.
+
+```bash
+checkfleet check all --config checkfleet.yml --watch 5s
+```

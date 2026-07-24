@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.48.0
+
+- `--watch` (CF-50): `checkfleet check … --watch <interval>` riesegue i check a intervallo e ridisegna una vista live nel terminale (clear-screen + header + output text), Ctrl-C per fermare. Maintenance e filtri applicati a ogni tick. Helper `watchFrame` testato (loop I/O a parte).
+
 ## 0.47.0
 
 - DX CLI (CF-54): nuovo `checkfleet explain [module]` — stampa cosa controlla un modulo e le soglie chiave (senza argomento lista i moduli); mappa guidata dal registry con test anti-drift. Nuovo `checkfleet completion <bash|zsh|fish>` — script di completamento per subcomandi, moduli (dopo `check`/`explain`) e formati `--output`. Testati.

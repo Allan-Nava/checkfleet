@@ -76,7 +76,7 @@ func main() {
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `usage:
-  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka> --config checkfleet.yml [--output text|markdown|json|junit|html|prometheus|slack|discord|teams|webhook] [--out-file PATH] [--only ...] [--min-severity warn] [--target glob] [--exit-on-bad]
+  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka> --config checkfleet.yml [--output text|markdown|json|junit|html|prometheus|slack|discord|teams|webhook] [--out-file PATH] [--only ...] [--min-severity warn] [--target glob] [--watch 5s] [--exit-on-bad]
   checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s]   # export Prometheus metrics
   checkfleet report-issues --config checkfleet.yml [--dry-run]                 # open/close GitHub issues from BAD findings
   checkfleet validate --config checkfleet.yml                                  # validate the config without running the checks
@@ -105,6 +105,7 @@ func runCheck(args []string) error {
 	flapChanges := fs.Int("flap-changes", 3, "minimum number of state changes to flag flapping")
 	flapWindow := fs.Int("flap-window", 10, "number of recent runs to evaluate flapping over")
 	pingURLEnv := fs.String("ping-url-env", "", "env var holding the dead-man's-switch URL (e.g. Healthchecks.io) to ping at the end of the run")
+	watch := fs.Duration("watch", 0, "re-run on this interval with a live terminal view (e.g. 5s); Ctrl-C to stop")
 	exitOnBad := fs.Bool("exit-on-bad", false, "exit code 2 if any BAD/ERROR finding is present")
 	if err := fs.Parse(args[1:]); err != nil {
 		return err
@@ -142,6 +143,10 @@ func runCheck(args []string) error {
 	}
 	if len(selected) == 0 {
 		return fmt.Errorf("no module selected (nothing configured for %q)", module)
+	}
+
+	if *watch > 0 {
+		return runWatch(selected, cfg, filter, *watch)
 	}
 
 	res := engine.RunWith(context.Background(), selected, runOptions(cfg))
@@ -219,6 +224,25 @@ func runCheck(args []string) error {
 		}
 	}
 	return nil
+}
+
+// runWatch re-runs the selected checks on an interval, redrawing a live text
+// view until interrupted (Ctrl-C). Maintenance and filters apply each tick.
+func runWatch(checks []engine.Check, cfg *engine.Config, filter engine.FilterOptions, interval time.Duration) error {
+	for {
+		res := engine.RunWith(context.Background(), checks, runOptions(cfg))
+		res.Findings = engine.ApplyMaintenance(res.Findings, cfg.Maintenance, time.Now())
+		res.Findings = engine.Filter(res.Findings, filter)
+		fmt.Print(watchFrame(res, time.Now(), interval))
+		time.Sleep(interval)
+	}
+}
+
+// watchFrame renders one live frame: clear the screen, a header, then the text
+// output. Kept separate so it can be tested without the loop.
+func watchFrame(res engine.Result, now time.Time, interval time.Duration) string {
+	return fmt.Sprintf("\033[H\033[2Jcheckfleet — watch every %s — %s\n\n%s",
+		interval, now.Format("15:04:05"), output.Text(res))
 }
 
 // pingDeadman pings a dead-man's-switch URL (Healthchecks.io-style): the base
