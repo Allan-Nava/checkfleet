@@ -1,0 +1,65 @@
+version: 2
+
+project_name: checkfleet
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: checkfleet
+    main: ./cmd/checkfleet
+    binary: checkfleet
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+
+archives:
+  - id: default
+    # tar.gz everywhere, zip on Windows.
+    formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - README.md
+      - LICENSE*
+      - CHANGELOG.md
+      - checkfleet.example.yml
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  use: github
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "^report:"
+
+homebrew_casks:
+  - name: checkfleet
+    repository:
+      owner: Allan-Nava
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    homepage: "https://github.com/Allan-Nava/checkfleet"
+    description: "A fleet of domain-aware infrastructure checks in one binary"
+    # Cask is generated but NOT pushed until the tap is set up. To publish:
+    #   1) create the repo Allan-Nava/homebrew-tap
+    #   2) add repo secret HOMEBREW_TAP_GITHUB_TOKEN (a PAT with repo scope)
+    #   3) set skip_upload: "false" below
+    skip_upload: "true"
+
+release:
+  draft: false
+  prerelease: auto

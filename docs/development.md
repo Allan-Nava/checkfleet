@@ -62,3 +62,26 @@ never the other way around.
   ```
 
 Don't open or close backlog issues by hand — edit `BACKLOG.md` instead.
+
+## Releasing
+
+Every `vX.Y.Z` tag triggers `.github/workflows/release.yml`, which runs
+[goreleaser](https://goreleaser.com) (`.goreleaser.yaml`): cross-platform
+archives (`linux`/`darwin`/`windows` × `amd64`/`arm64`), `checksums.txt`,
+GitHub release notes from the commit log, and a Homebrew cask.
+
+Validate the config locally without publishing:
+
+```bash
+goreleaser check                       # lint the config
+goreleaser release --snapshot --clean  # full build + archives into dist/, no upload
+```
+
+**Enabling the Homebrew tap** (one-time): the cask is generated but not pushed
+(`skip_upload: "true"`). To publish it:
+
+1. create the repo `Allan-Nava/homebrew-tap`;
+2. add a repo secret `HOMEBREW_TAP_GITHUB_TOKEN` (a PAT with `repo` scope);
+3. set `skip_upload: "false"` in `.goreleaser.yaml`.
+
+Then `brew install Allan-Nava/tap/checkfleet` works after the next tag.

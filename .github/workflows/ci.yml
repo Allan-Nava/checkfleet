@@ -21,29 +21,5 @@ jobs:
       - run: go test ./...
       - run: go build ./...
 
-  release:
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: "1.25"
-      - name: Build binaries
-        run: |
-          VERSION="${GITHUB_REF_NAME}"
-          mkdir -p dist
-          for os in linux darwin; do
-            for arch in amd64 arm64; do
-              out="dist/checkfleet_${VERSION}_${os}_${arch}"
-              GOOS=$os GOARCH=$arch CGO_ENABLED=0 \
-                go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" \
-                -o "$out" ./cmd/checkfleet
-            done
-          done
-          (cd dist && shasum -a 256 * > SHA256SUMS)
-      - name: Upload binaries to the release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: dist/*
+# Releases (cross-platform archives, checksums, Homebrew formula) are built by
+# .github/workflows/release.yml with goreleaser on v* tags.

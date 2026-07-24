@@ -41,5 +41,5 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 
 ## Rilascio
 
-- [ ] **CF-9 — goreleaser o build matrix completa** (linux/darwin, amd64/arm64) + Homebrew tap.
+- [x] **CF-9 — goreleaser** (linux/darwin/windows, amd64/arm64) + archivi + checksums + Homebrew cask. Tap pronto ma disattivo (`skip_upload`) finché non si crea `Allan-Nava/homebrew-tap` + secret. Validato con `goreleaser check` + `--snapshot`. _(v0.13.0)_
 - [ ] **CF-10 — Docs sito** (README ricco con GIF, esempi per modulo, ricette CI TeamCity/GitHub Actions).

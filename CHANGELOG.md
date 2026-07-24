@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.13.0
+
+- Release con **goreleaser** (CF-9): nuovo `.goreleaser.yaml` + workflow `release.yml` sui tag `v*`. Archivi `tar.gz`/`zip` per linux/darwin/windows × amd64/arm64, `checksums.txt`, release notes dai commit, cask Homebrew.
+- Rimosso il vecchio job `release` da `ci.yml` (build matrix manuale) per evitare release doppie.
+- Tap Homebrew pronto ma **disattivo** (`skip_upload: "true"`): si attiva creando `Allan-Nava/homebrew-tap` + secret `HOMEBREW_TAP_GITHUB_TOKEN` e mettendo `skip_upload: "false"`. Validato con `goreleaser check` e `goreleaser release --snapshot`.
+- Docs: installazione via archivio/Homebrew, sezione "Releasing" in development.
+
 ## 0.12.0
 
 - Comando `report-issues` (CF-7): trasforma i finding BAD/ERROR in issue GitHub (una per `check/target`, dedup), aperte al fallimento e **chiuse automaticamente al rientro**. Idempotente, `--dry-run`, label `checkfleet-finding`; usa `gh`.
