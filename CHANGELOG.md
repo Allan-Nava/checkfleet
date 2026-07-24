@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.50.1
+
+- Docs: nuovo `COMMERCIAL.md` — come ottenere una licenza commerciale (cosa è già coperto dall'uso non-commerciale, quando serve la licenza, cosa concede, come richiederla via email/issue, dati utili per il preventivo). Collegato dalla sezione License del README. È un riepilogo di comodo: in caso di conflitto vale il testo di `LICENSE`.
+
 ## 0.50.0
 
 - **Cambio licenza: da MIT a PolyForm Noncommercial 1.0.0** (source-available). Dal v0.50.0 in poi l'uso è libero solo per scopi **non commerciali** (personale, ricerca, istruzione, organizzazioni no-profit, enti pubblici); qualsiasi uso commerciale richiede una licenza separata dall'autore. Le release **fino al v0.49.0 restano sotto MIT** (il cambio non è retroattivo). Testo verbatim dalla fonte ufficiale con riga `Required Notice`. Aggiornati README (badge + sezione License), footer/badge del sito docs, about dell'app desktop (`main.go`/`wails.json`), CLAUDE/AGENTS. Non è consulenza legale.

@@ -147,4 +147,4 @@ It never runs under `go test ./...`. CI runs it in its own workflow
 
 ## License
 
-[PolyForm Noncommercial License 1.0.0](LICENSE) — source-available, free for **noncommercial** use (personal, research, education, nonprofits, government). Any commercial use requires a separate license from the author. Releases published before v0.50.0 remain under the MIT license they shipped with.
+[PolyForm Noncommercial License 1.0.0](LICENSE) — source-available, free for **noncommercial** use (personal, research, education, nonprofits, government). Any commercial use requires a separate license — see [COMMERCIAL.md](COMMERCIAL.md). Releases published before v0.50.0 remain under the MIT license they shipped with.
