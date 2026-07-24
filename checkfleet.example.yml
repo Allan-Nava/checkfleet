@@ -122,3 +122,9 @@ checks:
     realms:
       - hiway
       - partners
+
+  tcp:
+    targets:
+      - {name: ssh-bastion, address: 10.20.30.9:22, expect_banner: "SSH-2.0", max_latency_ms: 500}
+      - {name: smtp-relay, address: mail.hiway.media:25}
+      - {name: rtmp-ingest, address: ingest.hiway.media:1935}

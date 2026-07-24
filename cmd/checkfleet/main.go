@@ -32,6 +32,7 @@ import (
 	"github.com/Allan-Nava/checkfleet/internal/checks/postgres"
 	"github.com/Allan-Nava/checkfleet/internal/checks/redis"
 	"github.com/Allan-Nava/checkfleet/internal/checks/stream"
+	"github.com/Allan-Nava/checkfleet/internal/checks/tcp"
 	"github.com/Allan-Nava/checkfleet/internal/engine"
 	"github.com/Allan-Nava/checkfleet/internal/history"
 	"github.com/Allan-Nava/checkfleet/internal/output"
@@ -75,7 +76,7 @@ func main() {
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `uso:
-  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak> --config checkfleet.yml [--output text|markdown|json|slack] [--only ...] [--min-severity warn] [--target glob] [--exit-on-bad]
+  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp> --config checkfleet.yml [--output text|markdown|json|slack] [--only ...] [--min-severity warn] [--target glob] [--exit-on-bad]
   checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s]   # esporta le metriche Prometheus
   checkfleet report-issues --config checkfleet.yml [--dry-run]                 # apre/chiude issue GitHub dai finding BAD
   checkfleet validate --config checkfleet.yml                                  # valida la config senza eseguire i check
@@ -292,6 +293,7 @@ func modules(cfg *engine.Config) []moduleSpec {
 		{"dns", c.DNS != nil, func() engine.Check { return dns.New(*c.DNS) }},
 		{"redis", c.Redis != nil, func() engine.Check { return redis.New(*c.Redis) }},
 		{"keycloak", c.Keycloak != nil, func() engine.Check { return keycloak.New(*c.Keycloak) }},
+		{"tcp", c.TCP != nil, func() engine.Check { return tcp.New(*c.TCP) }},
 	}
 }
 

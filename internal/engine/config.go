@@ -29,6 +29,7 @@ type ChecksConfig struct {
 	DNS      *DNSConfig      `yaml:"dns"`
 	Redis    *RedisConfig    `yaml:"redis"`
 	Keycloak *KeycloakConfig `yaml:"keycloak"`
+	TCP      *TCPConfig      `yaml:"tcp"`
 }
 
 // CertsConfig configures the TLS certificate expiry check.
@@ -203,6 +204,24 @@ type KeycloakConfig struct {
 	HealthURL string `yaml:"health_url"`
 	// Realms to verify via their OIDC discovery document.
 	Realms []string `yaml:"realms"`
+}
+
+// TCPConfig configures the generic TCP reachability check.
+type TCPConfig struct {
+	Targets []TCPTarget `yaml:"targets"`
+}
+
+type TCPTarget struct {
+	// Optional display label; defaults to Address.
+	Name string `yaml:"name"`
+	// host:port to connect to. Required.
+	Address string `yaml:"address"`
+	// Optional TLS handshake instead of a plain TCP connect.
+	TLS bool `yaml:"tls"`
+	// Optional substring the server banner must contain (first bytes read).
+	ExpectBanner string `yaml:"expect_banner"`
+	// Optional WARN when the connect takes longer than this.
+	MaxLatencyMS int `yaml:"max_latency_ms"`
 }
 
 // HTTPConfig configures the HTTP probe check.

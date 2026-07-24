@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.22.0
+
+- Modulo `tcp` (CF-38): reachability TCP generica — connect (opz. TLS) + latenza, banner atteso opzionale (substring). Stdlib `net`, zero dip. Config `checks.tcp`, testato con listener in-test. Apre **M10**.
+
 ## 0.21.1
 
 - Roadmap fase 3: nuove milestone e feature candidate nel BACKLOG (CF-38..57).

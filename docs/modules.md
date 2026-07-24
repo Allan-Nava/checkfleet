@@ -5,9 +5,9 @@ nav_order: 5
 
 Each module is a self-contained check that knows what "healthy" means for one
 kind of target. Shipping today: `certs`, `http`, `nats`, `haproxy`, `stream`,
-`patroni`, `consul`, `postgres`, `dns`, `redis`, `keycloak`. The
+`patroni`, `consul`, `postgres`, `dns`, `redis`, `keycloak`, `tcp`. The
 [backlog](https://github.com/Allan-Nava/checkfleet/blob/main/BACKLOG.md) tracks
-what's next (`mediamtx`, `s3`, `smtp`, `elasticsearch`, …).
+what's next (`tls`, `ntp`, `grpc`, `ldap`, `kafka`, `mongodb`, `rabbitmq`, …).
 
 ## `certs`
 
@@ -218,6 +218,18 @@ Keycloak health via HTTP/JSON — read-only, no admin credentials.
 Findings are labelled `health` and `realm/<name>`.
 
 See [Configuration → checks.keycloak](configuration.md#checkskeycloak).
+
+## `tcp`
+
+Generic TCP reachability for anything that speaks TCP.
+
+- Connects to each `address` (optionally over TLS) and measures the connect
+  latency. A failed connect is `ERROR`.
+- With `expect_banner`, the first bytes the server sends must contain the
+  string, else `BAD` (e.g. `SSH-2.0` on port 22).
+- With `max_latency_ms`, a slower connect is `WARN`.
+
+See [Configuration → checks.tcp](configuration.md#checkstcp).
 
 ## Ansible inventory as a target source
 

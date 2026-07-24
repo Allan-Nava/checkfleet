@@ -343,6 +343,28 @@ checks:
     realms: [hiway, partners]
 ```
 
+## `checks.tcp`
+
+Generic TCP reachability. See [Modules → tcp](modules.md#tcp).
+
+`checks.tcp.targets` is a list of:
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `address` | string | — | `host:port` to connect to. Required. |
+| `name` | string | the address | Display label. |
+| `tls` | bool | `false` | TLS handshake instead of a plain connect. |
+| `expect_banner` | string | — | Substring the server banner must contain. |
+| `max_latency_ms` | int | — | WARN if the connect is slower. |
+
+```yaml
+checks:
+  tcp:
+    targets:
+      - {name: ssh, address: 10.20.30.9:22, expect_banner: "SSH-2.0"}
+      - {name: rtmp, address: ingest.hiway.media:1935}
+```
+
 ## No secrets in config
 
 Keep credentials out of `checkfleet.yml` — checks never log or echo secrets, and
