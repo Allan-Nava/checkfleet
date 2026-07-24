@@ -16,7 +16,7 @@
         <span class="pill-mini" id="version">dev</span>
       </div>
       <div class="tb-right" style="--wails-draggable:no-drag">
-        <button class="icon-btn" id="theme" title="Tema chiaro/scuro" aria-label="Tema">
+        <button class="icon-btn" id="theme" title="Toggle light/dark theme" aria-label="Theme">
           <svg class="i-sun" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10m0-5 2 3h-4zm0 20-2-3h4zM2 12l3-2v4zm20 0-3 2v-4zM4.9 4.9l3.5 1.4-2.1 2.1zm14.2 14.2-3.5-1.4 2.1-2.1zM19.1 4.9l-1.4 3.5-2.1-2.1zM4.9 19.1l1.4-3.5 2.1 2.1z"/></svg>
           <svg class="i-moon" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9"/></svg>
         </button>
@@ -28,7 +28,7 @@
       <div class="field grow">
         <span class="field-label">Config</span>
         <input type="text" id="configPath" placeholder="checkfleet.yml" spellcheck="false">
-        <button class="btn" id="pick">Sfoglia…</button>
+        <button class="btn" id="pick">Browse…</button>
       </div>
       <div class="field">
         <span class="field-label">Stack</span>
@@ -57,7 +57,7 @@
       </div>
       <div class="meta">
         <div class="meta-row"><span>Findings</span><b id="mTotal">0</b></div>
-        <div class="meta-row"><span>Durata</span><b id="mDur">—</b></div>
+        <div class="meta-row"><span>Duration</span><b id="mDur">—</b></div>
         <div class="meta-row"><span>Run</span><b id="mStarted">—</b></div>
         <div class="chips" id="mModules"></div>
       </div>
@@ -65,12 +65,12 @@
 
     <!-- findings toolbar -->
     <div class="findings-bar">
-      <input type="search" id="filter" placeholder="Filtra check / target / messaggio…">
+      <input type="search" id="filter" placeholder="Filter check / target / message…">
       <select id="minsev">
-        <option value="ok">tutti</option>
+        <option value="ok">all</option>
         <option value="warn">≥ WARN</option>
         <option value="bad">≥ BAD</option>
-        <option value="error">solo ERROR</option>
+        <option value="error">ERROR only</option>
       </select>
       <span class="spacer"></span>
       <button class="btn" id="expmd" disabled>Export MD</button>
@@ -80,18 +80,18 @@
     <!-- findings table -->
     <main class="table-wrap">
       <table class="findings">
-        <thead><tr><th class="c-status">Status</th><th class="c-check">Check</th><th class="c-target">Target</th><th class="c-msg">Messaggio</th></tr></thead>
+        <thead><tr><th class="c-status">Status</th><th class="c-check">Check</th><th class="c-target">Target</th><th class="c-msg">Message</th></tr></thead>
         <tbody id="rows"></tbody>
       </table>
       <div class="empty" id="empty">
         <img src="assets/logo.svg" alt="" width="56" height="56">
-        <p id="emptyText">Premi <b>Run</b> per eseguire i check.</p>
+        <p id="emptyText">Press <b>Run</b> to run the checks.</p>
       </div>
     </main>
 
     <!-- status bar -->
     <footer class="statusbar">
-      <span id="statusText">pronto</span>
+      <span id="statusText">ready</span>
       <span class="spacer"></span>
       <span id="configHint"></span>
     </footer>

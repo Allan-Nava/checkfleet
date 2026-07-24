@@ -49,7 +49,7 @@
       empty.style.display = "flex";
       $("emptyText").innerHTML = "⚠️ " + escapeHtml(report.err);
       rows.innerHTML = "";
-      setStatus("errore di configurazione");
+      setStatus("configuration error");
       return;
     }
 
@@ -88,12 +88,12 @@
       </tr>`).join("");
 
     empty.style.display = visible.length ? "none" : "flex";
-    if (!visible.length) $("emptyText").textContent = "Nessun finding con questi filtri.";
+    if (!visible.length) $("emptyText").textContent = "No findings match these filters.";
 
     const can = findings.length > 0;
     $("expmd").disabled = !can;
     $("expjson").disabled = !can;
-    setStatus(`${findings.length} finding · ${report.ok} OK / ${report.warn} WARN / ${report.bad} BAD / ${report.error} ERROR`);
+    setStatus(`${findings.length} findings · ${report.ok} OK / ${report.warn} WARN / ${report.bad} BAD / ${report.error} ERROR`);
   }
 
   function setStatus(t) { $("statusText").textContent = t; }
@@ -107,7 +107,7 @@
   async function run() {
     const btn = $("run");
     btn.disabled = true;
-    setStatus("esecuzione dei check…");
+    setStatus("running checks…");
     try {
       report = await Backend.RunChecks($("configPath").value, $("stack").value);
     } catch (e) {
@@ -139,8 +139,8 @@
   async function save(fmt) {
     try {
       const path = await Backend.SaveReport(fmt);
-      if (path) setStatus("salvato: " + path);
-    } catch (e) { setStatus("errore export: " + e); }
+      if (path) setStatus("saved: " + path);
+    } catch (e) { setStatus("export error: " + e); }
   }
 
   function toggleTheme() {
@@ -207,21 +207,21 @@
   function mockReport() {
     const f = (check, target, status, message) => ({ check, target, status, message });
     const findings = [
-      f("stream", "https://live.example.com/edge/master.m3u8", "BAD", "live-edge fermo da 47s (soglia 30s), ladder 3/4 varianti"),
-      f("haproxy", "lb-01:8404/be_ingest", "BAD", "backend senza server disponibili (2 DOWN)"),
-      f("postgres", "pg-01:5432", "ERROR", "connessione fallita: dial tcp 10.0.3.11:5432: i/o timeout"),
-      f("certs", "api.example.com:443", "ERROR", "handshake TLS fallito: connection refused"),
-      f("nats", "nats-02:8222", "WARN", "peer in lag di 1420 sul raft meta-group (soglia 1000)"),
-      f("redis", "redis-cache-01:6379", "WARN", "used_memory 82% di maxmemory (soglia 80%)"),
-      f("certs", "cdn.example.com:443", "WARN", "scade tra 12 giorni (2026-08-05, CN=*.example.com)"),
-      f("dns", "example.com @ 1.1.1.1", "WARN", "TTL 30s sotto la soglia (60s)"),
-      f("consul", "consul-01:8500", "OK", "leader presente, 5/5 peer, 0 check critical"),
-      f("nats", "nats-01:8222", "OK", "meta-leader presente, 3/3 peer, versioni allineate"),
-      f("certs", "www.example.com:443", "OK", "scade tra 68 giorni (2026-09-30, CN=*.example.com)"),
+      f("stream", "https://live.example.com/edge/master.m3u8", "BAD", "live-edge stalled for 47s (threshold 30s), ladder 3/4 variants"),
+      f("haproxy", "lb-01:8404/be_ingest", "BAD", "backend has no available server (2 DOWN)"),
+      f("postgres", "pg-01:5432", "ERROR", "connection failed: dial tcp 10.0.3.11:5432: i/o timeout"),
+      f("certs", "api.example.com:443", "ERROR", "TLS handshake failed: connection refused"),
+      f("nats", "nats-02:8222", "WARN", "peer lagging by 1420 on the raft meta-group (threshold 1000)"),
+      f("redis", "redis-cache-01:6379", "WARN", "used_memory 82% of maxmemory (threshold 80%)"),
+      f("certs", "cdn.example.com:443", "WARN", "expires in 12 days (2026-08-05, CN=*.example.com)"),
+      f("dns", "example.com @ 1.1.1.1", "WARN", "TTL 30s below the threshold (60s)"),
+      f("consul", "consul-01:8500", "OK", "leader present, 5/5 peers, 0 critical checks"),
+      f("nats", "nats-01:8222", "OK", "meta-leader present, 3/3 peers, versions aligned"),
+      f("certs", "www.example.com:443", "OK", "expires in 68 days (2026-09-30, CN=*.example.com)"),
       f("http", "https://example.com/health", "OK", "HTTP 200, 142ms"),
-      f("redis", "redis-session-01:6379", "OK", "role master, link up, ultimo RDB ok"),
-      f("tcp", "smtp.example.com:587", "OK", "connesso in 38ms, banner atteso"),
-      f("postgres", "pg-02:5432", "OK", "primary, 2 repliche in pari, 41% connessioni"),
+      f("redis", "redis-session-01:6379", "OK", "role master, link up, last RDB ok"),
+      f("tcp", "smtp.example.com:587", "OK", "connected in 38ms, expected banner"),
+      f("postgres", "pg-02:5432", "OK", "primary, 2 replicas in sync, 41% connections"),
     ];
     const count = (s) => findings.filter((x) => x.status === s).length;
     return {

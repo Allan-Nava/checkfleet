@@ -58,7 +58,7 @@ func (a *App) Version() string { return a.version }
 func (a *App) RunChecks(configPath, stack string) Report {
 	rep := Report{ConfigPath: configPath, Stack: stack}
 	if strings.TrimSpace(configPath) == "" {
-		rep.Err = "nessun file di configurazione selezionato"
+		rep.Err = "no configuration file selected"
 		return rep
 	}
 	cfg, err := loadConfig(configPath, stack)
@@ -68,7 +68,7 @@ func (a *App) RunChecks(configPath, stack string) Report {
 	}
 	checks := registry.Configured(cfg)
 	if len(checks) == 0 {
-		rep.Err = fmt.Sprintf("nessun modulo configurato in %s", configPath)
+		rep.Err = fmt.Sprintf("no module configured in %s", configPath)
 		return rep
 	}
 
@@ -169,7 +169,7 @@ func (a *App) StartupConfig() Startup {
 // OpenConfigDialog shows a native file picker and returns the chosen path.
 func (a *App) OpenConfigDialog() (string, error) {
 	return wruntime.OpenFileDialog(a.ctx, wruntime.OpenDialogOptions{
-		Title: "Seleziona checkfleet.yml",
+		Title: "Select checkfleet.yml",
 		Filters: []wruntime.FileFilter{
 			{DisplayName: "YAML", Pattern: "*.yml;*.yaml"},
 		},
@@ -207,7 +207,7 @@ func (a *App) SaveReport(format string) (string, error) {
 		return "", err
 	}
 	path, err := wruntime.SaveFileDialog(a.ctx, wruntime.SaveDialogOptions{
-		Title:           "Salva report",
+		Title:           "Save report",
 		DefaultFilename: def,
 	})
 	if err != nil || path == "" {

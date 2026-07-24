@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.36.1
+
+- Desktop: stringhe user-facing portate in inglese (etichette UI, placeholder, header tabella, messaggi di stato/errore, titoli dei dialoghi, dati mock di anteprima). Coerente con la scelta di tenere codice e UI del desktop in inglese. Il CLI/engine resta in italiano per ora (le finding reali arrivano da lì).
+
 ## 0.36.0
 
 - Dead-man's-switch (CF-48): `--ping-url-env <ENV>` pinga un URL (stile Healthchecks.io) a fine run — base URL su successo, `<url>/fail` se il worst è BAD/ERROR. Best-effort (non fa fallire il comando). Con cron rileva anche il caso 'checkfleet non ha girato'.
