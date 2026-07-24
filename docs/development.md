@@ -46,3 +46,23 @@ they are the same checks CI runs.
 - Todos live in
   [`BACKLOG.md`](https://github.com/Allan-Nava/checkfleet/blob/main/BACKLOG.md)
   with stable `CF-n` ids — not scattered in code comments.
+
+## Backlog ↔ GitHub issues
+
+`BACKLOG.md` is the single source of truth, and issues are derived from it —
+never the other way around.
+
+- `internal/backlog` parses the file into `CF-n` items (tested).
+- `cmd/backlog-sync` turns each item into a GitHub issue: label `backlog`,
+  grouped by milestone (the `##` sections). Checking an item (`[x]`) closes its
+  issue; unchecking reopens it. Matching is by the `CF-n` title prefix, so the
+  sync is **idempotent**.
+- The `Backlog sync` workflow runs it on every push to `main` that touches
+  `BACKLOG.md` (or the tool). Run it by hand with:
+
+  ```bash
+  go run ./cmd/backlog-sync -dry-run   # preview
+  go run ./cmd/backlog-sync            # apply (needs an authenticated gh)
+  ```
+
+Don't open or close backlog issues by hand — edit `BACKLOG.md` instead.

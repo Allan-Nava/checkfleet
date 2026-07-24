@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.2
+
+- Automazione backlog ↔ issue: `BACKLOG.md` resta sorgente unica; ogni `CF-n` diventa una issue GitHub (label `backlog`, milestone per sezione M1–M5/Rilascio).
+  - `internal/backlog`: parser di `BACKLOG.md` in item (id, titolo, milestone, done), con test.
+  - `cmd/backlog-sync`: crea/chiude/riapre le issue in modo idempotente (match per prefisso `CF-n`), con `-dry-run`; usa `gh`.
+  - Workflow `.github/workflows/backlog-sync.yml`: sync a ogni push su `main` che tocca il backlog + `workflow_dispatch`.
+  - Creazione iniziale: 18 issue (15 aperte + CF-1/2/3 chiuse come completate).
+
 ## 0.4.1
 
 - Docs: tema GitHub Pages passato da `cayman` a **just-the-docs** (sidebar di navigazione + ricerca full-text). Build via Gemfile + `ruby/setup-ruby` (Jekyll 4); `jekyll-relative-links` mantiene i link `.md` interni. Ordinamento pagine con `nav_order`.

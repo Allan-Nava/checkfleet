@@ -2,6 +2,8 @@
 
 Sorgente unica dei todo. Id stabili `CF-n`; spuntare, non cancellare.
 
+> **Sync automatico issue**: questo file è la fonte di verità. Ogni `CF-n` diventa una issue GitHub (label `backlog`, milestone per sezione) via `cmd/backlog-sync` + workflow `.github/workflows/backlog-sync.yml`. Spuntare un item (`[x]`) chiude la issue al prossimo push; toglierlo la riapre. Idempotente. Non aprire/chiudere le issue a mano: edita qui.
+
 Roadmap a milestone: prima **cosa monitorare** (M1→M3), poi **come consegnarlo** (M4) e **come usarlo** (M5). Le versioni sono indicative: ogni modulo/output è comunque una release taggata a sé.
 
 ## M1 — Rete & delivery (~v0.2) — il cuore hiway media
