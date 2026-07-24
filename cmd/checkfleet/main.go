@@ -54,6 +54,11 @@ func main() {
 			fmt.Fprintln(os.Stderr, "checkfleet:", err)
 			os.Exit(1)
 		}
+	case "validate":
+		if err := runValidate(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, "checkfleet:", err)
+			os.Exit(1)
+		}
 	case "report-issues":
 		if err := runReportIssues(os.Args[2:]); err != nil {
 			fmt.Fprintln(os.Stderr, "checkfleet:", err)
@@ -70,6 +75,7 @@ func usage() {
   checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns> --config checkfleet.yml [--output text|markdown|json|slack] [--only ...] [--min-severity warn] [--target glob] [--exit-on-bad]
   checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s]   # esporta le metriche Prometheus
   checkfleet report-issues --config checkfleet.yml [--dry-run]                 # apre/chiude issue GitHub dai finding BAD
+  checkfleet validate --config checkfleet.yml                                  # valida la config senza eseguire i check
   checkfleet version`)
 }
 
@@ -164,6 +170,33 @@ func runCheck(args []string) error {
 			os.Exit(2)
 		}
 	}
+	return nil
+}
+
+// runValidate checks the config without running any check; exit 1 if invalid.
+//
+//	checkfleet validate --config checkfleet.yml [--stack …]
+func runValidate(args []string) error {
+	fs := flag.NewFlagSet("validate", flag.ExitOnError)
+	configPath := fs.String("config", "checkfleet.yml", "file di configurazione YAML")
+	stack := fs.String("stack", "", "profilo stack: sovrappone checkfleet.<stack>.yml alla base")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	cfg, err := loadConfig(*configPath, *stack)
+	if err != nil {
+		return err // parse/read errors are already fatal
+	}
+	problems := engine.Validate(cfg)
+	if len(problems) == 0 {
+		fmt.Printf("checkfleet: %s valida ✅\n", *configPath)
+		return nil
+	}
+	fmt.Fprintf(os.Stderr, "%s: %d problema/i:\n", *configPath, len(problems))
+	for _, p := range problems {
+		fmt.Fprintln(os.Stderr, "  -", p)
+	}
+	os.Exit(1)
 	return nil
 }
 

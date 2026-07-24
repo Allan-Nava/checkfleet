@@ -86,6 +86,17 @@ title (the dedup key). Requires the [`gh`](https://cli.github.com/) CLI,
 authenticated; in CI provide `GH_TOKEN`. GitLab isn't supported yet — the
 tracker is behind an interface, so it can be added later.
 
+## The `validate` command
+
+Check the config without running any check — useful in CI or a pre-commit hook.
+It reports missing targets/URLs/DSNs, incoherent thresholds (e.g. `warn` past
+`crit`), and an empty `checks`. Exit `1` on any problem.
+
+```bash
+checkfleet validate --config checkfleet.yml            # exit 0 if usable
+checkfleet validate --config checkfleet.yml --stack prod
+```
+
 ## Finding statuses
 
 | Status | Meaning |

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.18.0
+
+- Comando `validate` (CF-33): valida la config senza eseguire i check — target/url/dsn presenti, soglie coerenti (warn vs crit), `checks` non vuoto. Exit 1 con elenco dei problemi. `engine.Validate`, testato. Utile in CI/pre-commit.
+
 ## 0.17.0
 
 - Filtri finding (CF-34) sul comando `check`: `--only <check,...>`, `--min-severity ok|warn|bad|error`, `--target <glob>`. Si applicano all'output renderizzato e quindi anche a `--exit-on-bad` e al `worst` JSON. Funzione `engine.Filter` + `engine.ParseStatus`, testate.
