@@ -45,4 +45,4 @@ go vet ./...
 
 - Backlog: `BACKLOG.md` · CI: `.github/workflows/ci.yml` (vet+test su push/PR; tag `v*` → build multipiattaforma in release)
 - Config d'esempio: `checkfleet.example.yml`
-- Repo affini (famiglia Lens/tooling): `~/projects/github.com/ansible-vars-lens`, `nats-lens`, `nomad-lens` · Runbook di riferimento: `~/projects/hiway/devops_hiway/CLAUDE.md`
+- Repo affini (famiglia Lens/tooling): `~/projects/github.com/ansible-vars-lens`, `nats-lens`, `nomad-lens`

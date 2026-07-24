@@ -50,7 +50,7 @@ Terms are tailored per agreement and typically cover:
 
 Open the conversation by email or a GitHub issue — whichever you prefer:
 
-- **Email:** dev-ops@hiway.media (subject: `checkfleet commercial license`)
+- **Email:** allannava95@gmail.com (subject: `checkfleet commercial license`)
 - **GitHub:** open an issue at
   <https://github.com/Allan-Nava/checkfleet/issues> titled
   `Commercial license request` (no confidential details in a public issue —

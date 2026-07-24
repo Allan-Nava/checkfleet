@@ -1,6 +1,6 @@
 // Package nats implements a preflight/health check for a NATS JetStream
 // cluster, reading the HTTP monitoring endpoints (/varz and /jsz?meta=1) of
-// each node. It encodes the domain knowledge from the devops_hiway runbook:
+// each node. It encodes the domain knowledge from an internal ops runbook:
 // meta-leader present (and in the expected position), degraded/ghost peers
 // (offline or not current), raft peer lag over threshold, and mixed binary
 // versions across the cluster.

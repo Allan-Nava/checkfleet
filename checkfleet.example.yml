@@ -100,9 +100,9 @@ checks:
       - 8.8.8.8
     min_ttl_seconds: 30               # WARN if any answer TTL is below this (0 = off)
     targets:
-      - {name: hiway.media, type: A, expect: ["203.0.113.10"]}   # drift check
-      - {name: cdn.hiway.media, type: CNAME}
-      - {name: hiway.media, type: SOA}                            # serial drift across resolvers
+      - {name: example.com, type: A, expect: ["203.0.113.10"]}   # drift check
+      - {name: cdn.example.com, type: CNAME}
+      - {name: example.com, type: SOA}                            # serial drift across resolvers
 
   redis:
     port: 6379                        # Redis/Valkey port
@@ -117,10 +117,10 @@ checks:
       - 10.20.30.41:6380
 
   keycloak:
-    base_url: https://auth.hiway.media   # scheme+host (+ /auth prefix on old versions), no trailing slash
-    health_url: https://auth.hiway.media:9000/health/ready   # optional (often the management port)
+    base_url: https://auth.example.com   # scheme+host (+ /auth prefix on old versions), no trailing slash
+    health_url: https://auth.example.com:9000/health/ready   # optional (often the management port)
     realms:
-      - hiway
+      - example
       - partners
 
   kafka:
@@ -137,16 +137,16 @@ checks:
   ldap:
     targets:
       - name: dir-prod
-        url: ldaps://ldap.hiway.media:636
-        bind_dn: "cn=monitor,dc=hiway,dc=media"
+        url: ldaps://ldap.example.com:636
+        bind_dn: "cn=monitor,dc=example,dc=com"
         password_env: LDAP_PASS       # never inline
-        base_dn: "ou=people,dc=hiway,dc=media"
+        base_dn: "ou=people,dc=example,dc=com"
         filter: "(objectClass=inetOrgPerson)"
         min_entries: 1
 
   grpc:
     targets:
-      - {name: api, address: api.hiway.media:443, service: hiway.api.v1.API}
+      - {name: api, address: api.example.com:443, service: example.api.v1.API}
       - {address: internal.svc:8443, insecure_skip_verify: true}   # self-signed interno
 
   rabbitmq:
@@ -162,18 +162,18 @@ checks:
     offset_warn_ms: 100
     offset_crit_ms: 1000
     targets:
-      - time.hiway.media
+      - time.example.com
       - 0.pool.ntp.org
 
   tls:
     warn_days: 30
     crit_days: 7
     targets:
-      - auth.hiway.media            # uses port 443
-      - api.hiway.media:8443
+      - auth.example.com            # uses port 443
+      - api.example.com:8443
 
   tcp:
     targets:
       - {name: ssh-bastion, address: 10.20.30.9:22, expect_banner: "SSH-2.0", max_latency_ms: 500}
-      - {name: smtp-relay, address: mail.hiway.media:25}
-      - {name: rtmp-ingest, address: ingest.hiway.media:1935}
+      - {name: smtp-relay, address: mail.example.com:25}
+      - {name: rtmp-ingest, address: ingest.example.com:1935}

@@ -6,9 +6,9 @@ Sorgente unica dei todo. Id stabili `CF-n`; spuntare, non cancellare.
 
 Roadmap a milestone. **Fase 1 (completa)**: cosa monitorare (M1→M3), come consegnarlo (M4), rilascio. **Fase 2**: usarlo meglio (M5 app desktop), più domini (M6), più alerting (M7), engine più solido (M8), qualità (M9). **Fase 3**: check generici/protocollo (M10), datastore & broker (M11), output & sink (M12), engine & UX (M13), distribuzione & supply-chain (M14). Le versioni sono indicative: ogni modulo/output è comunque una release taggata a sé. **M5 completa** (app desktop Wails, v0.24.0). **In corso:** M6 (redis ✅, keycloak ✅).
 
-## M1 — Rete & delivery (~v0.2) — il cuore hiway media
+## M1 — Rete & delivery (~v0.2) — il cuore rete & delivery
 
-- [x] **CF-1 — Modulo `nats`**: preflight/health cluster NATS via monitor endpoint (`/varz`, `/jsz?meta=1`): meta-leader presente e in posizione, ghost peer, lag peer oltre soglia, versioni miste nel cluster. Codifica il runbook devops_hiway. _(v0.2.0; lag misurato sui peer del raft meta-group)_
+- [x] **CF-1 — Modulo `nats`**: preflight/health cluster NATS via monitor endpoint (`/varz`, `/jsz?meta=1`): meta-leader presente e in posizione, ghost peer, lag peer oltre soglia, versioni miste nel cluster. Codifica un runbook devops interno. _(v0.2.0; lag misurato sui peer del raft meta-group)_
 - [x] **CF-2 — Modulo `haproxy`**: backend/server DOWN via CSV stats HTTP; MAINT/DRAIN/NOLB → WARN, backend senza server → BAD, saturazione sessioni opzionale, basic-auth con password da env. _(v0.3.0; drift config running vs file rimandato)_
 - [x] **CF-3 — Modulo `stream`**: HLS/DASH — manifest raggiungibile/valido, ladder completa (varianti/representation), freschezza live-edge via `EXT-X-PROGRAM-DATE-TIME`/`publishTime`, live vs VOD. _(v0.4.0; solo manifest, mai i segmenti)_
 
@@ -48,7 +48,7 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 
 - [x] **CF-19 — Modulo `redis`/`valkey`**: reachability (`PING`)+`INFO` con **client RESP minimale in-tree** (zero dip), uso memoria vs `maxmemory`, replica (link up/down, offset lag), persistenza RDB/AOF, loading. TLS + ACL (password da env). _(v0.20.0)_
 - [x] **CF-20 — Modulo `keycloak`**: health endpoint UP, discovery OIDC per realm (token_endpoint presente, issuer coerente con `/realms/<realm>`). HTTP/JSON zero-dip, nessuna credenziale. _(v0.21.0; versione via admin rimandata — richiede auth)_
-- [ ] **CF-21 — Modulo `mediamtx`**: API di mediamtx — path attivi, reader/publisher per path, path attesi presenti, ingest fermi. Codifica l'uso hiway (KV_mediamtx nel runbook NATS).
+- [ ] **CF-21 — Modulo `mediamtx`**: API di mediamtx — path attivi, reader/publisher per path, path attesi presenti, ingest fermi. Codifica l'uso interno (KV_mediamtx nel runbook NATS).
 - [ ] **CF-22 — Modulo `ingest` (RTMP/SRT)**: l'endpoint di ingest accetta connessioni (handshake TCP/RTMP, o SRT), latenza. Segnale "lo streamer riesce a pubblicare?".
 - [ ] **CF-23 — Modulo `s3`/object storage**: bucket raggiungibile, oggetto sentinella presente e fresco (last-modified sotto soglia), spazio/quota se esposta. Credenziali da env.
 - [ ] **CF-24 — Modulo `smtp`**: il relay accetta connessioni, STARTTLS ok, cert del relay non scaduto, banner atteso. Nessun invio reale.

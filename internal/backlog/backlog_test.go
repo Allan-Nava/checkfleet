@@ -6,7 +6,7 @@ const sample = `# Backlog — checkfleet
 
 Sorgente unica dei todo.
 
-## M1 — Rete & delivery (~v0.2) — il cuore hiway media
+## M1 — Rete & delivery (~v0.2) — il cuore rete & delivery
 
 - [x] **CF-1 — Modulo ` + "`nats`" + `**: preflight/health cluster NATS. _(v0.2.0)_
 - [x] **CF-2 — Modulo ` + "`haproxy`" + `**: backend/server DOWN via CSV stats.

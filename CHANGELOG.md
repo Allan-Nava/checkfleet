@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.51.1
+
+- Rimossi i riferimenti aziendali dal progetto (sviluppato a titolo personale): contatto della licenza commerciale (`COMMERCIAL.md`) sull'email personale dell'autore (`allannava95@gmail.com`); neutralizzati gli host d'esempio in `checkfleet.example.yml` (dominio aziendale → `example.com`, DN LDAP, realm, service gRPC); ripuliti i riferimenti in `BACKLOG.md`, nel fixture di `internal/backlog`, nel commento di `internal/checks/nats` e il puntatore runbook in `CLAUDE.md`. Licenziante (`LICENSE`) e contatto coincidono con l'autore.
+
 ## 0.51.0
 
 - Issue GitLab (CF-26): `report-issues --forge gitlab` riconcilia le issue su GitLab via `glab` (adapter `glIssueClient`: list/create/close+note, ensureLabel), con la stessa logica di reconcile di CF-7 (GitHub). Factory `issueClient(forge)` testata; `--forge github|gitlab` (default github). Il rispettivo CLI (`gh`/`glab`) dev'essere installato e autenticato.
@@ -58,7 +62,7 @@
 - Guardrail English-output + sweep finale (CF-60, **chiude M15**):
   - Nuovo `scripts/check-english.sh` — fallisce se trova vocali accentate o parole italiane distintive nei `.go` di `cmd/`+`internal/`. Aggiunto come step di `ci.yml` (anti-regressione).
   - Il guardrail ha scovato italiano rimasto fuori da CF-58/59: tradotti i test di `engine` (filter/engine/stack/config), `history`, `issuesync`, `backlog`, `output/prometheus` e il tool `cmd/backlog-sync` (messaggi + body delle issue). Ora `go test ./...` e il guardrail sono verdi.
-  - Sito docs e README: esempi di output portati in inglese (`want`/`expires in`/`N checks:`/`Needs attention`); neutralizzati gli host/realm aziendali rimasti negli esempi (`hiway.media`→`example.com`, `prod-cologno`→`prod`).
+  - Sito docs e README: esempi di output portati in inglese (`want`/`expires in`/`N checks:`/`Needs attention`); neutralizzati gli host/realm aziendali rimasti negli esempi (dominio aziendale → `example.com`, `prod-cologno`→`prod`).
 - Con CF-58/59/60 la migrazione i18n è completa: tutto l'output e i test del progetto sono in inglese (CHANGELOG escluso, per convenzione).
 
 ## 0.39.0
