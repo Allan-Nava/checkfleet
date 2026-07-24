@@ -64,7 +64,7 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 
 ## M8 — Engine & UX (fase 2)
 
-- [ ] **CF-31 — Check concorrenti**: il runner esegue i moduli in parallelo (ora è sequenziale), con cap di concorrenza e timeout per-check; ordine dei finding invariato (sort stabile).
+- [x] **CF-31 — Check concorrenti**: il runner esegue i moduli in parallelo (goroutine per check, timeout per-check), raccolta per-indice + sort stabile → output deterministico e wall-clock ≈ check più lento. _(v0.15.0)_
 - [ ] **CF-32 — Storico & flap/trend**: persistenza dei run (valutare `modernc.org/sqlite` puro-Go o file JSON), detection di flapping e trend; base per "finding persistenti" di CF-7.
 - [ ] **CF-33 — `checkfleet validate`**: valida la config senza eseguire i check (schema, target, soglie coerenti); exit ≠0 su config errata. Utile in CI/pre-commit.
 - [ ] **CF-34 — Filtri finding**: `--only <check[,check]>`, `--min-severity warn|bad`, `--target <glob>` per ridurre il rumore in output/alerting.

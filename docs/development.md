@@ -16,7 +16,7 @@ they are the same checks CI runs.
 
 | Path | Responsibility |
 |---|---|
-| `internal/engine/` | The contract: `Check`, `Finding` (status OK/WARN/BAD/ERROR), `Run` (timeout + worst-first sort), `Summarize`/`Worst`, and the typed YAML config with defaults (`LoadConfig`). |
+| `internal/engine/` | The contract: `Check`, `Finding` (status OK/WARN/BAD/ERROR), `Run` (checks run **concurrently**, each with its own timeout; results flattened in check order then worst-first sorted → deterministic), `Summarize`/`Worst`, and the typed YAML config with defaults (`LoadConfig`). |
 | `internal/output/` | Renderers: `Text`, `Markdown`, `JSON`. |
 | `internal/checks/<name>/` | One package per module, implementing `engine.Check`. |
 | `internal/inventory/` | Minimal Ansible INI inventory parser. |

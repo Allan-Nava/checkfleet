@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.0
+
+- Engine: `Run` esegue i check **in parallelo** (CF-31) — una goroutine per modulo, ciascuna col proprio timeout. Raccolta per-indice + sort stabile: output invariato e deterministico, ma wall-clock ≈ check più lento invece della somma. Test con `-race`.
+
 ## 0.14.1
 
 - Roadmap fase 2: nuove milestone e feature candidate nel BACKLOG.

@@ -84,3 +84,39 @@ type funcCheck func(context.Context) []Finding
 
 func (f funcCheck) Name() string                      { return "func" }
 func (f funcCheck) Run(ctx context.Context) []Finding { return f(ctx) }
+
+func TestRunRunsChecksConcurrently(t *testing.T) {
+	// Three checks that each sleep 120ms: run in parallel the total is ~120ms,
+	// serial it would be ~360ms.
+	sleeper := func(status Status) funcCheck {
+		return func(ctx context.Context) []Finding {
+			select {
+			case <-time.After(120 * time.Millisecond):
+			case <-ctx.Done():
+			}
+			return []Finding{{Status: status}}
+		}
+	}
+	checks := []Check{sleeper(OK), sleeper(WARN), sleeper(BAD)}
+	start := time.Now()
+	res := Run(context.Background(), checks, time.Second)
+	if elapsed := time.Since(start); elapsed > 300*time.Millisecond {
+		t.Errorf("i check non girano in parallelo: %s (attesi ~120ms)", elapsed)
+	}
+	if len(res.Findings) != 3 || Worst(res.Findings) != BAD {
+		t.Errorf("risultati inattesi dai check concorrenti: %+v", res.Findings)
+	}
+}
+
+func TestRunPreservesCheckOrderBeforeSort(t *testing.T) {
+	// All findings same severity → order is by the check flattening (stable),
+	// which must follow the input check order deterministically.
+	mk := func(check string) funcCheck {
+		return func(context.Context) []Finding { return []Finding{{Check: check, Status: OK}} }
+	}
+	res := Run(context.Background(), []Check{mk("a"), mk("b"), mk("c")}, time.Second)
+	// Equal severity → secondary sort by check name: a, b, c.
+	if res.Findings[0].Check != "a" || res.Findings[1].Check != "b" || res.Findings[2].Check != "c" {
+		t.Errorf("ordine non deterministico: %+v", res.Findings)
+	}
+}

@@ -7,6 +7,7 @@ package engine
 import (
 	"context"
 	"sort"
+	"sync"
 	"time"
 )
 
@@ -47,11 +48,25 @@ type Result struct {
 // Findings are sorted by severity (worst first), then check, then target.
 func Run(ctx context.Context, checks []Check, timeout time.Duration) Result {
 	started := time.Now()
+	// Run checks concurrently, each bounded by its own timeout. Results are
+	// collected per-check by index and flattened in check order, so the output
+	// is deterministic regardless of completion order (the stable sort below
+	// then orders by severity).
+	perCheck := make([][]Finding, len(checks))
+	var wg sync.WaitGroup
+	for i, c := range checks {
+		wg.Add(1)
+		go func(i int, c Check) {
+			defer wg.Done()
+			cctx, cancel := context.WithTimeout(ctx, timeout)
+			defer cancel()
+			perCheck[i] = c.Run(cctx)
+		}(i, c)
+	}
+	wg.Wait()
 	var findings []Finding
-	for _, c := range checks {
-		cctx, cancel := context.WithTimeout(ctx, timeout)
-		findings = append(findings, c.Run(cctx)...)
-		cancel()
+	for _, fs := range perCheck {
+		findings = append(findings, fs...)
 	}
 	sort.SliceStable(findings, func(i, j int) bool {
 		if severity[findings[i].Status] != severity[findings[j].Status] {
