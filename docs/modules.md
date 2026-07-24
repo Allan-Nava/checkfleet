@@ -5,9 +5,9 @@ nav_order: 5
 
 Each module is a self-contained check that knows what "healthy" means for one
 kind of target. Shipping today: `certs`, `http`, `nats`, `haproxy`, `stream`,
-`patroni`, `consul`, `postgres`, `dns`, `redis`, `keycloak`, `tcp`, `tls`, `ntp`. The
+`patroni`, `consul`, `postgres`, `dns`, `redis`, `keycloak`, `tcp`, `tls`, `ntp`, `rabbitmq`. The
 [backlog](https://github.com/Allan-Nava/checkfleet/blob/main/BACKLOG.md) tracks
-what's next (`grpc`, `ldap`, `kafka`, `mongodb`, `rabbitmq`, …).
+what's next (`grpc`, `ldap`, `kafka`, `mongodb`, …).
 
 ## `certs`
 
@@ -256,6 +256,21 @@ Clock drift silently breaks TLS validation and JWT expiry.
 - Unreachable / no reply → `ERROR`.
 
 See [Configuration → checks.ntp](configuration.md#checksntp).
+
+## `rabbitmq`
+
+RabbitMQ health via the management HTTP API — read-only.
+
+- **Reachability**: `/api/overview` (basic auth) → `OK` with version, else `ERROR`.
+- **Nodes** (`/api/nodes`): not running, or a memory / disk-free alarm → `BAD`.
+- **Queues** (`/api/queues`): depth past `queue_warn_depth`/`queue_crit_depth` →
+  `WARN`/`BAD`; messages present with zero consumers → `WARN` (stuck backlog).
+
+Any management node answers cluster-wide, so one endpoint is enough. Findings
+are labelled `node/<name>` and `queue/<vhost>/<name>`. The password is read from
+`password_env`, never stored in config.
+
+See [Configuration → checks.rabbitmq](configuration.md#checksrabbitmq).
 
 ## Ansible inventory as a target source
 

@@ -32,6 +32,7 @@ type ChecksConfig struct {
 	TCP      *TCPConfig      `yaml:"tcp"`
 	TLS      *TLSConfig      `yaml:"tls"`
 	NTP      *NTPConfig      `yaml:"ntp"`
+	RabbitMQ *RabbitMQConfig `yaml:"rabbitmq"`
 }
 
 // CertsConfig configures the TLS certificate expiry check.
@@ -243,6 +244,20 @@ type NTPConfig struct {
 	OffsetCritMS int      `yaml:"offset_crit_ms"`
 }
 
+// RabbitMQConfig configures the RabbitMQ management-API health check.
+type RabbitMQConfig struct {
+	// Management API endpoints as host[:port]; Port applies when none.
+	Targets []string `yaml:"targets"`
+	Port    int      `yaml:"port"`
+	Scheme  string   `yaml:"scheme"`
+	// HTTP basic auth. Password from the env var; never inline.
+	Username    string `yaml:"username"`
+	PasswordEnv string `yaml:"password_env"`
+	// Queue depth thresholds (messages ready+unacked).
+	QueueWarnDepth int `yaml:"queue_warn_depth"`
+	QueueCritDepth int `yaml:"queue_crit_depth"`
+}
+
 // HTTPConfig configures the HTTP probe check.
 type HTTPConfig struct {
 	Targets []HTTPTarget `yaml:"targets"`
@@ -349,6 +364,20 @@ func applyDefaults(cfg *Config) {
 		}
 		if t.CritDays <= 0 {
 			t.CritDays = 7
+		}
+	}
+	if rb := cfg.Checks.RabbitMQ; rb != nil {
+		if rb.Port <= 0 {
+			rb.Port = 15672
+		}
+		if rb.Username == "" {
+			rb.Username = "guest"
+		}
+		if rb.QueueWarnDepth <= 0 {
+			rb.QueueWarnDepth = 1000
+		}
+		if rb.QueueCritDepth <= 0 {
+			rb.QueueCritDepth = 50000
 		}
 	}
 	if n := cfg.Checks.NTP; n != nil {

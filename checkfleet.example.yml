@@ -123,6 +123,15 @@ checks:
       - hiway
       - partners
 
+  rabbitmq:
+    port: 15672
+    username: monitoring
+    password_env: RABBITMQ_PASS      # never inline
+    queue_warn_depth: 1000
+    queue_crit_depth: 50000
+    targets:
+      - 10.20.30.60
+
   ntp:
     offset_warn_ms: 100
     offset_crit_ms: 1000

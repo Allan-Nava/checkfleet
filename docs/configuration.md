@@ -400,6 +400,28 @@ checks:
     targets: [time.hiway.media, 0.pool.ntp.org]
 ```
 
+## `checks.rabbitmq`
+
+RabbitMQ management API. See [Modules → rabbitmq](modules.md#rabbitmq).
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `targets` | list | — | Management API endpoints `host` or `host:port`. |
+| `port` | int | `15672` | Default management port. |
+| `scheme` | string | `http` | `http` or `https`. |
+| `username` | string | `guest` | Basic-auth user. |
+| `password_env` | string | — | Env var holding the password. **Never inline.** |
+| `queue_warn_depth` | int | `1000` | Queue messages → WARN. |
+| `queue_crit_depth` | int | `50000` | Queue messages → BAD. |
+
+```yaml
+checks:
+  rabbitmq:
+    username: monitoring
+    password_env: RABBITMQ_PASS
+    targets: [10.20.30.60]
+```
+
 ## No secrets in config
 
 Keep credentials out of `checkfleet.yml` — checks never log or echo secrets, and

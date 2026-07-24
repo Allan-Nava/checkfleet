@@ -65,8 +65,9 @@ See [Installation](https://allan-nava.github.io/checkfleet/installation/) for al
 | `tcp` | Generic TCP reachability: connect (optionally TLS), latency, optional banner match |
 | `tls` | Deep TLS: chain validity, certificate expiry, weak negotiated protocol version |
 | `ntp` | NTP clock offset & stratum via a hand-rolled SNTP query (drift breaks TLS/JWT) |
+| `rabbitmq` | RabbitMQ via the management API: nodes running & alarm-free, queue depth & consumer presence |
 
-More modules on the roadmap (see [BACKLOG.md](BACKLOG.md)): `grpc`, `ldap`, `kafka`, `mongodb`, `rabbitmq`, plus more alerting outputs.
+More modules on the roadmap (see [BACKLOG.md](BACKLOG.md)): `grpc`, `ldap`, `kafka`, `mongodb`, plus more alerting outputs.
 
 ## Configuration
 

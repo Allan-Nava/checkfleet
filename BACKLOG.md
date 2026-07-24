@@ -87,7 +87,7 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 
 - [ ] **CF-43 — Modulo `kafka`**: broker raggiungibili, controller presente, under-replicated partitions, lag dei consumer group attesi. Valutare dip (`franz-go`/`sarama`) — protocollo Kafka non banale a mano.
 - [ ] **CF-44 — Modulo `mongodb`**: `replSetGetStatus` (primary presente, membri health, lag), `serverStatus` connessioni. Valutare dip (driver mongo) vs wire protocol.
-- [ ] **CF-45 — Modulo `rabbitmq`**: management HTTP API — code con profondità oltre soglia, consumer assenti, nodi cluster. HTTP/JSON, zero dip.
+- [x] **CF-45 — Modulo `rabbitmq`**: management HTTP API — profondità code oltre soglia, backlog senza consumer, nodi non-running/alarm. HTTP/JSON, zero dip. _(v0.27.0)_
 
 ## M12 — Output & sink (fase 3)
 

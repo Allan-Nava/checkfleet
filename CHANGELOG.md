@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.27.0
+
+- Modulo `rabbitmq` (CF-45): health via management HTTP API (zero-dip). Reachability+versione (`/api/overview`), nodi non-running o con memory/disk alarm → BAD (`/api/nodes`), profondità code oltre `queue_warn_depth`/`queue_crit_depth` → WARN/BAD e backlog senza consumer → WARN (`/api/queues`). Basic-auth con password da env. Testato con httptest.
+
 ## 0.26.1
 
 - Desktop: i dati mock di anteprima usano placeholder neutri (`example.com`, host generici, `/home/ops/checkfleet.yml`) — rimossi i riferimenti a domini/host aziendali.

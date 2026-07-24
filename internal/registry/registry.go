@@ -15,6 +15,7 @@ import (
 	"github.com/Allan-Nava/checkfleet/internal/checks/ntp"
 	"github.com/Allan-Nava/checkfleet/internal/checks/patroni"
 	"github.com/Allan-Nava/checkfleet/internal/checks/postgres"
+	"github.com/Allan-Nava/checkfleet/internal/checks/rabbitmq"
 	"github.com/Allan-Nava/checkfleet/internal/checks/redis"
 	"github.com/Allan-Nava/checkfleet/internal/checks/stream"
 	"github.com/Allan-Nava/checkfleet/internal/checks/tcp"
@@ -47,6 +48,7 @@ func Modules(cfg *engine.Config) []Spec {
 		{"tcp", c.TCP != nil, func() engine.Check { return tcp.New(*c.TCP) }},
 		{"tls", c.TLS != nil, func() engine.Check { return tlscheck.New(*c.TLS) }},
 		{"ntp", c.NTP != nil, func() engine.Check { return ntp.New(*c.NTP) }},
+		{"rabbitmq", c.RabbitMQ != nil, func() engine.Check { return rabbitmq.New(*c.RabbitMQ) }},
 	}
 }
 

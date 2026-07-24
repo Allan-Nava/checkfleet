@@ -65,7 +65,7 @@ func main() {
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `uso:
-  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp> --config checkfleet.yml [--output text|markdown|json|slack] [--only ...] [--min-severity warn] [--target glob] [--exit-on-bad]
+  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq> --config checkfleet.yml [--output text|markdown|json|slack] [--only ...] [--min-severity warn] [--target glob] [--exit-on-bad]
   checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s]   # esporta le metriche Prometheus
   checkfleet report-issues --config checkfleet.yml [--dry-run]                 # apre/chiude issue GitHub dai finding BAD
   checkfleet validate --config checkfleet.yml                                  # valida la config senza eseguire i check
