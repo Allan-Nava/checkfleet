@@ -57,3 +57,13 @@ checks:
       - name: vod-catalogo
         url: https://cdn.example/vod/movie/master.m3u8
         min_variants: 4               # VOD: just check reachability + ladder
+
+  patroni:
+    port: 8008                        # Patroni REST API port
+    scheme: http                      # http | https
+    lag_warn_bytes: 33554432          # replica lag → WARN (default 32 MiB)
+    lag_crit_bytes: 134217728         # replica lag → BAD  (default 128 MiB)
+    targets:
+      - 10.20.30.11                   # any Patroni node (they proxy the cluster view)
+      - 10.20.30.12:8008
+    # ansible_inventory: /path/to/inventory/patroni

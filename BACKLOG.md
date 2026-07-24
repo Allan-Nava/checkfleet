@@ -14,7 +14,7 @@ Roadmap a milestone: prima **cosa monitorare** (M1→M3), poi **come consegnarlo
 
 ## M2 — Data layer (~v0.3)
 
-- [ ] **CF-4 — Modulo `patroni`**: leader per cluster (API Patroni o Consul), repliche in lag.
+- [x] **CF-4 — Modulo `patroni`**: leader per cluster via REST API Patroni (`/cluster`), repliche in lag, stato replica, divergenza timeline. _(v0.5.0; split-brain → WARN, no leader → BAD)_
 - [ ] **CF-11 — Modulo `postgres`**: reachability (`pg_isready`-like), replica lag in byte/secondi, replication slot vicini alla saturazione, età transazione (wraparound), connessioni vs `max_connections`. Solo lettura, mai DDL.
 - [ ] **CF-12 — Modulo `consul`**: quorum raft e leader presente, servizi in stato `critical`/`warning`, membri `failed`/`left`, sanity KV su chiavi note.
 

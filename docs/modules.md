@@ -8,9 +8,10 @@ nav_order: 5
 # Modules
 
 Each module is a self-contained check that knows what "healthy" means for one
-kind of target. Shipping today: `certs`, `http`, `nats`, `haproxy`, `stream`.
-The [backlog](https://github.com/Allan-Nava/checkfleet/blob/main/BACKLOG.md)
-tracks what's next (`patroni`, `postgres`, `consul`, …).
+kind of target. Shipping today: `certs`, `http`, `nats`, `haproxy`, `stream`,
+`patroni`. The
+[backlog](https://github.com/Allan-Nava/checkfleet/blob/main/BACKLOG.md) tracks
+what's next (`postgres`, `consul`, …).
 
 ## `certs`
 
@@ -105,14 +106,34 @@ from the `.mpd` extension, the `dash+xml` content-type, or an `<MPD` root.
 
 See [Configuration → checks.stream](configuration.md#checksstream).
 
+## `patroni`
+
+Health of a Patroni-managed PostgreSQL cluster from the Patroni **REST API**
+(`/cluster`) — read-only, it never touches PostgreSQL itself.
+
+- **Leader**: exactly one expected. Zero leaders → `BAD` (failover in progress
+  or lost quorum); more than one → `WARN` (split-brain).
+- **Replica state**: `running`/`streaming` → `OK`; `stopped`/`start failed`/
+  `crashed`/`restarting` → `BAD`; anything else → `WARN`.
+- **Replica lag**: `WARN`/`BAD` past `lag_warn_bytes`/`lag_crit_bytes`. A lag
+  reported as `unknown` is `OK` with a note (not a false alarm).
+- **Timeline**: a replica on a different timeline than the leader → `WARN`.
+
+Any Patroni node proxies the same cluster view, so listing one endpoint is
+enough; extra endpoints add redundancy (an unreachable one is `ERROR`). The
+cluster-level leader finding is labelled with the cluster scope; per-node
+findings are labelled by member name.
+
+See [Configuration → checks.patroni](configuration.md#checkspatroni).
+
 ## Ansible inventory as a target source
 
-The `certs`, `nats` and `haproxy` modules can read a standard Ansible **INI**
-inventory (a file or a directory of files):
+The `certs`, `nats`, `haproxy` and `patroni` modules can read a standard Ansible
+**INI** inventory (a file or a directory of files):
 
 - host lines and their `ansible_host=` value are used;
 - `:vars` and `:children` sections are ignored;
 - hosts are de-duplicated.
 
 Every discovered host becomes a target on the module's `port` (443 for `certs`,
-8222 for `nats`, 8404 for `haproxy`).
+8222 for `nats`, 8404 for `haproxy`, 8008 for `patroni`).

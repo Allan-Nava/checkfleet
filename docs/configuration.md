@@ -157,6 +157,31 @@ checks:
         min_variants: 4
 ```
 
+## `checks.patroni`
+
+Patroni-managed PostgreSQL cluster health via the Patroni REST API. See
+[Modules → patroni](modules.md#patroni).
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `targets` | list | — | Patroni REST endpoints as `host` or `host:port`. |
+| `port` | int | `8008` | Default API port for targets/inventory hosts without one. |
+| `scheme` | string | `http` | `http` or `https`. |
+| `ansible_inventory` | string | — | Ansible INI inventory; every host becomes an API target on `port`. |
+| `lag_warn_bytes` | int | `33554432` (32 MiB) | Replica lag → WARN. |
+| `lag_crit_bytes` | int | `134217728` (128 MiB) | Replica lag → BAD. |
+
+```yaml
+checks:
+  patroni:
+    port: 8008
+    lag_warn_bytes: 33554432
+    lag_crit_bytes: 134217728
+    targets:
+      - 10.20.30.11
+      - 10.20.30.12:8008
+```
+
 ## No secrets in config
 
 Keep credentials out of `checkfleet.yml` — checks never log or echo secrets, and

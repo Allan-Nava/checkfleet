@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.0
+
+- Modulo `patroni` (CF-4): health cluster PostgreSQL gestito da Patroni via REST API (`/cluster`), sola lettura.
+  - Leader: assente → BAD (failover/quorum), più di uno → WARN (split-brain), uno → OK.
+  - Replica: stato non running/streaming → WARN/BAD; lag oltre `lag_warn_bytes`/`lag_crit_bytes` → WARN/BAD (default 32/128 MiB); lag `unknown` → OK con nota.
+  - Timeline replica diversa dal leader → WARN.
+  - Config `checks.patroni` (default `port: 8008`); target espliciti + inventory Ansible.
+- CLI: `checkfleet check patroni`. Docs e config d'esempio aggiornate.
+
 ## 0.4.2
 
 - Automazione backlog ↔ issue: `BACKLOG.md` resta sorgente unica; ogni `CF-n` diventa una issue GitHub (label `backlog`, milestone per sezione M1–M5/Rilascio).

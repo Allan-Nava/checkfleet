@@ -40,8 +40,9 @@ go install github.com/Allan-Nava/checkfleet/cmd/checkfleet@latest
 | `nats` | NATS JetStream cluster health via `/varz` + `/jsz?meta=1`: meta-leader present/expected, offline or lagging peers, ghost/missing peers, mixed versions |
 | `haproxy` | Backend/server health from the CSV stats export: servers DOWN/MAINT/DRAIN, backends with no available server, optional session saturation |
 | `stream` | HLS/DASH stream health from the manifest: reachable & valid, complete bitrate ladder, live-edge freshness (live) |
+| `patroni` | Patroni PostgreSQL cluster via the REST API: single leader, replica state, replica lag, timeline divergence |
 
-More on the way (see [BACKLOG.md](BACKLOG.md)): `patroni`, `postgres`, `consul`, Slack output, Prometheus exporter mode.
+More on the way (see [BACKLOG.md](BACKLOG.md)): `postgres`, `consul`, Slack output, Prometheus exporter mode.
 
 ## Configuration
 
@@ -71,6 +72,7 @@ checks:
 checkfleet check all   --config checkfleet.yml                    # terminal
 checkfleet check certs --config checkfleet.yml --output markdown  # ops report
 checkfleet check nats  --config checkfleet.yml --output markdown  # NATS cluster health
+checkfleet check patroni --config checkfleet.yml                  # PostgreSQL cluster (Patroni)
 checkfleet check http  --config checkfleet.yml --output json      # machine-readable (includes "worst")
 checkfleet check all   --config checkfleet.yml --exit-on-bad      # exit 2 on BAD/ERROR, for CI gates
 ```

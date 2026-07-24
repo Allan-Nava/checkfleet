@@ -19,6 +19,7 @@ type ChecksConfig struct {
 	NATS    *NATSConfig    `yaml:"nats"`
 	HAProxy *HAProxyConfig `yaml:"haproxy"`
 	Stream  *StreamConfig  `yaml:"stream"`
+	Patroni *PatroniConfig `yaml:"patroni"`
 }
 
 // CertsConfig configures the TLS certificate expiry check.
@@ -90,6 +91,20 @@ type StreamTarget struct {
 	MaxAgeCritSeconds int `yaml:"max_age_crit_seconds"`
 }
 
+// PatroniConfig configures the Patroni cluster health check.
+type PatroniConfig struct {
+	// Patroni REST API endpoints as host[:port]; Port applies when a target
+	// has none.
+	Targets []string `yaml:"targets"`
+	Port    int      `yaml:"port"`
+	Scheme  string   `yaml:"scheme"`
+	// Optional Ansible INI inventory: every host becomes an API target.
+	AnsibleInventory string `yaml:"ansible_inventory"`
+	// Replica lag thresholds in bytes (WARN/BAD).
+	LagWarnBytes int64 `yaml:"lag_warn_bytes"`
+	LagCritBytes int64 `yaml:"lag_crit_bytes"`
+}
+
 // HTTPConfig configures the HTTP probe check.
 type HTTPConfig struct {
 	Targets []HTTPTarget `yaml:"targets"`
@@ -150,6 +165,17 @@ func LoadConfig(path string) (*Config, error) {
 		}
 		if hp.Path == "" {
 			hp.Path = "/stats;csv"
+		}
+	}
+	if p := cfg.Checks.Patroni; p != nil {
+		if p.Port <= 0 {
+			p.Port = 8008
+		}
+		if p.LagWarnBytes <= 0 {
+			p.LagWarnBytes = 32 << 20 // 32 MiB
+		}
+		if p.LagCritBytes <= 0 {
+			p.LagCritBytes = 128 << 20 // 128 MiB
 		}
 	}
 	if s := cfg.Checks.Stream; s != nil {
