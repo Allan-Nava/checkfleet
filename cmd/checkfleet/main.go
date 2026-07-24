@@ -66,7 +66,7 @@ func main() {
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `usage:
-  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka> --config checkfleet.yml [--output text|markdown|json|junit|html|prometheus|slack|webhook] [--out-file PATH] [--only ...] [--min-severity warn] [--target glob] [--exit-on-bad]
+  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka> --config checkfleet.yml [--output text|markdown|json|junit|html|prometheus|slack|discord|teams|webhook] [--out-file PATH] [--only ...] [--min-severity warn] [--target glob] [--exit-on-bad]
   checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s]   # export Prometheus metrics
   checkfleet report-issues --config checkfleet.yml [--dry-run]                 # open/close GitHub issues from BAD findings
   checkfleet validate --config checkfleet.yml                                  # validate the config without running the checks
@@ -83,7 +83,7 @@ func runCheck(args []string) error {
 	fs := flag.NewFlagSet("check", flag.ExitOnError)
 	configPath := fs.String("config", "checkfleet.yml", "YAML config file")
 	stack := fs.String("stack", "", "stack profile: overlays checkfleet.<stack>.yml onto the base")
-	format := fs.String("output", "text", "format: text, markdown, json, junit, html, prometheus, slack, webhook")
+	format := fs.String("output", "text", "format: text, markdown, json, junit, html, prometheus, slack, discord, teams, webhook")
 	outFile := fs.String("out-file", "", "write the output to this file (atomically) instead of stdout")
 	webhookEnv := fs.String("webhook-env", "SLACK_WEBHOOK", "env var holding the Slack webhook URL (slack output)")
 	only := fs.String("only", "", "show only these checks (comma-separated list)")
@@ -156,6 +156,14 @@ func runCheck(args []string) error {
 			return err
 		}
 		fmt.Println("checkfleet: report sent to Slack")
+	case "discord":
+		if err := postRendered(*webhookEnv, "Discord", func() (string, error) { return output.Discord(res, module) }); err != nil {
+			return err
+		}
+	case "teams":
+		if err := postRendered(*webhookEnv, "Teams", func() (string, error) { return output.Teams(res, module) }); err != nil {
+			return err
+		}
 	case "webhook":
 		payload, err := output.JSON(res)
 		if err != nil {
@@ -396,6 +404,24 @@ func runServe(args []string) error {
 	})
 	fmt.Fprintf(os.Stderr, "checkfleet serve: %d modules on %s (interval %s)\n", len(checks), *listen, *interval)
 	return http.ListenAndServe(*listen, nil)
+}
+
+// postRendered renders a chat payload and POSTs it to the webhook URL taken
+// from env var webhookEnv, printing a confirmation. Shared by discord/teams.
+func postRendered(webhookEnv, name string, render func() (string, error)) error {
+	payload, err := render()
+	if err != nil {
+		return err
+	}
+	url := os.Getenv(webhookEnv)
+	if url == "" {
+		return fmt.Errorf("%s webhook not set: env %s is empty", name, webhookEnv)
+	}
+	if err := postJSON(context.Background(), url, payload); err != nil {
+		return err
+	}
+	fmt.Printf("checkfleet: report sent to %s\n", name)
+	return nil
 }
 
 // postJSON POSTs a JSON payload to a webhook URL, accepting any 2xx response.

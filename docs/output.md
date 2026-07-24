@@ -103,6 +103,21 @@ checkfleet check all --config checkfleet.yml --output slack --webhook-env SLACK_
 If the env var is empty the command errors (nothing is sent). A run that posts
 successfully prints `report sent to Slack`.
 
+## `discord` / `teams`
+
+Post to a **Discord** webhook (a rich embed) or a **Microsoft Teams** incoming
+webhook (a MessageCard) — the summary plus the non-OK findings (worst first,
+capped), colored by the worst status. Same model as `slack`: the URL comes from
+`--webhook-env`, never the command line.
+
+```bash
+export DISCORD_WEBHOOK="https://discord.com/api/webhooks/…"
+checkfleet check all --config checkfleet.yml --output discord --webhook-env DISCORD_WEBHOOK
+
+export TEAMS_WEBHOOK="https://outlook.office.com/webhook/…"
+checkfleet check all --config checkfleet.yml --output teams --webhook-env TEAMS_WEBHOOK
+```
+
 ## `webhook`
 
 POSTs the JSON output to a generic webhook (URL from `--webhook-env`), for any

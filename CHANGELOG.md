@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.44.0
+
+- Output `discord` e `teams` (CF-27): `--output discord` invia un embed a un webhook Discord, `--output teams` una MessageCard a un incoming webhook Microsoft Teams — summary + problemi worst-first (cap 15), colore per worst status. URL da `--webhook-env` (mai in CLI/config), come Slack. Renderer `output.Discord`/`output.Teams` testati (JSON valido, titolo, problemi, cap, all-green).
+
 ## 0.43.0
 
 - Output `html` (CF-29): `--output html` produce un report **statico autoconsistente** (CSS inline, nessuna risorsa esterna) col tema del sito — pill worst-status, tiles OK/WARN/BAD/ERROR, sezione "Needs attention" e tabella completa; messaggi HTML-escaped. Ideale come artifact di CI o allegato a un incident. Renderer `output.HTML` testato (struttura, summary, escaping). Con `--out-file` scrive su file atomico.
