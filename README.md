@@ -1,10 +1,23 @@
-# checkfleet
+<p align="center">
+  <img src="docs/assets/logo.png" alt="checkfleet logo" width="116" height="116">
+</p>
 
-**A fleet of infrastructure checks in one binary.**
+<h1 align="center">checkfleet</h1>
+
+<p align="center"><strong>A fleet of <em>domain-aware</em> infrastructure checks in one Go binary.</strong></p>
+
+<p align="center">
+  <a href="https://github.com/Allan-Nava/checkfleet/releases"><img alt="Latest release" src="https://img.shields.io/github/v/tag/Allan-Nava/checkfleet?label=release&sort=semver&color=10b981"></a>
+  <a href="https://github.com/Allan-Nava/checkfleet/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Allan-Nava/checkfleet/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-10b981"></a>
+  <img alt="Go" src="https://img.shields.io/github/go-mod/go-version/Allan-Nava/checkfleet?color=10b981">
+</p>
+
+<p align="center">📖 <strong>Full documentation: <a href="https://allan-nava.github.io/checkfleet/">allan-nava.github.io/checkfleet</a></strong></p>
+
+---
 
 checkfleet runs *domain-aware* health checks — the kind that generic monitoring can't express — and reports them as terminal output, an ops-style markdown report, or JSON. One static Go binary, one YAML config, no agents, no server.
-
-📖 **Full documentation: [allan-nava.github.io/checkfleet](https://allan-nava.github.io/checkfleet/)**
 
 ```
 $ checkfleet check all --config checkfleet.yml
@@ -48,13 +61,15 @@ See [Installation](https://allan-nava.github.io/checkfleet/installation/) for al
 | `postgres` | PostgreSQL via read-only SQL: wraparound risk, connection saturation, inactive replication slots, replica lag |
 | `dns` | DNS resolution via an in-tree client: records resolve, drift from expected, SOA-serial & answer consistency across resolvers, low TTL |
 
-More on the way (see [BACKLOG.md](BACKLOG.md)): `endpoint`/`disk`, Slack output, Prometheus exporter mode.
+More modules on the roadmap (see [BACKLOG.md](BACKLOG.md)): `redis`/`valkey`, `keycloak`, `mediamtx`, `s3`, `smtp`, `elasticsearch`, plus more alerting outputs (GitLab issues, Discord/Teams webhooks).
 
 ## Configuration
 
 ```yaml
 # checkfleet.yml
 timeout_seconds: 30
+retries: 2               # retry a check that ERRORs (network/handshake) before reporting
+retry_backoff_ms: 250
 checks:
   certs:
     warn_days: 30
@@ -72,19 +87,28 @@ checks:
         expect_body: "ok"
 ```
 
+Layer a `checkfleet.<stack>.yml` on top of the base with `--stack <name>` (per-module merge). See the [Configuration reference](https://allan-nava.github.io/checkfleet/configuration/).
+
 ## Usage
 
 ```bash
 checkfleet check all   --config checkfleet.yml                    # terminal
 checkfleet check certs --config checkfleet.yml --output markdown  # ops report
 checkfleet check nats  --config checkfleet.yml --output markdown  # NATS cluster health
-checkfleet check patroni --config checkfleet.yml                  # PostgreSQL cluster (Patroni)
 checkfleet check postgres --config checkfleet.yml                 # PostgreSQL (read-only SQL)
 checkfleet check dns   --config checkfleet.yml                    # DNS resolution & drift
 checkfleet check http  --config checkfleet.yml --output json      # machine-readable (includes "worst")
 checkfleet check all   --config checkfleet.yml --exit-on-bad      # exit 2 on BAD/ERROR, for CI gates
 checkfleet check all   --config checkfleet.yml --output slack     # post a Block Kit report to a Slack webhook
-checkfleet serve       --config checkfleet.yml --listen :9876     # Prometheus exporter (metrics at /metrics)
+
+# scope the findings
+checkfleet check all --config checkfleet.yml --only certs,http    # run/report only these checks
+checkfleet check all --config checkfleet.yml --min-severity warn  # hide OK
+checkfleet check all --config checkfleet.yml --target 'example.*'  # glob on target
+
+# other commands
+checkfleet validate     --config checkfleet.yml                   # validate the config without running checks
+checkfleet serve        --config checkfleet.yml --listen :9876    # Prometheus exporter (metrics at /metrics)
 checkfleet report-issues --config checkfleet.yml                  # open/close GitHub issues from BAD findings
 ```
 

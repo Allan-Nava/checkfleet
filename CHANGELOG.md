@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.19.1
+
+- README: header con logo e badge (release/CI/license/Go), sezioni allineate allo stato attuale.
+  - Rimosso "in arrivo" ormai fatto (output Slack, exporter Prometheus); roadmap moduli aggiornata (redis/valkey, keycloak, mediamtx, s3, smtp, elasticsearch).
+  - Aggiunti a Usage: `validate`, filtri finding (`--only`/`--min-severity`/`--target`), `--stack`; config d'esempio con `retries`/`retry_backoff_ms`.
+- Nuovo asset `docs/assets/logo.png` (256px) per il README.
+
 ## 0.19.0
 
 - Storico & flap detection (CF-32): `--history <file>` registra ogni run in un file **JSONL** (zero dipendenze) e aggiunge un finding `flap` (WARN) per ogni `check/target` che cambia stato ≥ `--flap-changes` volte nelle ultime `--flap-window` run. Package `internal/history` (Append/Recent/Flaps), testato. SQLite scartato per restare zero-dep. **Chiude M8 (engine & UX).**
