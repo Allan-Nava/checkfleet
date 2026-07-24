@@ -103,3 +103,15 @@ checks:
       - {name: hiway.media, type: A, expect: ["203.0.113.10"]}   # drift check
       - {name: cdn.hiway.media, type: CNAME}
       - {name: hiway.media, type: SOA}                            # serial drift across resolvers
+
+  redis:
+    port: 6379                        # Redis/Valkey port
+    # tls: true                       # for rediss / TLS endpoints
+    # username: monitor               # optional ACL user
+    # password_env: REDIS_PASS        # password from this env var, never inline
+    mem_warn_pct: 80                  # WARN when used_memory ≥ % of maxmemory
+    lag_warn_bytes: 16777216          # replica offset lag → WARN (16 MiB)
+    lag_crit_bytes: 134217728         # replica offset lag → BAD  (128 MiB)
+    targets:
+      - 10.20.30.40                   # uses `port`
+      - 10.20.30.41:6380

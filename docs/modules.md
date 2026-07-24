@@ -5,9 +5,9 @@ nav_order: 5
 
 Each module is a self-contained check that knows what "healthy" means for one
 kind of target. Shipping today: `certs`, `http`, `nats`, `haproxy`, `stream`,
-`patroni`, `consul`, `postgres`, `dns`. The
+`patroni`, `consul`, `postgres`, `dns`, `redis`. The
 [backlog](https://github.com/Allan-Nava/checkfleet/blob/main/BACKLOG.md) tracks
-what's next (`endpoint`/`disk`, …).
+what's next (`keycloak`, `mediamtx`, `s3`, `smtp`, `elasticsearch`, …).
 
 ## `certs`
 
@@ -182,14 +182,35 @@ labelled `name/TYPE`, `name/TYPE [consistency]`, `name/TYPE [ttl]`.
 
 See [Configuration → checks.dns](configuration.md#checksdns).
 
+## `redis`
+
+Redis / Valkey health via a minimal in-tree RESP client (no third-party
+dependency) reading `INFO` — read-only commands only.
+
+- **Reachability**: a failed connect/`PING`/`INFO` is `ERROR`; otherwise `OK`
+  with version and role. `WARN` while the dataset is still `loading`.
+- **Memory**: with `mem_warn_pct` and a configured `maxmemory`, `used_memory` at
+  or above that percent is `WARN`.
+- **Replication** (replicas): `master_link_status` not `up` → `BAD`; the
+  master/replica offset lag past `lag_warn_bytes`/`lag_crit_bytes` → `WARN`/`BAD`.
+- **Persistence**: a failed last RDB bgsave, or AOF last write when AOF is
+  enabled, → `WARN`.
+
+Findings are labelled `target`, `target [memory]`, `target [replication]`,
+`target [persistence]`. TLS (`rediss`) and ACL auth are supported; the password
+is read from `password_env`, never stored in config.
+
+See [Configuration → checks.redis](configuration.md#checksredis).
+
 ## Ansible inventory as a target source
 
-The `certs`, `nats`, `haproxy`, `patroni` and `consul` modules can read a
-standard Ansible **INI** inventory (a file or a directory of files):
+The `certs`, `nats`, `haproxy`, `patroni`, `consul` and `redis` modules can read
+a standard Ansible **INI** inventory (a file or a directory of files):
 
 - host lines and their `ansible_host=` value are used;
 - `:vars` and `:children` sections are ignored;
 - hosts are de-duplicated.
 
 Every discovered host becomes a target on the module's `port` (443 for `certs`,
-8222 for `nats`, 8404 for `haproxy`, 8008 for `patroni`, 8500 for `consul`).
+8222 for `nats`, 8404 for `haproxy`, 8008 for `patroni`, 8500 for `consul`,
+6379 for `redis`).

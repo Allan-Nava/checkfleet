@@ -298,6 +298,33 @@ checks:
     targets: [edge.cologno.hiway.media]
 ```
 
+## `checks.redis`
+
+Redis / Valkey health via `INFO`. See [Modules → redis](modules.md#redis).
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `targets` | list | — | Endpoints as `host` or `host:port`. |
+| `port` | int | `6379` | Default port for targets/inventory hosts without one. |
+| `tls` | bool | `false` | Use TLS (`rediss`). |
+| `username` | string | — | Optional ACL username. |
+| `password_env` | string | — | Env var holding the password. **Never inline it.** |
+| `ansible_inventory` | string | — | Ansible INI inventory; every host becomes a target on `port`. |
+| `mem_warn_pct` | int | `80` | WARN when `used_memory` reaches this % of `maxmemory`. |
+| `lag_warn_bytes` | int | `16777216` (16 MiB) | Replica offset lag → WARN. |
+| `lag_crit_bytes` | int | `134217728` (128 MiB) | Replica offset lag → BAD. |
+
+```yaml
+checks:
+  redis:
+    port: 6379
+    password_env: REDIS_PASS
+    mem_warn_pct: 80
+    targets:
+      - 10.20.30.40
+      - 10.20.30.41:6380
+```
+
 ## No secrets in config
 
 Keep credentials out of `checkfleet.yml` — checks never log or echo secrets, and

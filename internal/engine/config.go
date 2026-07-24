@@ -27,6 +27,7 @@ type ChecksConfig struct {
 	Consul   *ConsulConfig   `yaml:"consul"`
 	Postgres *PostgresConfig `yaml:"postgres"`
 	DNS      *DNSConfig      `yaml:"dns"`
+	Redis    *RedisConfig    `yaml:"redis"`
 }
 
 // CertsConfig configures the TLS certificate expiry check.
@@ -174,6 +175,24 @@ type DNSTarget struct {
 	Expect []string `yaml:"expect"`
 }
 
+// RedisConfig configures the Redis/Valkey health check.
+type RedisConfig struct {
+	// Endpoints as host[:port]; Port applies when a target has none.
+	Targets []string `yaml:"targets"`
+	Port    int      `yaml:"port"`
+	// Optional Ansible INI inventory: every host becomes a target.
+	AnsibleInventory string `yaml:"ansible_inventory"`
+	// Optional TLS (rediss) and ACL auth. Password comes from the env var.
+	TLS         bool   `yaml:"tls"`
+	Username    string `yaml:"username"`
+	PasswordEnv string `yaml:"password_env"`
+	// WARN when used_memory reaches this percent of maxmemory (0 disables).
+	MemWarnPct int `yaml:"mem_warn_pct"`
+	// Replica offset lag thresholds in bytes (WARN/BAD).
+	LagWarnBytes int64 `yaml:"lag_warn_bytes"`
+	LagCritBytes int64 `yaml:"lag_crit_bytes"`
+}
+
 // HTTPConfig configures the HTTP probe check.
 type HTTPConfig struct {
 	Targets []HTTPTarget `yaml:"targets"`
@@ -269,6 +288,20 @@ func applyDefaults(cfg *Config) {
 	if cn := cfg.Checks.Consul; cn != nil {
 		if cn.Port <= 0 {
 			cn.Port = 8500
+		}
+	}
+	if r := cfg.Checks.Redis; r != nil {
+		if r.Port <= 0 {
+			r.Port = 6379
+		}
+		if r.MemWarnPct <= 0 {
+			r.MemWarnPct = 80
+		}
+		if r.LagWarnBytes <= 0 {
+			r.LagWarnBytes = 16 << 20 // 16 MiB
+		}
+		if r.LagCritBytes <= 0 {
+			r.LagCritBytes = 128 << 20 // 128 MiB
 		}
 	}
 	if pg := cfg.Checks.Postgres; pg != nil {

@@ -60,8 +60,9 @@ See [Installation](https://allan-nava.github.io/checkfleet/installation/) for al
 | `consul` | Consul cluster via the HTTP API: raft leader & quorum, critical/warning health checks, required KV keys |
 | `postgres` | PostgreSQL via read-only SQL: wraparound risk, connection saturation, inactive replication slots, replica lag |
 | `dns` | DNS resolution via an in-tree client: records resolve, drift from expected, SOA-serial & answer consistency across resolvers, low TTL |
+| `redis` | Redis/Valkey via an in-tree RESP client (INFO): reachability & role, memory vs maxmemory, replication link & lag, persistence (RDB/AOF) |
 
-More modules on the roadmap (see [BACKLOG.md](BACKLOG.md)): `redis`/`valkey`, `keycloak`, `mediamtx`, `s3`, `smtp`, `elasticsearch`, plus more alerting outputs (GitLab issues, Discord/Teams webhooks).
+More modules on the roadmap (see [BACKLOG.md](BACKLOG.md)): `keycloak`, `mediamtx`, `s3`, `smtp`, `elasticsearch`, plus more alerting outputs (GitLab issues, Discord/Teams webhooks).
 
 ## Configuration
 

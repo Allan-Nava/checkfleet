@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.20.0
+
+- Modulo `redis`/`valkey` (CF-19): health via `INFO` con **client RESP minimale in-tree** (zero dipendenze), sola lettura.
+  - Reachability + ruolo (WARN se `loading`); connect/PING/INFO falliti → ERROR.
+  - Memoria: `used_memory` ≥ `mem_warn_pct`% di `maxmemory` → WARN.
+  - Replica: `master_link_status` != up → BAD; offset lag oltre `lag_warn_bytes`/`lag_crit_bytes` → WARN/BAD.
+  - Persistenza: ultimo bgsave RDB o scrittura AOF fallita → WARN.
+  - TLS (`rediss`) e ACL opzionali; password da env (`password_env`), mai in config.
+  - Config `checks.redis` (default `port: 6379`); target espliciti + inventory Ansible. Testato contro un finto server RESP in-test (nessuna infra reale).
+- CLI: `checkfleet check redis`. Docs e config d'esempio aggiornate. Apre **M6**.
+
 ## 0.19.1
 
 - README: header con logo e badge (release/CI/license/Go), sezioni allineate allo stato attuale.
