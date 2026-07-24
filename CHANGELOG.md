@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.21.1
+
+- Roadmap fase 3: nuove milestone e feature candidate nel BACKLOG (CF-38..57).
+  - **M10 — Generici & protocollo**: `tcp`, `tls` profondo, `ntp`, `grpc`, `ldap`.
+  - **M11 — Datastore & broker**: `kafka`, `mongodb`, `rabbitmq`.
+  - **M12 — Output & sink**: `--output junit`, `--output prom-textfile`, dead-man switch (Healthchecks.io), sink generici (webhook/Telegram/syslog).
+  - **M13 — Engine & UX**: `--watch`, `--diff` vs storico, finestre di manutenzione/mute, `${VAR}`+secret da file, completion & `explain`.
+  - **M14 — Distribuzione & supply-chain**: immagine Docker multi-arch su GHCR, firma cosign + SBOM, govulncheck + golangci-lint in CI.
+  - Al push `backlog-sync` apre le 20 nuove issue.
+
 ## 0.21.0
 
 - Modulo `keycloak` (CF-20): health via HTTP/JSON, zero-dip, nessuna credenziale.

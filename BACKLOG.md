@@ -4,7 +4,7 @@ Sorgente unica dei todo. Id stabili `CF-n`; spuntare, non cancellare.
 
 > **Sync automatico issue**: questo file è la fonte di verità. Ogni `CF-n` diventa una issue GitHub (label `backlog`, milestone per sezione) via `cmd/backlog-sync` + workflow `.github/workflows/backlog-sync.yml`. Spuntare un item (`[x]`) chiude la issue al prossimo push; toglierlo la riapre. Idempotente. Non aprire/chiudere le issue a mano: edita qui.
 
-Roadmap a milestone. **Fase 1 (completa)**: cosa monitorare (M1→M3), come consegnarlo (M4), rilascio. **Fase 2**: usarlo meglio (M5 app desktop), più domini (M6), più alerting (M7), engine più solido (M8), qualità (M9). Le versioni sono indicative: ogni modulo/output è comunque una release taggata a sé. **Prossimo:** M5 (Wails), poi M6.
+Roadmap a milestone. **Fase 1 (completa)**: cosa monitorare (M1→M3), come consegnarlo (M4), rilascio. **Fase 2**: usarlo meglio (M5 app desktop), più domini (M6), più alerting (M7), engine più solido (M8), qualità (M9). **Fase 3**: check generici/protocollo (M10), datastore & broker (M11), output & sink (M12), engine & UX (M13), distribuzione & supply-chain (M14). Le versioni sono indicative: ogni modulo/output è comunque una release taggata a sé. **In corso:** M6 (redis ✅, keycloak ✅).
 
 ## M1 — Rete & delivery (~v0.2) — il cuore hiway media
 
@@ -74,3 +74,38 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 
 - [ ] **CF-36 — Fuzz dei parser**: `go test -fuzz` su m3u8 (stream), wire DNS, CSV HAProxy, `/jsz` NATS — i parser che leggono input esterno non fidato.
 - [ ] **CF-37 — Suite d'integrazione opt-in**: harness con docker-compose (nats, haproxy, postgres, consul, redis…) dietro build tag/flag, fuori dai unit test; gira in CI separata, mai nei `go test ./...` di default.
+
+## M10 — Check generici & protocollo (fase 3)
+
+- [ ] **CF-38 — Modulo `tcp`**: connect a `host:port` + banner opzionale (regex/substring), latenza. Reachability generica per qualsiasi servizio; stdlib `net`, zero dip.
+- [ ] **CF-39 — Modulo `tls`** (profondo): validità della catena, scadenza di ogni cert, protocolli/cipher deboli (TLS<1.2), hostname mismatch, OCSP se disponibile. Completa `certs` (che fa solo scadenza leaf). Stdlib `crypto/tls`.
+- [ ] **CF-40 — Modulo `ntp`**: offset dell'orologio oltre soglia, stratum, root dispersion. Query NTP a mano (UDP 123), zero dip. Il drift rompe TLS e token JWT.
+- [ ] **CF-41 — Modulo `grpc`**: gRPC Health Checking Protocol (`grpc.health.v1.Health/Check`) → SERVING. Valutare dip (`google.golang.org/grpc`) vs richiesta HTTP/2 a mano.
+- [ ] **CF-42 — Modulo `ldap`**: bind (anonimo o con credenziali da env) + search di sanity su una base DN. Valutare dip (`go-ldap`) vs protocollo a mano.
+
+## M11 — Datastore & broker (fase 3)
+
+- [ ] **CF-43 — Modulo `kafka`**: broker raggiungibili, controller presente, under-replicated partitions, lag dei consumer group attesi. Valutare dip (`franz-go`/`sarama`) — protocollo Kafka non banale a mano.
+- [ ] **CF-44 — Modulo `mongodb`**: `replSetGetStatus` (primary presente, membri health, lag), `serverStatus` connessioni. Valutare dip (driver mongo) vs wire protocol.
+- [ ] **CF-45 — Modulo `rabbitmq`**: management HTTP API — code con profondità oltre soglia, consumer assenti, nodi cluster. HTTP/JSON, zero dip.
+
+## M12 — Output & sink (fase 3)
+
+- [ ] **CF-46 — `--output junit`**: report XML JUnit (un testcase per finding, failure su BAD/ERROR) per il test tab di CI (TeamCity/GitHub Actions).
+- [ ] **CF-47 — `--output prom-textfile`**: scrive le metriche nel formato del textfile collector di node_exporter (one-shot da cron), alternativa a `serve` per host senza server.
+- [ ] **CF-48 — Dead-man's-switch**: ping a Healthchecks.io (o URL configurabile) a fine run — success/fail in base al `worst`. Rileva anche il caso "checkfleet non ha girato".
+- [ ] **CF-49 — Sink generici**: webhook generico (POST JSON), Telegram, syslog. Interfaccia comune agli output "push".
+
+## M13 — Engine & UX (fase 3)
+
+- [ ] **CF-50 — `--watch`**: riesegue i check a intervallo con vista live aggiornata nel terminale (senza exporter). Utile in incidente.
+- [ ] **CF-51 — `--diff`**: confronto col run precedente nello storico (`--history`) — mostra solo cosa è cambiato (nuovi/risolti/peggiorati).
+- [ ] **CF-52 — Finestre di manutenzione / mute**: sopprime (o declassa) i finding di certi check/target in finestre pianificate; annotate nel report.
+- [ ] **CF-53 — Config dinamica**: interpolazione `${VAR}` nei valori di config + secret da file (`*_file`, stile Docker/K8s secrets), oltre a `*_env`.
+- [ ] **CF-54 — DX CLI**: shell completion (bash/zsh/fish) e `checkfleet explain <modulo>` (cosa controlla e con quali soglie).
+
+## M14 — Distribuzione & supply-chain (fase 3)
+
+- [ ] **CF-55 — Immagine Docker**: immagine multi-arch (linux/amd64+arm64) pubblicata su GHCR via goreleaser, con l'exporter come entrypoint. Utile in k8s/nomad.
+- [ ] **CF-56 — Firma & SBOM**: firma delle release con cosign (keyless) + SBOM (goreleaser). Provenienza verificabile.
+- [ ] **CF-57 — Lint & vuln in CI**: `govulncheck` e `golangci-lint` come gate in CI, accanto a vet/test.
