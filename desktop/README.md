@@ -49,8 +49,19 @@ wails build -platform linux/amd64 \
 Output lands in `build/bin/`. The app icon is `build/appicon.png` (generated
 from `docs/assets/logo.svg`). Packaging is intentionally **separate** from the
 CLI's goreleaser flow (CF-9): the desktop build needs the web toolchain, the CLI
-release must not. A manual GitHub Actions pipeline lives at
-`.github/workflows/desktop.yml` (dispatch-only, so it never runs on CLI tags).
+release must not.
+
+`.github/workflows/desktop.yml` builds the app for macOS/Linux/Windows on every
+`v*` tag and **attaches the executables to that GitHub Release** (the one
+goreleaser creates) — it waits for the release to exist, then uploads:
+
+- `checkfleet-desktop_<version>_darwin_universal.zip` (the `.app`)
+- `checkfleet-desktop_<version>_linux_amd64.tar.gz`
+- `checkfleet-desktop_<version>_windows_amd64.zip`
+
+Because it runs as its own workflow, a desktop build failure never blocks the
+CLI release. It can also be run by hand (`workflow_dispatch`), which uploads the
+same files as workflow artifacts instead.
 
 ## Preview without the toolchain
 

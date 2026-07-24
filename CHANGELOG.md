@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.31.0
+
+- Release: l'app desktop Wails viene allegata a **ogni** GitHub Release (tag `v*`). Il workflow `desktop.yml` builda per macOS (`.app` universale), Linux e Windows, aspetta che goreleaser abbia creato la release e vi carica gli eseguibili (`checkfleet-desktop_<versione>_<os>_<arch>.zip|.tar.gz`). Resta un workflow separato: se il build desktop fallisce, la release del CLI non si blocca. Eseguibile anche a mano via `workflow_dispatch` (carica gli artifact del workflow).
+
 ## 0.30.1
 
 - Desktop: `desktop/go.mod` + `desktop/go.sum` risolti (dep indirette di Wails) così `wails build` gira out-of-the-box; `.gitignore` esteso a `build/darwin`, `build/windows` e al binario vagante. Build verificata in locale: `.app` universale (x86_64+arm64) con frontend embeddato e icona dal logo — conferma che la GUI è un binario nativo unico, non un servizio a parte.
