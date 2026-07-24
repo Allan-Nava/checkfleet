@@ -66,7 +66,7 @@ func main() {
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `usage:
-  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka> --config checkfleet.yml [--output text|markdown|json|junit|prometheus|slack|webhook] [--out-file PATH] [--only ...] [--min-severity warn] [--target glob] [--exit-on-bad]
+  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka> --config checkfleet.yml [--output text|markdown|json|junit|html|prometheus|slack|webhook] [--out-file PATH] [--only ...] [--min-severity warn] [--target glob] [--exit-on-bad]
   checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s]   # export Prometheus metrics
   checkfleet report-issues --config checkfleet.yml [--dry-run]                 # open/close GitHub issues from BAD findings
   checkfleet validate --config checkfleet.yml                                  # validate the config without running the checks
@@ -83,7 +83,7 @@ func runCheck(args []string) error {
 	fs := flag.NewFlagSet("check", flag.ExitOnError)
 	configPath := fs.String("config", "checkfleet.yml", "YAML config file")
 	stack := fs.String("stack", "", "stack profile: overlays checkfleet.<stack>.yml onto the base")
-	format := fs.String("output", "text", "format: text, markdown, json, junit, prometheus, slack, webhook")
+	format := fs.String("output", "text", "format: text, markdown, json, junit, html, prometheus, slack, webhook")
 	outFile := fs.String("out-file", "", "write the output to this file (atomically) instead of stdout")
 	webhookEnv := fs.String("webhook-env", "SLACK_WEBHOOK", "env var holding the Slack webhook URL (slack output)")
 	only := fs.String("only", "", "show only these checks (comma-separated list)")
@@ -234,6 +234,8 @@ func render(format string, res engine.Result, module string) (string, error) {
 	case "junit":
 		s, err := output.JUnit(res, module)
 		return s + "\n", err
+	case "html":
+		return output.HTML(res, module), nil
 	case "prometheus":
 		return output.Prometheus(res), nil
 	default:

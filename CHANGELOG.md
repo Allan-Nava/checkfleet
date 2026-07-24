@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.43.0
+
+- Output `html` (CF-29): `--output html` produce un report **statico autoconsistente** (CSS inline, nessuna risorsa esterna) col tema del sito — pill worst-status, tiles OK/WARN/BAD/ERROR, sezione "Needs attention" e tabella completa; messaggi HTML-escaped. Ideale come artifact di CI o allegato a un incident. Renderer `output.HTML` testato (struttura, summary, escaping). Con `--out-file` scrive su file atomico.
+
 ## 0.42.0
 
 - Fuzz dei parser (CF-36, **chiude M9**): fuzz target `go test -fuzz` sui parser che leggono input esterno non fidato — `parseM3U8` (stream/HLS), `parseMessage` (DNS wire, parsing byte a mano con compression pointer), `parseCSV` (HAProxy stats), decode `/jsz` + `analyzeMeta` (NATS). White-box, in-package; i seed girano già come unit test in `go test ./...`. Nessun crasher trovato (~4.7M esecuzioni totali in locale, 15s/target).

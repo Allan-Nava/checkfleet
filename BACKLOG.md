@@ -59,7 +59,7 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 - [ ] **CF-26 — Issue GitLab**: implementa `issuesync.Client` per GitLab (via `glab`/API), stessa logica di CF-7. Selezione forge in config/flag.
 - [ ] **CF-27 — Webhook Discord/Teams**: output verso Discord/Teams (come Slack), payload adatti, URL da env.
 - [ ] **CF-28 — Alert PagerDuty/Opsgenie**: crea/risolve alert per finding BAD/ERROR (dedup per check+target), chiave di routing da env.
-- [ ] **CF-29 — Report HTML**: `--output html` — report statico autoconsistente (summary, "Da guardare", tabella), tema coerente col sito.
+- [x] **CF-29 — Report HTML**: `--output html` — report statico autoconsistente (summary + tiles, "Needs attention", tabella completa), CSS inline, tema coerente col sito, messaggi HTML-escaped. Renderer `output.HTML` testato. _(v0.43.0)_
 - [ ] **CF-30 — Export OTLP**: esporta i finding come metriche/eventi OpenTelemetry (OTLP), per chi non usa lo scrape Prometheus.
 
 ## M8 — Engine & UX (fase 2)

@@ -61,6 +61,17 @@ tab (TeamCity, GitHub Actions test reporters).
 checkfleet check all --config checkfleet.yml --output junit > report.xml
 ```
 
+## `html`
+
+A self-contained static HTML report (styles inlined, no external resources),
+themed like this site: the worst-status pill, per-status count tiles, a
+"Needs attention" section, and the full table. Nice to publish as a CI artifact
+or attach to an incident.
+
+```bash
+checkfleet check all --config checkfleet.yml --output html --out-file report.html
+```
+
 ## `prometheus`
 
 The Prometheus text-exposition format (same metrics as `serve`), for a one-shot
