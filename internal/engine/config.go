@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -344,11 +345,57 @@ func parseConfig(path string) (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("config: %w", err)
 	}
+	raw, err = expandVars(raw)
+	if err != nil {
+		return nil, fmt.Errorf("config %s: %w", path, err)
+	}
 	var cfg Config
 	if err := yaml.Unmarshal(raw, &cfg); err != nil {
 		return nil, fmt.Errorf("config %s: %w", path, err)
 	}
 	return &cfg, nil
+}
+
+// varPattern matches ${...} interpolation tokens in a config file.
+var varPattern = regexp.MustCompile(`\$\{([^}]*)\}`)
+
+// expandVars interpolates ${...} tokens in the raw config before parsing:
+//
+//	${VAR}            environment variable VAR (empty if unset)
+//	${VAR:-default}   VAR, or default when unset/empty
+//	${file:/path}     the trimmed contents of a file (Docker/K8s secrets)
+//
+// A missing secret file is an error; unknown env vars expand to empty. Use
+// $${ to emit a literal ${.
+func expandVars(raw []byte) ([]byte, error) {
+	src := strings.ReplaceAll(string(raw), "$${", "\x00")
+	var firstErr error
+	out := varPattern.ReplaceAllStringFunc(src, func(tok string) string {
+		inner := tok[2 : len(tok)-1] // strip ${ and }
+		switch {
+		case strings.HasPrefix(inner, "file:"):
+			b, err := os.ReadFile(strings.TrimPrefix(inner, "file:"))
+			if err != nil {
+				if firstErr == nil {
+					firstErr = fmt.Errorf("secret file: %w", err)
+				}
+				return ""
+			}
+			return strings.TrimSpace(string(b))
+		case strings.Contains(inner, ":-"):
+			name, def, _ := strings.Cut(inner, ":-")
+			if v := os.Getenv(name); v != "" {
+				return v
+			}
+			return def
+		default:
+			return os.Getenv(inner)
+		}
+	})
+	if firstErr != nil {
+		return nil, firstErr
+	}
+	return []byte(strings.ReplaceAll(out, "\x00", "${")), nil
 }
 
 // applyDefaults fills in per-module defaults on a parsed config.

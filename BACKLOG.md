@@ -101,7 +101,7 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 - [ ] **CF-50 — `--watch`**: riesegue i check a intervallo con vista live aggiornata nel terminale (senza exporter). Utile in incidente.
 - [ ] **CF-51 — `--diff`**: confronto col run precedente nello storico (`--history`) — mostra solo cosa è cambiato (nuovi/risolti/peggiorati).
 - [ ] **CF-52 — Finestre di manutenzione / mute**: sopprime (o declassa) i finding di certi check/target in finestre pianificate; annotate nel report.
-- [ ] **CF-53 — Config dinamica**: interpolazione `${VAR}` nei valori di config + secret da file (`*_file`, stile Docker/K8s secrets), oltre a `*_env`.
+- [x] **CF-53 — Config dinamica**: interpolazione `${VAR}`, `${VAR:-default}` e `${file:/path}` (secret da file, stile Docker/K8s) nei valori di config, espansa prima del parse; `$${` per `${` letterale; file secret mancante = errore. Testata. (Scelto `${file:…}` come meccanismo generale invece del per-campo `*_file`.) _(v0.45.0)_
 - [ ] **CF-54 — DX CLI**: shell completion (bash/zsh/fish) e `checkfleet explain <modulo>` (cosa controlla e con quali soglie).
 
 ## M14 — Distribuzione & supply-chain (fase 3)

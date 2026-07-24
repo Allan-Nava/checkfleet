@@ -135,3 +135,34 @@ func TestLoadConfigErrors(t *testing.T) {
 		t.Error("invalid YAML: want error")
 	}
 }
+
+func TestConfigInterpolation(t *testing.T) {
+	t.Setenv("CF_TEST_PORT", "8443")
+	dir := t.TempDir()
+	secret := filepath.Join(dir, "pw")
+	if err := os.WriteFile(secret, []byte("s3cr3t\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	body := "timeout_seconds: ${CF_TEST_TIMEOUT:-30}\n" +
+		"checks:\n  certs:\n    port: ${CF_TEST_PORT}\n    targets:\n      - \"${file:" + secret + "}\"\n"
+	cfg, err := LoadConfig(writeConfig(t, body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.TimeoutSeconds != 30 {
+		t.Errorf("default interpolation: want 30, got %d", cfg.TimeoutSeconds)
+	}
+	if cfg.Checks.Certs.Port != 8443 {
+		t.Errorf("env interpolation: want 8443, got %d", cfg.Checks.Certs.Port)
+	}
+	if len(cfg.Checks.Certs.Targets) != 1 || cfg.Checks.Certs.Targets[0] != "s3cr3t" {
+		t.Errorf("file interpolation: want [s3cr3t], got %v", cfg.Checks.Certs.Targets)
+	}
+}
+
+func TestConfigInterpolationMissingFile(t *testing.T) {
+	body := "checks:\n  certs:\n    targets: [\"${file:/no/such/secret}\"]\n"
+	if _, err := LoadConfig(writeConfig(t, body)); err == nil {
+		t.Error("missing secret file: want error")
+	}
+}

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.45.0
+
+- Config dinamica (CF-53): i valori di `checkfleet.yml` supportano l'interpolazione `${VAR}`, `${VAR:-default}` e `${file:/path}` (secret da file, stile Docker/K8s), espansa prima del parse; `$${` per un `${` letterale. Un file secret mancante è errore. `engine.expandVars` testato. Tiene i segreti fuori dalla config restando compatibile coi campi `*_env` dei moduli.
+
 ## 0.44.0
 
 - Output `discord` e `teams` (CF-27): `--output discord` invia un embed a un webhook Discord, `--output teams` una MessageCard a un incoming webhook Microsoft Teams — summary + problemi worst-first (cap 15), colore per worst status. URL da `--webhook-env` (mai in CLI/config), come Slack. Renderer `output.Discord`/`output.Teams` testati (JSON valido, titolo, problemi, cap, all-green).

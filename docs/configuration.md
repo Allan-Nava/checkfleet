@@ -488,3 +488,28 @@ checks:
 
 Keep credentials out of `checkfleet.yml` — checks never log or echo secrets, and
 example/config files must stay clean.
+
+## Dynamic values & secrets
+
+Config values support `${…}` interpolation, expanded before the file is parsed:
+
+| Token | Expands to |
+|---|---|
+| `${VAR}` | environment variable `VAR` (empty if unset) |
+| `${VAR:-default}` | `VAR`, or `default` when unset/empty |
+| `${file:/path}` | the trimmed contents of a file — Docker/Kubernetes secrets |
+
+```yaml
+timeout_seconds: ${CF_TIMEOUT:-30}
+checks:
+  redis:
+    targets: ["${REDIS_HOST}:6379"]
+    password_env: REDIS_PASSWORD          # module secrets still come from env…
+  postgres:
+    targets:
+      - name: primary
+        dsn: "postgres://app:${file:/run/secrets/pg_password}@db:5432/app"
+```
+
+A missing `${file:…}` is a hard error. Use `$${` for a literal `${`. This keeps
+secrets out of `checkfleet.yml` while staying friendly to `*_env` module fields.
