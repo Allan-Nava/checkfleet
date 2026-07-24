@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="{{ site.lang | default: 'en' }}" data-theme="dark">
+<head>
+  {% include head.html %}
+  <title>{{ site.title }} — {{ site.description }}</title>
+</head>
+<body class="is-home">
+  {% include topbar.html %}
+  <div class="layout">
+    {% include sidebar.html %}
+    <main class="content content-home">
+
+      <section class="hero">
+        <div class="hero-copy">
+          <span class="badge">Open source · single Go binary</span>
+          <h1>A fleet of <span class="grad">domain-aware</span> infrastructure checks.</h1>
+          <p class="lede">{{ site.description }} Run the checks generic monitoring can't
+          express — TLS estates, HTTP probes, HAProxy backends, HLS/DASH streams —
+          from CI, cron, or your laptop. Text, Markdown or JSON output.</p>
+          <div class="cta">
+            <a class="btn btn-primary" href="{{ '/installation/' | relative_url }}">Get started</a>
+            <a class="btn btn-ghost" href="{{ site.github.repo }}" target="_blank" rel="noopener">Star on GitHub ↗</a>
+          </div>
+        </div>
+
+        <div class="terminal" aria-hidden="true">
+          <div class="term-bar"><span></span><span></span><span></span><em>checkfleet</em></div>
+          <pre class="term-body"><code><span class="t-prompt">$</span> checkfleet check all --config checkfleet.yml
+
+<span class="s-bad">🔴 BAD </span>  http     https://example.com/health   HTTP 404 (want 200), 151ms
+<span class="s-ok">🟢 OK  </span>  certs    example.com:443              expires in 41 days (2026-09-02)
+<span class="s-ok">🟢 OK  </span>  http     https://example.com/         HTTP 200, 168ms
+
+<span class="t-dim">3 checks: 2 OK, 0 WARN, 1 BAD, 0 ERROR (in 227ms)</span></code></pre>
+        </div>
+      </section>
+
+      <section class="features">
+        <article class="card">
+          <div class="card-ico">⚡</div>
+          <h3>One static binary</h3>
+          <p>No agents, no server, no runtime. One YAML config and a Go binary you drop anywhere.</p>
+        </article>
+        <article class="card">
+          <div class="card-ico">🎯</div>
+          <h3>Domain-aware</h3>
+          <p>Checks that know what <em>healthy</em> means for TLS, HAProxy, or an HLS stream — not just <code>up/down</code>.</p>
+        </article>
+        <article class="card">
+          <div class="card-ico">🧩</div>
+          <h3>Pluggable modules</h3>
+          <p>Certs, HTTP, HAProxy, stream health — each a self-contained check. Adding one is a small package.</p>
+        </article>
+        <article class="card">
+          <div class="card-ico">🚦</div>
+          <h3>CI-friendly exit codes</h3>
+          <p>A check that <em>ran</em> is a success. Gate a pipeline on findings with <code>--exit-on-bad</code>.</p>
+        </article>
+        <article class="card">
+          <div class="card-ico">🛰️</div>
+          <h3>Fleet-aware</h3>
+          <p>Point the certs check at your Ansible inventory and every host becomes a target.</p>
+        </article>
+        <article class="card">
+          <div class="card-ico">📄</div>
+          <h3>Reports you can paste</h3>
+          <p>Terminal, ops-style Markdown, or JSON — worst findings first, ready for your docs.</p>
+        </article>
+      </section>
+
+      <section class="home-doc">
+        {{ content }}
+      </section>
+
+      <footer class="content-footer">
+        <span>© {{ 'now' | date: '%Y' }} checkfleet · MIT</span>
+        <a href="{{ site.github.repo }}" target="_blank" rel="noopener">GitHub ↗</a>
+      </footer>
+    </main>
+  </div>
+
+  <div class="scrim" id="scrim" hidden></div>
+  <script src="{{ '/assets/js/main.js' | relative_url }}" defer></script>
+</body>
+</html>

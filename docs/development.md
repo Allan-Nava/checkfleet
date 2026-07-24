@@ -3,10 +3,6 @@ title: Development
 nav_order: 8
 ---
 
-[← back to index](index.md)
-
-# Development
-
 ```bash
 go test ./...    # unit tests + modules against local in-test servers — no network
 go vet ./...

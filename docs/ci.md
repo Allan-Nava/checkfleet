@@ -3,10 +3,6 @@ title: CI integration
 nav_order: 7
 ---
 
-[← back to index](index.md)
-
-# CI integration
-
 checkfleet is built to run in a pipeline. Because a check that ran is a
 *success*, a normal run exits `0` regardless of findings — you decide when a
 finding should fail the build.

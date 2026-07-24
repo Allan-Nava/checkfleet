@@ -1,0 +1,25 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b1120">
+
+{%- comment -%} SEO meta / OpenGraph via jekyll-seo-tag {%- endcomment -%}
+{% seo %}
+
+<link rel="icon" type="image/svg+xml" href="{{ '/assets/favicon.svg' | relative_url }}">
+<link rel="icon" type="image/png" sizes="32x32" href="{{ '/assets/favicon.png' | relative_url }}">
+<link rel="apple-touch-icon" href="{{ '/assets/apple-touch-icon.png' | relative_url }}">
+<link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
+<script>window.CF_BASEURL = {{ site.baseurl | default: '' | jsonify }};</script>
+
+{%- comment -%} Set the theme before paint to avoid a flash of the wrong mode. {%- endcomment -%}
+<script>
+  (function () {
+    try {
+      var t = localStorage.getItem('cf-theme');
+      if (!t) t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+    } catch (e) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  })();
+</script>

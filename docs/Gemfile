@@ -1,6 +1,8 @@
 source "https://rubygems.org"
 
 # GitHub Pages docs site (built by .github/workflows/pages.yml).
+# Custom in-repo theme (layouts + SCSS under docs/), no third-party theme gem.
 gem "jekyll", "~> 4.3.4"
-gem "just-the-docs", "0.10.1"        # documentation theme: sidebar nav + search
 gem "jekyll-relative-links", "~> 0.7" # keep [text](page.md) cross-links working
+gem "jekyll-seo-tag", "~> 2.8"        # <head> meta/OpenGraph tags
+gem "webrick", "~> 1.8"               # required by `jekyll serve` on Ruby 3+

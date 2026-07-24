@@ -1,0 +1,21 @@
+{%- assign nav_pages = site.html_pages | where_exp: "p", "p.nav_order" | sort: "nav_order" -%}
+<aside class="sidebar" id="sidebar">
+  <nav class="side-nav" aria-label="Documentation">
+    <p class="side-nav-title">Documentation</p>
+    <ul>
+      {%- for p in nav_pages -%}
+      <li>
+        <a href="{{ p.url | relative_url }}"
+           class="{% if p.url == page.url %}active{% endif %}"
+           {% if p.url == page.url %}aria-current="page"{% endif %}>{{ p.title }}</a>
+      </li>
+      {%- endfor -%}
+    </ul>
+    <p class="side-nav-title">Project</p>
+    <ul>
+      <li><a href="{{ site.github.repo }}/blob/main/BACKLOG.md" target="_blank" rel="noopener">Roadmap / Backlog ↗</a></li>
+      <li><a href="{{ site.github.repo }}/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog ↗</a></li>
+      <li><a href="{{ site.github.repo }}" target="_blank" rel="noopener">GitHub ↗</a></li>
+    </ul>
+  </nav>
+</aside>

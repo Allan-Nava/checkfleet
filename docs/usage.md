@@ -3,12 +3,8 @@ title: Usage
 nav_order: 4
 ---
 
-[← back to index](index.md)
-
-# Usage
-
 ```
-checkfleet check <all|certs|http> --config checkfleet.yml [--output text|markdown|json] [--exit-on-bad]
+checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns> --config checkfleet.yml [--output text|markdown|json] [--exit-on-bad]
 checkfleet version
 ```
 

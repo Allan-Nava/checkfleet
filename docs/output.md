@@ -3,10 +3,6 @@ title: Output formats
 nav_order: 6
 ---
 
-[← back to index](index.md)
-
-# Output formats
-
 Pick one with `--output`. Every format renders the same findings, sorted
 worst-first.
 

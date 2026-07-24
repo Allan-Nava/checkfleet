@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.1
+
+- Docs site: nuovo tema custom (layout + SCSS in-repo), abbandonato `just-the-docs`.
+  - Dark-first con toggle chiaro/scuro (preferenza salvata), palette emerald/slate.
+  - Home "landing": hero con demo terminale, griglia feature, quickstart.
+  - Sidebar di navigazione, TOC "on this page" con scroll-spy, ricerca client-side (`search.json`), paginazione prev/next, syntax highlighting Rouge brandizzato.
+  - SEO/OpenGraph via `jekyll-seo-tag`; permalink "pretty" (`/installation/`).
+- Nuovo logo: monogramma "cf"/check in emerald/slate — `docs/assets/logo.svg`, favicon SVG + fallback PNG (32px, apple-touch 180px).
+- Gemfile docs: rimosso `just-the-docs`, aggiunti `jekyll-seo-tag` e `webrick`.
+
 ## 0.7.0
 
 - Modulo `postgres` (CF-11): health PostgreSQL via SQL di sola lettura (driver `pgx`), mai DDL/scritture.

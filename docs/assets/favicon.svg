@@ -1,0 +1,17 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="checkfleet">
+  <defs>
+    <linearGradient id="fbg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0b1120"/>
+      <stop offset="1" stop-color="#111c34"/>
+    </linearGradient>
+    <linearGradient id="fck" x1="16" y1="46" x2="50" y2="16" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#059669"/>
+      <stop offset="1" stop-color="#34d399"/>
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="62" height="62" rx="15" fill="url(#fbg)"/>
+  <path d="M42 17 A17 17 0 1 0 42 47"
+        fill="none" stroke="#2dd4bf" stroke-width="5.5" stroke-linecap="round" stroke-opacity="0.85"/>
+  <path d="M20 33 L29 42 L47 21"
+        fill="none" stroke="url(#fck)" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -3,3 +3,8 @@
 /checkfleet
 dist/
 .DS_Store
+
+# Jekyll docs site (built by .github/workflows/pages.yml).
+docs/_site/
+docs/.jekyll-cache/
+docs/Gemfile.lock

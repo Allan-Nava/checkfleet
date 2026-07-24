@@ -1,0 +1,14 @@
+---
+layout: null
+sitemap: false
+---
+[
+  {%- assign docs = site.html_pages | where_exp: "p", "p.title" -%}
+  {%- for p in docs -%}
+  {
+    "title": {{ p.title | jsonify }},
+    "url": {{ p.url | relative_url | jsonify }},
+    "content": {{ p.content | strip_html | normalize_whitespace | truncatewords: 90 | jsonify }}
+  }{%- unless forloop.last -%},{%- endunless -%}
+  {%- endfor -%}
+]

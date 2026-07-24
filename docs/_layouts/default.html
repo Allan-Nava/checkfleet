@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="{{ site.lang | default: 'en' }}" data-theme="dark">
+<head>
+  {% include head.html %}
+  <title>{% if page.title and page.title != 'Home' %}{{ page.title }} · {{ site.title }}{% else %}{{ site.title }} — {{ site.description }}{% endif %}</title>
+</head>
+<body>
+  {% include topbar.html %}
+  <div class="layout">
+    {% include sidebar.html %}
+    <main class="content">
+      <article class="doc">
+        {%- if page.title and page.title != 'Home' -%}
+        <h1 class="doc-title">{{ page.title }}</h1>
+        {%- endif -%}
+        {{ content }}
+      </article>
+
+      {%- assign nav_pages = site.html_pages | where_exp: "p", "p.nav_order" | sort: "nav_order" -%}
+      {%- assign prev = nil -%}
+      {%- assign next = nil -%}
+      {%- for p in nav_pages -%}
+        {%- if p.url == page.url -%}
+          {%- assign idx = forloop.index0 -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {%- if idx -%}
+        {%- assign pidx = idx | minus: 1 -%}
+        {%- assign nidx = idx | plus: 1 -%}
+        {%- if idx > 0 -%}{%- assign prev = nav_pages[pidx] -%}{%- endif -%}
+        {%- assign prev = nav_pages[pidx] -%}
+        {%- assign next = nav_pages[nidx] -%}
+      {%- endif -%}
+      {%- if page.nav_order -%}
+      <nav class="pager">
+        {%- if page.nav_order > 1 and prev -%}
+        <a class="pager-prev" href="{{ prev.url | relative_url }}"><span>← Previous</span><strong>{{ prev.title }}</strong></a>
+        {%- else -%}<span></span>{%- endif -%}
+        {%- if next -%}
+        <a class="pager-next" href="{{ next.url | relative_url }}"><span>Next →</span><strong>{{ next.title }}</strong></a>
+        {%- endif -%}
+      </nav>
+      {%- endif -%}
+
+      <footer class="content-footer">
+        <span>© {{ 'now' | date: '%Y' }} checkfleet · MIT</span>
+        <a href="{{ site.github.repo }}/edit/main/docs/{{ page.path | remove_first: 'docs/' }}" target="_blank" rel="noopener">Edit this page ↗</a>
+      </footer>
+    </main>
+
+    <aside class="toc" id="toc" aria-label="On this page"></aside>
+  </div>
+
+  <div class="scrim" id="scrim" hidden></div>
+  <script src="{{ '/assets/js/main.js' | relative_url }}" defer></script>
+</body>
+</html>

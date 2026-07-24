@@ -3,15 +3,11 @@ title: Modules
 nav_order: 5
 ---
 
-[← back to index](index.md)
-
-# Modules
-
 Each module is a self-contained check that knows what "healthy" means for one
 kind of target. Shipping today: `certs`, `http`, `nats`, `haproxy`, `stream`,
-`patroni`, `consul`, `postgres`. The
+`patroni`, `consul`, `postgres`, `dns`. The
 [backlog](https://github.com/Allan-Nava/checkfleet/blob/main/BACKLOG.md) tracks
-what's next (`dns`, `endpoint`/`disk`, …).
+what's next (`endpoint`/`disk`, …).
 
 ## `certs`
 
@@ -165,6 +161,26 @@ Findings are labelled `name`, `name [wraparound]`, `name [connections]`,
 target's `password_env` — never stored in the config.
 
 See [Configuration → checks.postgres](configuration.md#checkspostgres).
+
+## `dns`
+
+DNS resolution health, using a small in-tree DNS client (no third-party
+dependency) so it can query specific resolvers and read TTLs and SOA serials.
+
+- **Resolution**: a name that no resolver answers is `ERROR`; a name that
+  resolves to no record of the requested type is `BAD`.
+- **Drift**: with `expect`, an answer set different from the expected values is
+  `BAD` (for `SOA` the serial is compared).
+- **Consistency across resolvers**: when resolvers return different answers —
+  including divergent SOA serials (a propagation lag) — that's `WARN`; so is a
+  resolver that fails to answer while others succeed.
+- **TTL**: with `min_ttl_seconds`, an answer TTL below the threshold is `WARN`.
+
+Supported record types: `A`, `AAAA`, `CNAME`, `NS`, `TXT`, `SOA`. Resolvers
+default to the system `/etc/resolv.conf` when none are configured. Findings are
+labelled `name/TYPE`, `name/TYPE [consistency]`, `name/TYPE [ttl]`.
+
+See [Configuration → checks.dns](configuration.md#checksdns).
 
 ## Ansible inventory as a target source
 

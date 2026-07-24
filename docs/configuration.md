@@ -3,10 +3,6 @@ title: Configuration
 nav_order: 3
 ---
 
-[← back to index](index.md)
-
-# Configuration
-
 checkfleet reads a single YAML file (default `checkfleet.yml`, override with
 `--config`). A [`checkfleet.example.yml`](https://github.com/Allan-Nava/checkfleet/blob/main/checkfleet.example.yml)
 ships with the repo — copy it and adapt.
@@ -245,6 +241,35 @@ checks:
 
 The monitoring role needs only read access (it queries `pg_stat_*`,
 `pg_database`, `pg_replication_slots`, `pg_settings`).
+
+## `checks.dns`
+
+DNS resolution health. See [Modules → dns](modules.md#dns).
+
+Top-level keys:
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `resolvers` | list | system | Resolvers as `host` or `host:port` (default port 53). Empty → `/etc/resolv.conf`. |
+| `min_ttl_seconds` | int | `0` (off) | WARN when any answer's TTL is below this. |
+
+`checks.dns.targets` is a list of:
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `name` | string | — | Domain to resolve. Required. |
+| `type` | string | `A` | Record type: `A`, `AAAA`, `CNAME`, `NS`, `TXT`, `SOA`. |
+| `expect` | list | — | Expected value set; a different answer is BAD (drift). For `SOA`, compared against the serial. |
+
+```yaml
+checks:
+  dns:
+    resolvers: [10.20.30.53, 8.8.8.8]
+    min_ttl_seconds: 30
+    targets:
+      - {name: hiway.media, type: A, expect: ["203.0.113.10"]}
+      - {name: hiway.media, type: SOA}
+```
 
 ## No secrets in config
 

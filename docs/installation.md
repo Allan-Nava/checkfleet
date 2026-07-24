@@ -3,10 +3,6 @@ title: Installation
 nav_order: 2
 ---
 
-[← back to index](index.md)
-
-# Installation
-
 ## With `go install`
 
 ```bash

@@ -1,22 +1,21 @@
 ---
 title: Home
 nav_order: 1
+layout: home
+description: A fleet of domain-aware infrastructure checks in one Go binary.
 ---
 
-**A fleet of infrastructure checks in one binary.**
+## Quickstart
 
-checkfleet runs *domain-aware* health checks — the kind generic monitoring can't
-express — and reports them as terminal output, an ops-style markdown report, or
-JSON. One static Go binary, one YAML config, no agents, no server.
+```bash
+# build from source
+go build -o checkfleet ./cmd/checkfleet
 
-```
-$ checkfleet check all --config checkfleet.yml
+# run every configured check
+./checkfleet check all --config checkfleet.yml
 
-🔴 BAD   http     https://example.com/health   HTTP 404 (atteso 200), 151ms
-🟢 OK    certs    example.com:443              scade tra 41 giorni (2026-09-02, CN=*.example.com)
-🟢 OK    http     https://example.com/         HTTP 200, 168ms
-
-3 check: 2 OK, 0 WARN, 1 BAD, 0 ERROR (in 227ms)
+# just TLS expiry, as a Markdown report
+./checkfleet check certs --config checkfleet.yml --output markdown
 ```
 
 ## Documentation
