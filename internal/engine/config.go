@@ -28,6 +28,7 @@ type ChecksConfig struct {
 	Postgres *PostgresConfig `yaml:"postgres"`
 	DNS      *DNSConfig      `yaml:"dns"`
 	Redis    *RedisConfig    `yaml:"redis"`
+	Keycloak *KeycloakConfig `yaml:"keycloak"`
 }
 
 // CertsConfig configures the TLS certificate expiry check.
@@ -191,6 +192,17 @@ type RedisConfig struct {
 	// Replica offset lag thresholds in bytes (WARN/BAD).
 	LagWarnBytes int64 `yaml:"lag_warn_bytes"`
 	LagCritBytes int64 `yaml:"lag_crit_bytes"`
+}
+
+// KeycloakConfig configures the Keycloak health check.
+type KeycloakConfig struct {
+	// Base URL (scheme + host [+ path prefix like /auth]), no trailing slash.
+	BaseURL string `yaml:"base_url"`
+	// Optional health endpoint (e.g. https://auth:9000/health/ready); checked
+	// only when set (Keycloak often serves health on the management port).
+	HealthURL string `yaml:"health_url"`
+	// Realms to verify via their OIDC discovery document.
+	Realms []string `yaml:"realms"`
 }
 
 // HTTPConfig configures the HTTP probe check.

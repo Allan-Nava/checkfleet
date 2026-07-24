@@ -47,7 +47,7 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 ## M6 — Più moduli di dominio (fase 2)
 
 - [x] **CF-19 — Modulo `redis`/`valkey`**: reachability (`PING`)+`INFO` con **client RESP minimale in-tree** (zero dip), uso memoria vs `maxmemory`, replica (link up/down, offset lag), persistenza RDB/AOF, loading. TLS + ACL (password da env). _(v0.20.0)_
-- [ ] **CF-20 — Modulo `keycloak`**: health/ready endpoint, token endpoint del realm risponde, certificati/allineamento issuer, versione. Nessuna credenziale in config (client-credentials da env se serve).
+- [x] **CF-20 — Modulo `keycloak`**: health endpoint UP, discovery OIDC per realm (token_endpoint presente, issuer coerente con `/realms/<realm>`). HTTP/JSON zero-dip, nessuna credenziale. _(v0.21.0; versione via admin rimandata — richiede auth)_
 - [ ] **CF-21 — Modulo `mediamtx`**: API di mediamtx — path attivi, reader/publisher per path, path attesi presenti, ingest fermi. Codifica l'uso hiway (KV_mediamtx nel runbook NATS).
 - [ ] **CF-22 — Modulo `ingest` (RTMP/SRT)**: l'endpoint di ingest accetta connessioni (handshake TCP/RTMP, o SRT), latenza. Segnale "lo streamer riesce a pubblicare?".
 - [ ] **CF-23 — Modulo `s3`/object storage**: bucket raggiungibile, oggetto sentinella presente e fresco (last-modified sotto soglia), spazio/quota se esposta. Credenziali da env.

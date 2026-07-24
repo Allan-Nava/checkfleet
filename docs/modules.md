@@ -5,9 +5,9 @@ nav_order: 5
 
 Each module is a self-contained check that knows what "healthy" means for one
 kind of target. Shipping today: `certs`, `http`, `nats`, `haproxy`, `stream`,
-`patroni`, `consul`, `postgres`, `dns`, `redis`. The
+`patroni`, `consul`, `postgres`, `dns`, `redis`, `keycloak`. The
 [backlog](https://github.com/Allan-Nava/checkfleet/blob/main/BACKLOG.md) tracks
-what's next (`keycloak`, `mediamtx`, `s3`, `smtp`, `elasticsearch`, …).
+what's next (`mediamtx`, `s3`, `smtp`, `elasticsearch`, …).
 
 ## `certs`
 
@@ -201,6 +201,23 @@ Findings are labelled `target`, `target [memory]`, `target [replication]`,
 is read from `password_env`, never stored in config.
 
 See [Configuration → checks.redis](configuration.md#checksredis).
+
+## `keycloak`
+
+Keycloak health via HTTP/JSON — read-only, no admin credentials.
+
+- **Health** (when `health_url` is set): the endpoint (e.g. `/health/ready`,
+  often on the management port) must report `status: UP` → `OK`; `DOWN` → `BAD`;
+  unreachable → `ERROR`.
+- **Per realm**: the OIDC discovery document
+  (`/realms/<realm>/.well-known/openid-configuration`) must return `200` with a
+  `token_endpoint` → `OK`. A `404`/invalid document → `BAD` (realm missing); an
+  `issuer` that doesn't end with `/realms/<realm>` → `WARN` (usually a
+  proxy/frontend-URL misconfiguration); unreachable → `ERROR`.
+
+Findings are labelled `health` and `realm/<name>`.
+
+See [Configuration → checks.keycloak](configuration.md#checkskeycloak).
 
 ## Ansible inventory as a target source
 

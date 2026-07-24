@@ -325,6 +325,24 @@ checks:
       - 10.20.30.41:6380
 ```
 
+## `checks.keycloak`
+
+Keycloak health via HTTP. See [Modules → keycloak](modules.md#keycloak).
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `base_url` | string | — | Scheme + host (+ `/auth` prefix on old versions), no trailing slash. |
+| `health_url` | string | — | Optional health endpoint (often on the management port `:9000`). Checked only when set. |
+| `realms` | list | — | Realm names to verify via their OIDC discovery document. |
+
+```yaml
+checks:
+  keycloak:
+    base_url: https://auth.hiway.media
+    health_url: https://auth.hiway.media:9000/health/ready
+    realms: [hiway, partners]
+```
+
 ## No secrets in config
 
 Keep credentials out of `checkfleet.yml` — checks never log or echo secrets, and

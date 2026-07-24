@@ -115,3 +115,10 @@ checks:
     targets:
       - 10.20.30.40                   # uses `port`
       - 10.20.30.41:6380
+
+  keycloak:
+    base_url: https://auth.hiway.media   # scheme+host (+ /auth prefix on old versions), no trailing slash
+    health_url: https://auth.hiway.media:9000/health/ready   # optional (often the management port)
+    realms:
+      - hiway
+      - partners

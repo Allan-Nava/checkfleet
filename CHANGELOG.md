@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.21.0
+
+- Modulo `keycloak` (CF-20): health via HTTP/JSON, zero-dip, nessuna credenziale.
+  - Health endpoint (`health_url`, spesso sulla porta management) → UP=OK, DOWN=BAD, irraggiungibile=ERROR.
+  - Per realm: discovery OIDC (`/realms/<realm>/.well-known/openid-configuration`) → token_endpoint presente=OK, 404/invalida=BAD, issuer non coerente con `/realms/<realm>`=WARN (misconfig proxy), irraggiungibile=ERROR.
+  - Config `checks.keycloak` (`base_url`, `health_url`, `realms`); testato con httptest.
+- CLI: `checkfleet check keycloak`. Docs e config d'esempio aggiornate.
+
 ## 0.20.0
 
 - Modulo `redis`/`valkey` (CF-19): health via `INFO` con **client RESP minimale in-tree** (zero dipendenze), sola lettura.
