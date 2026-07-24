@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.33.0
+
+- Test E2E dell'app desktop (nuovo job `e2e` in `desktop-test.yml`): builda il binario Wails reale, lo lancia headless sotto **Xvfb** con config seed + auto-run, e verifica che la **webview nativa** crei una finestra e renderizzi (screenshot non-blank via `xdotool`+ImageMagick, caricato come artifact). Esercita embed + runtime Wails + binding, non solo il frontend in browser.
+- Nuova feature abilitante (utile anche come "apri con"): `App.StartupConfig()` — l'app si apre sulla config indicata da `CHECKFLEET_CONFIG` (fallback `./checkfleet.yml`) e, se `CHECKFLEET_AUTORUN=1`, esegue i check al lancio. Testata (`app_test.go`) e cablata nel frontend.
+- I test desktop ora coprono tre livelli: **binding Go** (unit), **smoke frontend** (render in headless Chrome) ed **E2E** (app impacchettata reale).
+
 ## 0.32.1
 
 - Homebrew: nuovo workflow `brew-test.yml` che verifica `brew install Allan-Nava/tap/checkfleet` end-to-end su macOS **Apple Silicon (macos-14) e Intel (macos-13)** — gira dopo ogni Release (via `workflow_run`, solo se la release è passata), a mano (`workflow_dispatch`, con assert opzionale della versione) e settimanale. Controlla: install dalla tap, `checkfleet version` reale (non `dev`), attributo `com.apple.quarantine` rimosso, e smoke di un check (`tcp`). `HOMEBREW_NO_REQUIRE_TAP_TRUST` per l'install headless su Homebrew 6+.

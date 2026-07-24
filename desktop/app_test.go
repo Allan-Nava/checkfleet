@@ -129,6 +129,25 @@ func TestDefaultConfigPath(t *testing.T) {
 	}
 }
 
+func TestStartupConfig(t *testing.T) {
+	app := NewApp("test")
+
+	// No env, no ./checkfleet.yml → empty, no auto-run.
+	t.Chdir(t.TempDir())
+	t.Setenv("CHECKFLEET_CONFIG", "")
+	t.Setenv("CHECKFLEET_AUTORUN", "")
+	if s := app.StartupConfig(); s.Path != "" || s.AutoRun {
+		t.Fatalf("StartupConfig = %+v, want empty/no-autorun", s)
+	}
+
+	// Env-chosen path + auto-run.
+	t.Setenv("CHECKFLEET_CONFIG", "/etc/checkfleet.yml")
+	t.Setenv("CHECKFLEET_AUTORUN", "1")
+	if s := app.StartupConfig(); s.Path != "/etc/checkfleet.yml" || !s.AutoRun {
+		t.Fatalf("StartupConfig = %+v, want path set and autoRun true", s)
+	}
+}
+
 func contains(ss []string, want string) bool {
 	for _, s := range ss {
 		if s == want {

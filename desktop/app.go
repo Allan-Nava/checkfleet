@@ -148,6 +148,24 @@ func (a *App) DefaultConfigPath() string {
 	return ""
 }
 
+// Startup carries the config the app should open with and whether to run it
+// immediately, chosen at launch via the environment.
+type Startup struct {
+	Path    string `json:"path"`
+	AutoRun bool   `json:"autoRun"`
+}
+
+// StartupConfig lets the app open straight into a fleet: CHECKFLEET_CONFIG picks
+// the config (falling back to ./checkfleet.yml) and CHECKFLEET_AUTORUN=1 runs it
+// on load. Handy for "open with" and used by the end-to-end test.
+func (a *App) StartupConfig() Startup {
+	path := os.Getenv("CHECKFLEET_CONFIG")
+	if path == "" {
+		path = a.DefaultConfigPath()
+	}
+	return Startup{Path: path, AutoRun: os.Getenv("CHECKFLEET_AUTORUN") == "1"}
+}
+
 // OpenConfigDialog shows a native file picker and returns the chosen path.
 func (a *App) OpenConfigDialog() (string, error) {
 	return wruntime.OpenFileDialog(a.ctx, wruntime.OpenDialogOptions{

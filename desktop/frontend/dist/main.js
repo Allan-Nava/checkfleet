@@ -17,6 +17,7 @@
   const Backend = wails || {
     Version: async () => "preview",
     DefaultConfigPath: async () => "/home/ops/checkfleet.yml",
+    StartupConfig: async () => ({ path: "/home/ops/checkfleet.yml", autoRun: false }),
     ListStacks: async () => ["prod", "edge", "staging"],
     OpenConfigDialog: async () => "/home/ops/checkfleet.yml",
     SaveReport: async (fmt) => "~/checkfleet-report." + (fmt === "json" ? "json" : "md"),
@@ -180,17 +181,24 @@
 
     bind();
     $("version").textContent = await Backend.Version();
-    const def = await Backend.DefaultConfigPath();
-    if (def) $("configPath").value = def;
+
+    // Startup config: env-chosen path (CHECKFLEET_CONFIG) or ./checkfleet.yml,
+    // plus an optional auto-run (CHECKFLEET_AUTORUN=1) so the app can open
+    // straight into a fleet.
+    let startup = { path: "", autoRun: false };
+    try { startup = (await Backend.StartupConfig()) || startup; } catch (_) {}
+    if (startup.path) $("configPath").value = startup.path;
     updateHint();
     await refreshStacks();
 
-    // In preview mode, add fake window controls and auto-run with sample data.
     if (IS_MOCK) {
+      // Preview: add fake window controls and auto-run with sample data.
       const tl = document.createElement("div");
       tl.className = "fake-traffic";
       tl.innerHTML = "<i></i><i></i><i></i>";
       document.querySelector(".titlebar").appendChild(tl);
+      run();
+    } else if (startup.autoRun && startup.path) {
       run();
     }
   }

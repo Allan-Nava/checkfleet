@@ -55,3 +55,65 @@ jobs:
           grep -q 'cell-check">stream'  dom.html || fail "findings table not populated"
           grep -q 'live.example.com'    dom.html || fail "finding target not rendered"
           echo "frontend smoke test OK — fleet view renders"
+
+  # End-to-end: build the real Wails binary, launch it headless under Xvfb with
+  # a seeded config + auto-run, and assert the actual native webview creates a
+  # window and renders (non-blank). Exercises embed + Wails runtime + bindings.
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+      - name: Prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev \
+            xvfb xdotool imagemagick
+      - name: Install Wails
+        run: |
+          go install github.com/wailsapp/wails/v2/cmd/wails@v2.10.2
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+      - name: Build the app
+        working-directory: desktop
+        run: |
+          go mod tidy
+          wails build -tags webkit2_41 -platform linux/amd64 -ldflags "-X main.version=e2e"
+      - name: Launch under Xvfb and assert it renders
+        run: |
+          set -x
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1280x800x24 >/tmp/xvfb.log 2>&1 &
+          sleep 2
+          # Software rendering so webkit works without a GPU.
+          export WEBKIT_DISABLE_COMPOSITING_MODE=1
+          export LIBGL_ALWAYS_SOFTWARE=1
+          # A reachable TCP target for the tcp check, then open the app on it.
+          python3 -m http.server 9999 >/tmp/listener.log 2>&1 &
+          printf 'timeout_seconds: 5\nchecks:\n  tcp:\n    targets:\n      - address: "127.0.0.1:9999"\n' > "$PWD/checkfleet.yml"
+          export CHECKFLEET_CONFIG="$PWD/checkfleet.yml"
+          export CHECKFLEET_AUTORUN=1
+          ./desktop/build/bin/checkfleet-desktop >/tmp/app.log 2>&1 &
+          APP=$!
+          ok=""
+          for i in $(seq 1 30); do
+            if ! kill -0 "$APP" 2>/dev/null; then echo "::error::app exited early"; cat /tmp/app.log; exit 1; fi
+            if xdotool search --name checkfleet >/dev/null 2>&1; then ok=1; break; fi
+            sleep 1
+          done
+          [ -n "$ok" ] || { echo "::error::app window never appeared"; cat /tmp/app.log; exit 1; }
+          sleep 3   # let the auto-run render its findings
+          import -window root e2e.png
+          colors=$(identify -format '%k' e2e.png)
+          echo "unique colors in screenshot: $colors"
+          kill "$APP" 2>/dev/null || true
+          [ "${colors:-0}" -gt 20 ] || { echo "::error::window looks blank ($colors colors)"; exit 1; }
+          echo "E2E OK: the packaged app launched and rendered a non-blank window"
+      - name: Upload screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-e2e-screenshot
+          path: e2e.png
+          if-no-files-found: ignore
