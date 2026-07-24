@@ -167,3 +167,13 @@ view (text output), handy during an incident. Ctrl-C to stop.
 ```bash
 checkfleet check all --config checkfleet.yml --watch 5s
 ```
+
+## Diff vs the previous run
+
+With `--history <file>`, `--diff` prints only what changed since the previous
+recorded run — new / resolved / worsened / improved findings — instead of the
+full table. Great for a cron that only reports deltas.
+
+```bash
+checkfleet check all --config checkfleet.yml --history runs.jsonl --diff
+```

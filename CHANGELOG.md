@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.49.0
+
+- `--diff` (CF-51): con `--history <file>`, `checkfleet check … --diff` mostra solo cosa è cambiato rispetto al run precedente registrato — finding **new / resolved / worsened / improved** per check/target — invece della tabella completa. Utile per un cron che riporta solo i delta. `engine.DiffStatus` pura e testata; helper CLI `diffFromRecords`/`formatDiff` testati. **Chiude M13.**
+
 ## 0.48.0
 
 - `--watch` (CF-50): `checkfleet check … --watch <interval>` riesegue i check a intervallo e ridisegna una vista live nel terminale (clear-screen + header + output text), Ctrl-C per fermare. Maintenance e filtri applicati a ogni tick. Helper `watchFrame` testato (loop I/O a parte).

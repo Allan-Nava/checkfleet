@@ -76,7 +76,7 @@ func main() {
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `usage:
-  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka> --config checkfleet.yml [--output text|markdown|json|junit|html|prometheus|slack|discord|teams|webhook] [--out-file PATH] [--only ...] [--min-severity warn] [--target glob] [--watch 5s] [--exit-on-bad]
+  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka> --config checkfleet.yml [--output text|markdown|json|junit|html|prometheus|slack|discord|teams|webhook] [--out-file PATH] [--only ...] [--min-severity warn] [--target glob] [--watch 5s] [--history F --diff] [--exit-on-bad]
   checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s]   # export Prometheus metrics
   checkfleet report-issues --config checkfleet.yml [--dry-run]                 # open/close GitHub issues from BAD findings
   checkfleet validate --config checkfleet.yml                                  # validate the config without running the checks
@@ -106,6 +106,7 @@ func runCheck(args []string) error {
 	flapWindow := fs.Int("flap-window", 10, "number of recent runs to evaluate flapping over")
 	pingURLEnv := fs.String("ping-url-env", "", "env var holding the dead-man's-switch URL (e.g. Healthchecks.io) to ping at the end of the run")
 	watch := fs.Duration("watch", 0, "re-run on this interval with a live terminal view (e.g. 5s); Ctrl-C to stop")
+	diff := fs.Bool("diff", false, "show only what changed vs the previous run (requires --history)")
 	exitOnBad := fs.Bool("exit-on-bad", false, "exit code 2 if any BAD/ERROR finding is present")
 	if err := fs.Parse(args[1:]); err != nil {
 		return err
@@ -159,6 +160,23 @@ func runCheck(args []string) error {
 	}
 	res.Findings = engine.ApplyMaintenance(res.Findings, cfg.Maintenance, time.Now())
 	res.Findings = engine.Filter(res.Findings, filter)
+
+	if *diff {
+		if *historyPath == "" {
+			return fmt.Errorf("--diff requires --history")
+		}
+		recent, err := history.Open(*historyPath).Recent(2)
+		if err != nil {
+			return err
+		}
+		fmt.Print(formatDiff(diffFromRecords(recent)))
+		if *exitOnBad {
+			if w := engine.Worst(res.Findings); w == engine.BAD || w == engine.ERROR {
+				os.Exit(2)
+			}
+		}
+		return nil
+	}
 
 	switch *format {
 	case "slack":

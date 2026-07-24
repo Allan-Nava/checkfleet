@@ -99,7 +99,7 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 ## M13 — Engine & UX (fase 3)
 
 - [x] **CF-50 — `--watch`**: `--watch <interval>` riesegue i check a intervallo e ridisegna una vista text live nel terminale (clear + header + output), Ctrl-C per fermare; maintenance e filtri applicati a ogni tick. Helper `watchFrame` testato. _(v0.48.0)_
-- [ ] **CF-51 — `--diff`**: confronto col run precedente nello storico (`--history`) — mostra solo cosa è cambiato (nuovi/risolti/peggiorati).
+- [x] **CF-51 — `--diff`**: con `--history`, `--diff` stampa solo i cambi vs il run precedente — new/resolved/worsened/improved per check/target. `engine.DiffStatus` (pura, testata) + helper CLI `diffFromRecords`/`formatDiff`. _(v0.49.0)_
 - [x] **CF-52 — Finestre di manutenzione / mute**: `maintenance:` in config — finestre con glob `check`/`target` + range `from`/`to` (RFC3339); `action: mute` (drop, default) o `warn` (cap BAD/ERROR a WARN + nota `[maintenance]`). `engine.ApplyMaintenance` testata; applicata a `check` (prima di `--exit-on-bad`) e `serve`. _(v0.46.0)_
 - [x] **CF-53 — Config dinamica**: interpolazione `${VAR}`, `${VAR:-default}` e `${file:/path}` (secret da file, stile Docker/K8s) nei valori di config, espansa prima del parse; `$${` per `${` letterale; file secret mancante = errore. Testata. (Scelto `${file:…}` come meccanismo generale invece del per-campo `*_file`.) _(v0.45.0)_
 - [x] **CF-54 — DX CLI**: `checkfleet explain [module]` (cosa controlla + soglie, guidato dal registry con test anti-drift) e `checkfleet completion <bash|zsh|fish>` (script che completano subcomandi, moduli e `--output`). _(v0.47.0)_
