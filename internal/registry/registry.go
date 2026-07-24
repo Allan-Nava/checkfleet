@@ -12,6 +12,7 @@ import (
 	"github.com/Allan-Nava/checkfleet/internal/checks/haproxy"
 	"github.com/Allan-Nava/checkfleet/internal/checks/httpcheck"
 	"github.com/Allan-Nava/checkfleet/internal/checks/keycloak"
+	"github.com/Allan-Nava/checkfleet/internal/checks/ldapcheck"
 	"github.com/Allan-Nava/checkfleet/internal/checks/nats"
 	"github.com/Allan-Nava/checkfleet/internal/checks/ntp"
 	"github.com/Allan-Nava/checkfleet/internal/checks/patroni"
@@ -51,6 +52,7 @@ func Modules(cfg *engine.Config) []Spec {
 		{"ntp", c.NTP != nil, func() engine.Check { return ntp.New(*c.NTP) }},
 		{"rabbitmq", c.RabbitMQ != nil, func() engine.Check { return rabbitmq.New(*c.RabbitMQ) }},
 		{"grpc", c.GRPC != nil, func() engine.Check { return grpccheck.New(*c.GRPC) }},
+		{"ldap", c.LDAP != nil, func() engine.Check { return ldapcheck.New(*c.LDAP) }},
 	}
 }
 

@@ -5,9 +5,9 @@ nav_order: 5
 
 Each module is a self-contained check that knows what "healthy" means for one
 kind of target. Shipping today: `certs`, `http`, `nats`, `haproxy`, `stream`,
-`patroni`, `consul`, `postgres`, `dns`, `redis`, `keycloak`, `tcp`, `tls`, `ntp`, `rabbitmq`, `grpc`. The
+`patroni`, `consul`, `postgres`, `dns`, `redis`, `keycloak`, `tcp`, `tls`, `ntp`, `rabbitmq`, `grpc`, `ldap`. The
 [backlog](https://github.com/Allan-Nava/checkfleet/blob/main/BACKLOG.md) tracks
-what's next (`ldap`, `kafka`, `mongodb`, …).
+what's next (`kafka`, `mongodb`, …).
 
 ## `certs`
 
@@ -287,6 +287,19 @@ Set `service` to check a specific gRPC service, or leave empty for whole-server
 health. `insecure_skip_verify` for internal self-signed endpoints.
 
 See [Configuration → checks.grpc](configuration.md#checksgrpc).
+
+## `ldap`
+
+LDAP directory health via bind + an optional sanity search (uses `go-ldap`).
+
+- Connect failure → `ERROR`; failed bind (bad credentials) → `BAD`.
+- With `base_dn`, a search returning fewer than `min_entries` (default 1) or an
+  error → `BAD`.
+- `ldaps://` and `start_tls` supported; `insecure_skip_verify` for internal
+  self-signed. Bind is anonymous when `bind_dn` is empty; the password comes
+  from `password_env`, never config.
+
+See [Configuration → checks.ldap](configuration.md#checksldap).
 
 ## Ansible inventory as a target source
 

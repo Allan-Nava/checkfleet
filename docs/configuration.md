@@ -442,6 +442,24 @@ checks:
       - {name: api, address: api.hiway.media:443, service: hiway.api.v1.API}
 ```
 
+## `checks.ldap`
+
+LDAP bind + search. See [Modules → ldap](modules.md#ldap).
+
+`checks.ldap.targets` is a list of:
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `url` | string | — | `ldap://host:389` or `ldaps://host:636`. Required. |
+| `name` | string | url | Display label. |
+| `start_tls` | bool | `false` | StartTLS on a plain connection. |
+| `insecure_skip_verify` | bool | `false` | Skip TLS cert verification. |
+| `bind_dn` | string | — | Bind DN; empty = anonymous. |
+| `password_env` | string | — | Env var with the bind password. **Never inline.** |
+| `base_dn` | string | — | Search base for the sanity search. |
+| `filter` | string | `(objectClass=*)` | Search filter. |
+| `min_entries` | int | `1` (when base_dn set) | Minimum results, else BAD. |
+
 ## No secrets in config
 
 Keep credentials out of `checkfleet.yml` — checks never log or echo secrets, and

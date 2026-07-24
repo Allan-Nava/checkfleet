@@ -123,6 +123,16 @@ checks:
       - hiway
       - partners
 
+  ldap:
+    targets:
+      - name: dir-prod
+        url: ldaps://ldap.hiway.media:636
+        bind_dn: "cn=monitor,dc=hiway,dc=media"
+        password_env: LDAP_PASS       # never inline
+        base_dn: "ou=people,dc=hiway,dc=media"
+        filter: "(objectClass=inetOrgPerson)"
+        min_entries: 1
+
   grpc:
     targets:
       - {name: api, address: api.hiway.media:443, service: hiway.api.v1.API}

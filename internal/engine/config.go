@@ -34,6 +34,7 @@ type ChecksConfig struct {
 	NTP      *NTPConfig      `yaml:"ntp"`
 	RabbitMQ *RabbitMQConfig `yaml:"rabbitmq"`
 	GRPC     *GRPCConfig     `yaml:"grpc"`
+	LDAP     *LDAPConfig     `yaml:"ldap"`
 }
 
 // CertsConfig configures the TLS certificate expiry check.
@@ -275,6 +276,28 @@ type GRPCTarget struct {
 	InsecureSkipVerify bool `yaml:"insecure_skip_verify"`
 }
 
+// LDAPConfig configures the LDAP bind + search check.
+type LDAPConfig struct {
+	Targets []LDAPTarget `yaml:"targets"`
+}
+
+type LDAPTarget struct {
+	// Optional display label; defaults to URL.
+	Name string `yaml:"name"`
+	// ldap://host:389 or ldaps://host:636. Required.
+	URL string `yaml:"url"`
+	// Optional StartTLS on a plain ldap:// connection.
+	StartTLS           bool `yaml:"start_tls"`
+	InsecureSkipVerify bool `yaml:"insecure_skip_verify"`
+	// Optional bind; empty BindDN = anonymous. Password from the env var.
+	BindDN      string `yaml:"bind_dn"`
+	PasswordEnv string `yaml:"password_env"`
+	// Optional sanity search: at least MinEntries under BaseDN matching Filter.
+	BaseDN     string `yaml:"base_dn"`
+	Filter     string `yaml:"filter"`
+	MinEntries int    `yaml:"min_entries"`
+}
+
 // HTTPConfig configures the HTTP probe check.
 type HTTPConfig struct {
 	Targets []HTTPTarget `yaml:"targets"`
@@ -381,6 +404,16 @@ func applyDefaults(cfg *Config) {
 		}
 		if t.CritDays <= 0 {
 			t.CritDays = 7
+		}
+	}
+	if l := cfg.Checks.LDAP; l != nil {
+		for i := range l.Targets {
+			if l.Targets[i].Filter == "" {
+				l.Targets[i].Filter = "(objectClass=*)"
+			}
+			if l.Targets[i].BaseDN != "" && l.Targets[i].MinEntries <= 0 {
+				l.Targets[i].MinEntries = 1
+			}
 		}
 	}
 	if rb := cfg.Checks.RabbitMQ; rb != nil {

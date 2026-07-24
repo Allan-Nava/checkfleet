@@ -81,7 +81,7 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 - [x] **CF-39 — Modulo `tls`** (profondo): validità della catena, scadenza di ogni cert, protocolli/cipher deboli (TLS<1.2), hostname mismatch, OCSP se disponibile. Completa `certs` (che fa solo scadenza leaf). Stdlib `crypto/tls`.
 - [x] **CF-40 — Modulo `ntp`**: offset dell'orologio oltre soglia, stratum, root dispersion. Query NTP a mano (UDP 123), zero dip. Il drift rompe TLS e token JWT.
 - [x] **CF-41 — Modulo `grpc`**: gRPC Health Checking Protocol via HTTP/2+TLS con protobuf a mano (zero dip; h2c plaintext non supportato). SERVING/NOT_SERVING/UNIMPLEMENTED gestiti. _(v0.28.0)_
-- [ ] **CF-42 — Modulo `ldap`**: bind (anonimo o con credenziali da env) + search di sanity su una base DN. Valutare dip (`go-ldap`) vs protocollo a mano.
+- [x] **CF-42 — Modulo `ldap`**: bind (anonimo o con credenziali da env) + search di sanity su una base DN. Valutare dip (`go-ldap`) vs protocollo a mano.
 
 ## M11 — Datastore & broker (fase 3)
 

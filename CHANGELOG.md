@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.29.0
+
+- Modulo `ldap` (CF-42): connect + bind (anonimo o con credenziali da env) + search di sanity opzionale (≥ `min_entries` sotto `base_dn`). Bind fallito → BAD, connessione → ERROR. `ldaps`/StartTLS supportati. Accesso LDAP dietro interfaccia `session`: logica testata con fake; adattatore `go-ldap` sottile. Nuova dip: `github.com/go-ldap/ldap/v3`.
+
 ## 0.28.1
 
 - CI integration: healthcheck HAProxy corretto (workflow `Integration` rosso). `bind *:8404` ascolta solo IPv4 ma `/etc/hosts` mappa `localhost` anche a `::1`; sui runner dove busybox `wget` preferisce IPv6 l'healthcheck colpiva `[::1]:8404` (nessun listener) e falliva sempre → `docker compose up --wait` in errore. Ora punta a `http://127.0.0.1:8404/stats;csv` (coerente col bind e col target del modulo). Gli altri servizi non sono affetti (nats/patroni/keycloak ascoltano dual-stack).
