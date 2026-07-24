@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.34.0
+
+- Output `junit` (CF-46): `--output junit` produce un report XML JUnit — un testcase per finding, `<failure>` su BAD, `<error>` su ERROR, WARN passante con nota. Per il test tab della CI. Renderer `output.JUnit` testato.
+
 ## 0.33.0
 
 - Test E2E dell'app desktop (nuovo job `e2e` in `desktop-test.yml`): builda il binario Wails reale, lo lancia headless sotto **Xvfb** con config seed + auto-run, e verifica che la **webview nativa** crei una finestra e renderizzi (screenshot non-blank via `xdotool`+ImageMagick, caricato come artifact). Esercita embed + runtime Wails + binding, non solo il frontend in browser.

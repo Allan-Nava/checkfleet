@@ -91,7 +91,7 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 
 ## M12 — Output & sink (fase 3)
 
-- [ ] **CF-46 — `--output junit`**: report XML JUnit (un testcase per finding, failure su BAD/ERROR) per il test tab di CI (TeamCity/GitHub Actions).
+- [x] **CF-46 — `--output junit`**: report XML JUnit (un testcase per finding, failure su BAD/ERROR) per il test tab di CI (TeamCity/GitHub Actions).
 - [ ] **CF-47 — `--output prom-textfile`**: scrive le metriche nel formato del textfile collector di node_exporter (one-shot da cron), alternativa a `serve` per host senza server.
 - [ ] **CF-48 — Dead-man's-switch**: ping a Healthchecks.io (o URL configurabile) a fine run — success/fail in base al `worst`. Rileva anche il caso "checkfleet non ha girato".
 - [ ] **CF-49 — Sink generici**: webhook generico (POST JSON), Telegram, syslog. Interfaccia comune agli output "push".

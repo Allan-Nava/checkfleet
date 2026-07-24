@@ -65,7 +65,7 @@ func main() {
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `uso:
-  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka> --config checkfleet.yml [--output text|markdown|json|slack] [--only ...] [--min-severity warn] [--target glob] [--exit-on-bad]
+  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka> --config checkfleet.yml [--output text|markdown|json|junit|slack] [--only ...] [--min-severity warn] [--target glob] [--exit-on-bad]
   checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s]   # esporta le metriche Prometheus
   checkfleet report-issues --config checkfleet.yml [--dry-run]                 # apre/chiude issue GitHub dai finding BAD
   checkfleet validate --config checkfleet.yml                                  # valida la config senza eseguire i check
@@ -82,7 +82,7 @@ func runCheck(args []string) error {
 	fs := flag.NewFlagSet("check", flag.ExitOnError)
 	configPath := fs.String("config", "checkfleet.yml", "file di configurazione YAML")
 	stack := fs.String("stack", "", "profilo stack: sovrappone checkfleet.<stack>.yml alla base")
-	format := fs.String("output", "text", "formato: text, markdown, json, slack")
+	format := fs.String("output", "text", "formato: text, markdown, json, junit, slack")
 	webhookEnv := fs.String("webhook-env", "SLACK_WEBHOOK", "env var con l'URL webhook Slack (output slack)")
 	only := fs.String("only", "", "mostra solo questi check (lista separata da virgole)")
 	minSeverity := fs.String("min-severity", "", "mostra solo finding a partire da: ok|warn|bad|error")
@@ -146,6 +146,12 @@ func runCheck(args []string) error {
 		fmt.Print(output.Markdown(res, module))
 	case "json":
 		s, err := output.JSON(res)
+		if err != nil {
+			return err
+		}
+		fmt.Println(s)
+	case "junit":
+		s, err := output.JUnit(res, module)
 		if err != nil {
 			return err
 		}

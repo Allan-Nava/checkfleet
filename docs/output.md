@@ -51,6 +51,16 @@ checkfleet check all --config checkfleet.yml --output json | jq '.worst'
 
 See [CI integration](ci.md) for using `worst` or `--exit-on-bad` to fail a build.
 
+## `junit`
+
+JUnit XML — one `<testcase>` per finding, a `<failure>` for BAD, an `<error>`
+for ERROR, WARN kept passing (with a `<system-out>` note). Feed it to a CI test
+tab (TeamCity, GitHub Actions test reporters).
+
+```bash
+checkfleet check all --config checkfleet.yml --output junit > report.xml
+```
+
 ## `slack`
 
 Posts a [Block Kit](https://api.slack.com/block-kit) message to a Slack incoming
