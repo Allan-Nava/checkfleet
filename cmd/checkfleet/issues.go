@@ -27,6 +27,7 @@ func runReportIssues(args []string) error {
 	configPath := fs.String("config", "checkfleet.yml", "YAML config file")
 	stack := fs.String("stack", "", "stack profile: overlays checkfleet.<stack>.yml onto the base")
 	dryRun := fs.Bool("dry-run", false, "print the actions without touching any issue")
+	forge := fs.String("forge", "github", "issue tracker: github (gh) or gitlab (glab)")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -42,9 +43,12 @@ func runReportIssues(args []string) error {
 	ctx := context.Background()
 	res := engine.RunWith(ctx, checks, runOptions(cfg))
 
-	client := &ghIssueClient{label: issueLabel}
+	client, ensureLabel, err := issueClient(*forge, issueLabel)
+	if err != nil {
+		return err
+	}
 	if !*dryRun {
-		client.ensureLabel()
+		ensureLabel()
 	}
 	rep, err := issuesync.Reconcile(ctx, client, res.Findings, *dryRun)
 	if err != nil {

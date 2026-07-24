@@ -80,14 +80,18 @@ Prometheus does the graphing and alerting — it doesn't replace them.
 
 ## The `report-issues` command
 
-Turn BAD/ERROR findings into GitHub issues: one issue per `check/target`, opened
+Turn BAD/ERROR findings into tracker issues: one issue per `check/target`, opened
 when it fails and **closed automatically when it recovers**. Idempotent — safe
-to run on a schedule.
+to run on a schedule. Works with **GitHub** (via `gh`) or **GitLab** (via `glab`).
 
 ```bash
-checkfleet report-issues --config checkfleet.yml            # apply
-checkfleet report-issues --config checkfleet.yml --dry-run  # preview, no changes
+checkfleet report-issues --config checkfleet.yml               # GitHub (default)
+checkfleet report-issues --config checkfleet.yml --forge gitlab
+checkfleet report-issues --config checkfleet.yml --dry-run     # preview, no changes
 ```
+
+`--forge github|gitlab` picks the tracker; the matching CLI (`gh`/`glab`) must be
+installed and authenticated.
 
 | Flag | Default | Meaning |
 |---|---|---|

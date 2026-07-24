@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.51.0
+
+- Issue GitLab (CF-26): `report-issues --forge gitlab` riconcilia le issue su GitLab via `glab` (adapter `glIssueClient`: list/create/close+note, ensureLabel), con la stessa logica di reconcile di CF-7 (GitHub). Factory `issueClient(forge)` testata; `--forge github|gitlab` (default github). Il rispettivo CLI (`gh`/`glab`) dev'essere installato e autenticato.
+
 ## 0.50.1
 
 - Docs: nuovo `COMMERCIAL.md` — come ottenere una licenza commerciale (cosa è già coperto dall'uso non-commerciale, quando serve la licenza, cosa concede, come richiederla via email/issue, dati utili per il preventivo). Collegato dalla sezione License del README. È un riepilogo di comodo: in caso di conflitto vale il testo di `LICENSE`.

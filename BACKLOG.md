@@ -56,7 +56,7 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 
 ## M7 — Alerting & output (fase 2)
 
-- [ ] **CF-26 — Issue GitLab**: implementa `issuesync.Client` per GitLab (via `glab`/API), stessa logica di CF-7. Selezione forge in config/flag.
+- [x] **CF-26 — Issue GitLab**: adapter `glIssueClient` via `glab` (List/Create/Close+note, ensureLabel), stessa logica di reconcile di CF-7. Flag `--forge github|gitlab` con factory `issueClient` testata. _(v0.51.0)_
 - [x] **CF-27 — Webhook Discord/Teams**: `--output discord` (embed) e `--output teams` (MessageCard) — summary + problemi worst-first (cap), colore per worst status; URL da `--webhook-env` (mai in CLI). Renderer `output.Discord`/`output.Teams` testati; helper `postRendered` condiviso. _(v0.44.0)_
 - [ ] **CF-28 — Alert PagerDuty/Opsgenie**: crea/risolve alert per finding BAD/ERROR (dedup per check+target), chiave di routing da env.
 - [x] **CF-29 — Report HTML**: `--output html` — report statico autoconsistente (summary + tiles, "Needs attention", tabella completa), CSS inline, tema coerente col sito, messaggi HTML-escaped. Renderer `output.HTML` testato. _(v0.43.0)_
