@@ -4,7 +4,7 @@ Sorgente unica dei todo. Id stabili `CF-n`; spuntare, non cancellare.
 
 > **Sync automatico issue**: questo file è la fonte di verità. Ogni `CF-n` diventa una issue GitHub (label `backlog`, milestone per sezione) via `cmd/backlog-sync` + workflow `.github/workflows/backlog-sync.yml`. Spuntare un item (`[x]`) chiude la issue al prossimo push; toglierlo la riapre. Idempotente. Non aprire/chiudere le issue a mano: edita qui.
 
-Roadmap a milestone. **Fase 1 (completa)**: cosa monitorare (M1→M3), come consegnarlo (M4), rilascio. **Fase 2**: usarlo meglio (M5 app desktop), più domini (M6), più alerting (M7), engine più solido (M8), qualità (M9). **Fase 3**: check generici/protocollo (M10), datastore & broker (M11), output & sink (M12), engine & UX (M13), distribuzione & supply-chain (M14). Le versioni sono indicative: ogni modulo/output è comunque una release taggata a sé. **In corso:** M6 (redis ✅, keycloak ✅).
+Roadmap a milestone. **Fase 1 (completa)**: cosa monitorare (M1→M3), come consegnarlo (M4), rilascio. **Fase 2**: usarlo meglio (M5 app desktop), più domini (M6), più alerting (M7), engine più solido (M8), qualità (M9). **Fase 3**: check generici/protocollo (M10), datastore & broker (M11), output & sink (M12), engine & UX (M13), distribuzione & supply-chain (M14). Le versioni sono indicative: ogni modulo/output è comunque una release taggata a sé. **M5 completa** (app desktop Wails, v0.24.0). **In corso:** M6 (redis ✅, keycloak ✅).
 
 ## M1 — Rete & delivery (~v0.2) — il cuore hiway media
 
@@ -34,10 +34,10 @@ Roadmap a milestone. **Fase 1 (completa)**: cosa monitorare (M1→M3), come cons
 
 Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, frontend web leggero, binario singolo — coerente con la filosofia zero-dep). Il core CLI resta la fonte di verità: la GUI è un frontend, non una fork della logica.
 
-- [ ] **CF-15 — Scaffold Wails**: progetto Wails in `desktop/` che importa `internal/engine`/`internal/output` senza duplicare logica; build separata dal binario CLI, stessa versione via ldflags. La CI CLI non deve dipendere dalla toolchain web.
-- [ ] **CF-16 — Vista fleet**: carica `checkfleet.yml`, esegue i check, mostra summary + tabella finding con stesso sort worst-first; colori per status (OK/WARN/BAD/ERROR).
-- [ ] **CF-17 — Run & refresh**: bottone "run", auto-refresh a intervallo, selettore stack (dipende da CF-8), export markdown/JSON riusando `internal/output`.
-- [ ] **CF-18 — Packaging desktop**: bundle macOS (`.app`)/Linux, icona, firma dove serve; separato dalla release CLI di CF-9.
+- [x] **CF-15 — Scaffold Wails**: progetto Wails in `desktop/` (**modulo Go separato**, `replace => ../`) che riusa `internal/engine`/`internal/registry`/`internal/output` senza duplicare logica; versione via ldflags. La CI del CLI non dipende dalla toolchain web (il modulo `desktop/` è escluso da `go ./...`). Registry moduli estratto in `internal/registry` (unica fonte, condivisa CLI+GUI). _(v0.24.0)_
+- [x] **CF-16 — Vista fleet**: carica `checkfleet.yml`, esegue i check, mostra summary (worst + tiles OK/WARN/BAD/ERROR + chip moduli) e tabella finding con lo stesso sort worst-first; badge colorati per status. _(v0.24.0)_
+- [x] **CF-17 — Run & refresh**: bottone Run, auto-refresh a intervallo, selettore stack (scopre `checkfleet.<stack>.yml`), filtri (testo + min-severity), export markdown/JSON via `internal/output` con file-dialog nativo. _(v0.24.0)_
+- [x] **CF-18 — Packaging desktop**: icona da `docs/assets/logo.svg`, `wails.json`, `desktop/README.md` con i comandi `wails build` macOS/Linux, e workflow `desktop.yml` **dispatch-only** separato dalla release CLI (CF-9). _(v0.24.0; firma code-sign da configurare con i certificati)_
 
 ## Rilascio
 

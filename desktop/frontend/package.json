@@ -1,0 +1,10 @@
+{
+  "name": "checkfleet-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "description": "checkfleet desktop frontend (static, no bundler).",
+  "scripts": {
+    "build": "echo \"no build step — static assets live in dist/\"",
+    "dev": "echo \"no dev step\""
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "checkfleet",
+  "outputfilename": "checkfleet-desktop",
+  "frontend:install": "",
+  "frontend:build": "",
+  "frontend:dev:watcher": "",
+  "frontend:dev:serverUrl": "auto",
+  "wailsjsdir": "./frontend/wailsjs",
+  "author": {
+    "name": "Allan Nava"
+  },
+  "info": {
+    "productName": "checkfleet",
+    "companyName": "checkfleet",
+    "copyright": "MIT — github.com/Allan-Nava/checkfleet",
+    "comments": "A fleet of domain-aware infrastructure checks."
+  }
+}

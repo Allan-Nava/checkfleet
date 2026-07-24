@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.26.0
+
+- **App desktop Wails** (M5, CF-15..18): nuovo frontend GUI in `desktop/` che riusa `internal/engine`/`internal/registry`/`internal/output` — il CLI resta la fonte di verità, la GUI è solo un altro frontend.
+  - **Modulo Go separato** (`desktop/go.mod`, `replace => ../`): la toolchain web di Wails resta fuori dal modulo CLI, `go build/test ./...` e la CI del root non la tirano dentro (CF-15).
+  - **Vista fleet** (CF-16): carica `checkfleet.yml`, esegue i check, summary (worst + tiles OK/WARN/BAD/ERROR + chip moduli) e tabella finding worst-first con badge colorati.
+  - **Run & refresh** (CF-17): bottone Run, auto-refresh a intervallo, selettore stack (scopre `checkfleet.<stack>.yml`), filtri testo + min-severity, export Markdown/JSON via `internal/output` con file-dialog nativo.
+  - **Packaging** (CF-18): icona da `docs/assets/logo.svg`, `wails.json`, `desktop/README.md` con i comandi build macOS/Linux, workflow `desktop.yml` **dispatch-only** separato dalla release CLI (goreleaser).
+  - Frontend statico (HTML/CSS/JS, niente bundler), dark-first coerente col sito docs; apribile nel browser con dati mock per anteprima senza toolchain.
+- Milestone GitHub per feature M5.1–M5.4 (CF-15..18).
+
 ## 0.25.0
 
 - Suite d'integrazione opt-in (CF-37): stack `docker-compose.integration.yml` con servizi reali (redis, nats, consul, haproxy, postgres, patroni+etcd, keycloak) e `checkfleet.integration.yml` che li punta su `127.0.0.1`.

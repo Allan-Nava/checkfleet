@@ -1,7 +1,9 @@
 # Built binary at the repo root only — anchored with a leading slash so it does
 # NOT also match the cmd/checkfleet/ package directory.
 /checkfleet
-dist/
+# goreleaser output at the repo root only — anchored so it does NOT match the
+# desktop frontend's committed sources under desktop/frontend/dist/.
+/dist/
 .DS_Store
 
 # Jekyll docs site (built by .github/workflows/pages.yml).

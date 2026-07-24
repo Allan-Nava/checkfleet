@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>checkfleet</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <!-- title bar (drag region on macOS via hidden inset) -->
+    <header class="titlebar" style="--wails-draggable:drag">
+      <div class="brand">
+        <img src="assets/logo.svg" alt="" width="22" height="22">
+        <span>check<b>fleet</b></span>
+        <span class="pill-mini" id="version">dev</span>
+      </div>
+      <div class="tb-right" style="--wails-draggable:no-drag">
+        <button class="icon-btn" id="theme" title="Tema chiaro/scuro" aria-label="Tema">
+          <svg class="i-sun" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10m0-5 2 3h-4zm0 20-2-3h4zM2 12l3-2v4zm20 0-3 2v-4zM4.9 4.9l3.5 1.4-2.1 2.1zm14.2 14.2-3.5-1.4 2.1-2.1zM19.1 4.9l-1.4 3.5-2.1-2.1zM4.9 19.1l1.4-3.5 2.1 2.1z"/></svg>
+          <svg class="i-moon" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- toolbar -->
+    <div class="toolbar" style="--wails-draggable:no-drag">
+      <div class="field grow">
+        <span class="field-label">Config</span>
+        <input type="text" id="configPath" placeholder="checkfleet.yml" spellcheck="false">
+        <button class="btn" id="pick">Sfoglia…</button>
+      </div>
+      <div class="field">
+        <span class="field-label">Stack</span>
+        <select id="stack"><option value="">(base)</option></select>
+      </div>
+      <div class="field">
+        <label class="switch"><input type="checkbox" id="auto"><span>Auto</span></label>
+        <select id="interval">
+          <option value="10">10s</option>
+          <option value="30" selected>30s</option>
+          <option value="60">60s</option>
+          <option value="300">5m</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" id="run"><span class="run-ico">▶</span> Run</button>
+    </div>
+
+    <!-- summary -->
+    <section class="summary" id="summary" hidden>
+      <div class="worst" id="worst"><span class="dot"></span><div><b id="worstLabel">—</b><span>worst status</span></div></div>
+      <div class="tiles">
+        <div class="tile ok"><b id="cOK">0</b><span>OK</span></div>
+        <div class="tile warn"><b id="cWARN">0</b><span>WARN</span></div>
+        <div class="tile bad"><b id="cBAD">0</b><span>BAD</span></div>
+        <div class="tile err"><b id="cERROR">0</b><span>ERROR</span></div>
+      </div>
+      <div class="meta">
+        <div class="meta-row"><span>Findings</span><b id="mTotal">0</b></div>
+        <div class="meta-row"><span>Durata</span><b id="mDur">—</b></div>
+        <div class="meta-row"><span>Run</span><b id="mStarted">—</b></div>
+        <div class="chips" id="mModules"></div>
+      </div>
+    </section>
+
+    <!-- findings toolbar -->
+    <div class="findings-bar">
+      <input type="search" id="filter" placeholder="Filtra check / target / messaggio…">
+      <select id="minsev">
+        <option value="ok">tutti</option>
+        <option value="warn">≥ WARN</option>
+        <option value="bad">≥ BAD</option>
+        <option value="error">solo ERROR</option>
+      </select>
+      <span class="spacer"></span>
+      <button class="btn" id="expmd" disabled>Export MD</button>
+      <button class="btn" id="expjson" disabled>Export JSON</button>
+    </div>
+
+    <!-- findings table -->
+    <main class="table-wrap">
+      <table class="findings">
+        <thead><tr><th class="c-status">Status</th><th class="c-check">Check</th><th class="c-target">Target</th><th class="c-msg">Messaggio</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div class="empty" id="empty">
+        <img src="assets/logo.svg" alt="" width="56" height="56">
+        <p id="emptyText">Premi <b>Run</b> per eseguire i check.</p>
+      </div>
+    </main>
+
+    <!-- status bar -->
+    <footer class="statusbar">
+      <span id="statusText">pronto</span>
+      <span class="spacer"></span>
+      <span id="configHint"></span>
+    </footer>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
