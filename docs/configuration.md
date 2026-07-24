@@ -365,6 +365,24 @@ checks:
       - {name: rtmp, address: ingest.hiway.media:1935}
 ```
 
+## `checks.tls`
+
+Deep TLS check. See [Modules → tls](modules.md#tls).
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `targets` | list | — | `host` or `host:port` (default 443). |
+| `port` | int | `443` | Default port. |
+| `warn_days` | int | `30` | Leaf expiry → WARN. |
+| `crit_days` | int | `7` | Leaf expiry → BAD. |
+| `ansible_inventory` | string | — | Ansible INI inventory; every host becomes a target. |
+
+```yaml
+checks:
+  tls:
+    targets: [auth.hiway.media, api.hiway.media:8443]
+```
+
 ## No secrets in config
 
 Keep credentials out of `checkfleet.yml` — checks never log or echo secrets, and

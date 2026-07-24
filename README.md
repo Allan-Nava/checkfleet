@@ -63,8 +63,9 @@ See [Installation](https://allan-nava.github.io/checkfleet/installation/) for al
 | `redis` | Redis/Valkey via an in-tree RESP client (INFO): reachability & role, memory vs maxmemory, replication link & lag, persistence (RDB/AOF) |
 | `keycloak` | Keycloak via HTTP: health endpoint UP, per-realm OIDC discovery (token endpoint present, issuer coherent) |
 | `tcp` | Generic TCP reachability: connect (optionally TLS), latency, optional banner match |
+| `tls` | Deep TLS: chain validity, certificate expiry, weak negotiated protocol version |
 
-More modules on the roadmap (see [BACKLOG.md](BACKLOG.md)): `tls`, `ntp`, `grpc`, `ldap`, `kafka`, `mongodb`, `rabbitmq`, plus more alerting outputs.
+More modules on the roadmap (see [BACKLOG.md](BACKLOG.md)): `ntp`, `grpc`, `ldap`, `kafka`, `mongodb`, `rabbitmq`, plus more alerting outputs.
 
 ## Configuration
 

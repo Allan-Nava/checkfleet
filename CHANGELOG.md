@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.23.0
+
+- Modulo `tls` (CF-39): TLS "profondo" che completa `certs`. Verifica catena vs trust store (BAD se non fidata/hostname mismatch), scadenza leaf (WARN/BAD), versione protocollo negoziata (< TLS 1.2 → WARN; si connette permissivo per poterlo segnalare). Zero-dip; testato con CA/leaf generati al volo. Etichette `[chain]`/`[expiry]`/`[protocol]`.
+
 ## 0.22.0
 
 - Modulo `tcp` (CF-38): reachability TCP generica — connect (opz. TLS) + latenza, banner atteso opzionale (substring). Stdlib `net`, zero dip. Config `checks.tcp`, testato con listener in-test. Apre **M10**.

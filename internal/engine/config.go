@@ -30,6 +30,7 @@ type ChecksConfig struct {
 	Redis    *RedisConfig    `yaml:"redis"`
 	Keycloak *KeycloakConfig `yaml:"keycloak"`
 	TCP      *TCPConfig      `yaml:"tcp"`
+	TLS      *TLSConfig      `yaml:"tls"`
 }
 
 // CertsConfig configures the TLS certificate expiry check.
@@ -224,6 +225,15 @@ type TCPTarget struct {
 	MaxLatencyMS int `yaml:"max_latency_ms"`
 }
 
+// TLSConfig configures the deep TLS check (chain validity, expiry, protocol).
+type TLSConfig struct {
+	Targets          []string `yaml:"targets"`
+	Port             int      `yaml:"port"`
+	WarnDays         int      `yaml:"warn_days"`
+	CritDays         int      `yaml:"crit_days"`
+	AnsibleInventory string   `yaml:"ansible_inventory"`
+}
+
 // HTTPConfig configures the HTTP probe check.
 type HTTPConfig struct {
 	Targets []HTTPTarget `yaml:"targets"`
@@ -319,6 +329,17 @@ func applyDefaults(cfg *Config) {
 	if cn := cfg.Checks.Consul; cn != nil {
 		if cn.Port <= 0 {
 			cn.Port = 8500
+		}
+	}
+	if t := cfg.Checks.TLS; t != nil {
+		if t.Port <= 0 {
+			t.Port = 443
+		}
+		if t.WarnDays <= 0 {
+			t.WarnDays = 30
+		}
+		if t.CritDays <= 0 {
+			t.CritDays = 7
 		}
 	}
 	if r := cfg.Checks.Redis; r != nil {

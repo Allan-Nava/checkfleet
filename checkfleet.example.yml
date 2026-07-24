@@ -123,6 +123,13 @@ checks:
       - hiway
       - partners
 
+  tls:
+    warn_days: 30
+    crit_days: 7
+    targets:
+      - auth.hiway.media            # uses port 443
+      - api.hiway.media:8443
+
   tcp:
     targets:
       - {name: ssh-bastion, address: 10.20.30.9:22, expect_banner: "SSH-2.0", max_latency_ms: 500}

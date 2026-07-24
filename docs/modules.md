@@ -5,9 +5,9 @@ nav_order: 5
 
 Each module is a self-contained check that knows what "healthy" means for one
 kind of target. Shipping today: `certs`, `http`, `nats`, `haproxy`, `stream`,
-`patroni`, `consul`, `postgres`, `dns`, `redis`, `keycloak`, `tcp`. The
+`patroni`, `consul`, `postgres`, `dns`, `redis`, `keycloak`, `tcp`, `tls`. The
 [backlog](https://github.com/Allan-Nava/checkfleet/blob/main/BACKLOG.md) tracks
-what's next (`tls`, `ntp`, `grpc`, `ldap`, `kafka`, `mongodb`, `rabbitmq`, …).
+what's next (`ntp`, `grpc`, `ldap`, `kafka`, `mongodb`, `rabbitmq`, …).
 
 ## `certs`
 
@@ -231,9 +231,24 @@ Generic TCP reachability for anything that speaks TCP.
 
 See [Configuration → checks.tcp](configuration.md#checkstcp).
 
+## `tls`
+
+Deep TLS check — complements `certs` (which only reads leaf expiry).
+
+- **Chain**: verifies the presented chain against the trust store (with the
+  hostname); invalid (untrusted, hostname mismatch) → `BAD`.
+- **Expiry**: leaf days-to-expiry → `OK`/`WARN`/`BAD` (`warn_days`/`crit_days`).
+- **Protocol**: the negotiated version; below TLS 1.2 → `WARN` (connects
+  permissively down to TLS 1.0 just to observe and flag it).
+- Unreachable / handshake failure → `ERROR`.
+
+Findings are labelled `target [chain]`, `target [expiry]`, `target [protocol]`.
+
+See [Configuration → checks.tls](configuration.md#checkstls).
+
 ## Ansible inventory as a target source
 
-The `certs`, `nats`, `haproxy`, `patroni`, `consul` and `redis` modules can read
+The `certs`, `nats`, `haproxy`, `patroni`, `consul`, `redis` and `tls` modules can read
 a standard Ansible **INI** inventory (a file or a directory of files):
 
 - host lines and their `ansible_host=` value are used;
@@ -242,4 +257,4 @@ a standard Ansible **INI** inventory (a file or a directory of files):
 
 Every discovered host becomes a target on the module's `port` (443 for `certs`,
 8222 for `nats`, 8404 for `haproxy`, 8008 for `patroni`, 8500 for `consul`,
-6379 for `redis`).
+6379 for `redis`, 443 for `tls`).

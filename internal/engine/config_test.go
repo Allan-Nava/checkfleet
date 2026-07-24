@@ -122,7 +122,7 @@ func TestLoadConfigAbsentModulesAreNil(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Checks.HTTP != nil || cfg.Checks.NATS != nil || cfg.Checks.HAProxy != nil || cfg.Checks.Stream != nil || cfg.Checks.Patroni != nil || cfg.Checks.Consul != nil || cfg.Checks.Postgres != nil || cfg.Checks.DNS != nil || cfg.Checks.Redis != nil || cfg.Checks.Keycloak != nil || cfg.Checks.TCP != nil {
+	if cfg.Checks.HTTP != nil || cfg.Checks.NATS != nil || cfg.Checks.HAProxy != nil || cfg.Checks.Stream != nil || cfg.Checks.Patroni != nil || cfg.Checks.Consul != nil || cfg.Checks.Postgres != nil || cfg.Checks.DNS != nil || cfg.Checks.Redis != nil || cfg.Checks.Keycloak != nil || cfg.Checks.TCP != nil || cfg.Checks.TLS != nil {
 		t.Errorf("i moduli non configurati devono restare nil: %+v", cfg.Checks)
 	}
 }
