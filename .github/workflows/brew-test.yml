@@ -1,0 +1,85 @@
+name: Brew test
+
+# Verifies that `brew install Allan-Nava/tap/checkfleet` actually works end to
+# end on macOS — after every Release (so the freshly-pushed cask is exercised),
+# on demand, and weekly (catches a tap that rots, e.g. a deleted release asset).
+#
+# Casks are macOS-only, so this runs on both Apple Silicon (macos-14) and Intel
+# (macos-13) to cover both branches of the generated cask.
+
+on:
+  workflow_run:
+    workflows: ["Release"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Expected version without the leading v (e.g. 0.32.1); empty = don't assert an exact version"
+        required: false
+        default: ""
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  brew-install:
+    # For the Release trigger, only run when the release actually succeeded.
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, macos-13] # arm64, intel
+    runs-on: ${{ matrix.os }}
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_NO_INSTALL_CLEANUP: "1"
+      # Homebrew 6+ asks to "trust" third-party taps interactively; disable that
+      # gate so a headless install doesn't hang/fail.
+      HOMEBREW_NO_REQUIRE_TAP_TRUST: "1"
+    steps:
+      - name: Install from the tap
+        run: brew install --cask Allan-Nava/tap/checkfleet
+
+      - name: It runs and reports a real version
+        run: |
+          set -euo pipefail
+          which checkfleet
+          out="$(checkfleet version)"
+          echo "$out"
+          # Must not be the local 'dev' string — a release cask carries a real version.
+          echo "$out" | grep -Eq '^checkfleet [0-9]+\.[0-9]+\.[0-9]+' \
+            || { echo "::error::unexpected version output: $out"; exit 1; }
+
+      - name: Assert the expected version (manual dispatch only)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.version != '' }}
+        run: checkfleet version | grep -qx "checkfleet ${{ inputs.version }}"
+
+      - name: Gatekeeper quarantine attribute is stripped
+        run: |
+          set -euo pipefail
+          bin="$(readlink -f "$(which checkfleet)")"
+          if xattr -l "$bin" 2>/dev/null | grep -qi com.apple.quarantine; then
+            echo "::error::$bin still has com.apple.quarantine — postflight hook failed"
+            exit 1
+          fi
+          echo "no quarantine attribute ✅"
+
+      - name: Smoke — the binary actually executes a check
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/cf.yml" <<'YAML'
+          checks:
+            tcp:
+              targets:
+                - {name: github, address: github.com:443, tls: true}
+          YAML
+          # Exit code is 0 even on WARN/BAD (only systemic errors are non-zero),
+          # so this just proves the module runs; --exit-on-bad is intentionally
+          # NOT used here.
+          checkfleet check tcp --config "$RUNNER_TEMP/cf.yml" --output markdown
+
+      - name: Uninstall
+        if: always()
+        run: brew uninstall --cask checkfleet || true

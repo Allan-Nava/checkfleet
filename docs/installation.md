@@ -16,10 +16,20 @@ The binary lands in `$(go env GOPATH)/bin`. Make sure that directory is on your
 
 ```bash
 brew install Allan-Nava/tap/checkfleet
+# equivalent, if you prefer to tap first:
+brew tap Allan-Nava/tap && brew install checkfleet
 ```
 
-> Available once the Homebrew tap is published (see the release notes). Until
-> then, use `go install` or a release archive.
+The cask ships the prebuilt release binary (macOS `amd64`/`arm64`) and strips
+the `com.apple.quarantine` attribute on install, so it runs without a Gatekeeper
+prompt. Every `v*` tag refreshes the cask automatically, and a
+[`Brew test`](https://github.com/Allan-Nava/checkfleet/actions/workflows/brew-test.yml)
+workflow verifies the install on both Apple Silicon and Intel after each
+release.
+
+> Homebrew 6+ may ask you to *trust* the tap the first time
+> (`brew trust --cask Allan-Nava/tap/checkfleet`). That's expected for any
+> third-party tap.
 
 ## From a release archive
 

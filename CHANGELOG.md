@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.32.1
+
+- Homebrew: nuovo workflow `brew-test.yml` che verifica `brew install Allan-Nava/tap/checkfleet` end-to-end su macOS **Apple Silicon (macos-14) e Intel (macos-13)** — gira dopo ogni Release (via `workflow_run`, solo se la release è passata), a mano (`workflow_dispatch`, con assert opzionale della versione) e settimanale. Controlla: install dalla tap, `checkfleet version` reale (non `dev`), attributo `com.apple.quarantine` rimosso, e smoke di un check (`tcp`). `HOMEBREW_NO_REQUIRE_TAP_TRUST` per l'install headless su Homebrew 6+.
+- Docs: `installation.md` e README aggiornati con la nota tap (form `brew tap` + trust di Homebrew 6+).
+
 ## 0.32.0
 
 - Test dell'app desktop in CI (nuovo workflow `desktop-test.yml`, gira su push/PR che toccano `desktop/**`):
