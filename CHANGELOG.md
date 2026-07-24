@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.26.1
+
+- Desktop: i dati mock di anteprima usano placeholder neutri (`example.com`, host generici, `/home/ops/checkfleet.yml`) — rimossi i riferimenti a domini/host aziendali.
+
 ## 0.26.0
 
 - **App desktop Wails** (M5, CF-15..18): nuovo frontend GUI in `desktop/` che riusa `internal/engine`/`internal/registry`/`internal/output` — il CLI resta la fonte di verità, la GUI è solo un altro frontend.

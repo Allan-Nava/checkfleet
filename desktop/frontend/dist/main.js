@@ -16,9 +16,9 @@
 
   const Backend = wails || {
     Version: async () => "preview",
-    DefaultConfigPath: async () => "/Users/allan/hiway/checkfleet.yml",
-    ListStacks: async () => ["prod-cologno", "prod-stnx", "staging"],
-    OpenConfigDialog: async () => "/Users/allan/hiway/checkfleet.yml",
+    DefaultConfigPath: async () => "/home/ops/checkfleet.yml",
+    ListStacks: async () => ["prod", "edge", "staging"],
+    OpenConfigDialog: async () => "/home/ops/checkfleet.yml",
     SaveReport: async (fmt) => "~/checkfleet-report." + (fmt === "json" ? "json" : "md"),
     RunChecks: async () => mockReport(),
   };
@@ -199,26 +199,26 @@
   function mockReport() {
     const f = (check, target, status, message) => ({ check, target, status, message });
     const findings = [
-      f("stream", "https://live.hiway.media/edge/master.m3u8", "BAD", "live-edge fermo da 47s (soglia 30s), ladder 3/4 varianti"),
-      f("haproxy", "lb-cologno-01:8404/be_ingest", "BAD", "backend senza server disponibili (2 DOWN)"),
-      f("postgres", "pg-cologno-01:5432", "ERROR", "connessione fallita: dial tcp 10.0.3.11:5432: i/o timeout"),
-      f("certs", "api.hiway.media:443", "ERROR", "handshake TLS fallito: connection refused"),
-      f("nats", "nats-stnx-02:8222", "WARN", "peer in lag di 1420 sul raft meta-group (soglia 1000)"),
+      f("stream", "https://live.example.com/edge/master.m3u8", "BAD", "live-edge fermo da 47s (soglia 30s), ladder 3/4 varianti"),
+      f("haproxy", "lb-01:8404/be_ingest", "BAD", "backend senza server disponibili (2 DOWN)"),
+      f("postgres", "pg-01:5432", "ERROR", "connessione fallita: dial tcp 10.0.3.11:5432: i/o timeout"),
+      f("certs", "api.example.com:443", "ERROR", "handshake TLS fallito: connection refused"),
+      f("nats", "nats-02:8222", "WARN", "peer in lag di 1420 sul raft meta-group (soglia 1000)"),
       f("redis", "redis-cache-01:6379", "WARN", "used_memory 82% di maxmemory (soglia 80%)"),
-      f("certs", "cdn.hiway.media:443", "WARN", "scade tra 12 giorni (2026-08-05, CN=*.hiway.media)"),
-      f("dns", "hiway.media @ 1.1.1.1", "WARN", "TTL 30s sotto la soglia (60s)"),
-      f("consul", "consul-cologno:8500", "OK", "leader presente, 5/5 peer, 0 check critical"),
-      f("nats", "nats-stnx-01:8222", "OK", "meta-leader presente, 3/3 peer, versioni allineate"),
-      f("certs", "www.hiway.media:443", "OK", "scade tra 68 giorni (2026-09-30, CN=*.hiway.media)"),
-      f("http", "https://hiway.media/health", "OK", "HTTP 200, 142ms"),
+      f("certs", "cdn.example.com:443", "WARN", "scade tra 12 giorni (2026-08-05, CN=*.example.com)"),
+      f("dns", "example.com @ 1.1.1.1", "WARN", "TTL 30s sotto la soglia (60s)"),
+      f("consul", "consul-01:8500", "OK", "leader presente, 5/5 peer, 0 check critical"),
+      f("nats", "nats-01:8222", "OK", "meta-leader presente, 3/3 peer, versioni allineate"),
+      f("certs", "www.example.com:443", "OK", "scade tra 68 giorni (2026-09-30, CN=*.example.com)"),
+      f("http", "https://example.com/health", "OK", "HTTP 200, 142ms"),
       f("redis", "redis-session-01:6379", "OK", "role master, link up, ultimo RDB ok"),
-      f("tcp", "smtp.hiway.media:587", "OK", "connesso in 38ms, banner atteso"),
-      f("postgres", "pg-stnx-01:5432", "OK", "primary, 2 repliche in pari, 41% connessioni"),
+      f("tcp", "smtp.example.com:587", "OK", "connesso in 38ms, banner atteso"),
+      f("postgres", "pg-02:5432", "OK", "primary, 2 repliche in pari, 41% connessioni"),
     ];
     const count = (s) => findings.filter((x) => x.status === s).length;
     return {
-      configPath: "/Users/allan/hiway/checkfleet.yml",
-      stack: "prod-cologno",
+      configPath: "/home/ops/checkfleet.yml",
+      stack: "prod",
       modules: ["certs", "http", "nats", "haproxy", "stream", "postgres", "consul", "redis", "dns", "tcp"],
       findings,
       ok: count("OK"), warn: count("WARN"), bad: count("BAD"), error: count("ERROR"),
