@@ -137,3 +137,24 @@ failed". A check that ran *is* a success.
 
 This semantics is intentional and stable — see [CI integration](ci.md) for how
 to gate on it.
+
+## Explain a module
+
+`checkfleet explain <module>` prints what a module checks and its key
+thresholds; with no argument it lists all modules.
+
+```bash
+checkfleet explain            # list modules
+checkfleet explain postgres   # what the postgres check verifies
+```
+
+## Shell completion
+
+```bash
+checkfleet completion bash > /etc/bash_completion.d/checkfleet   # bash
+checkfleet completion zsh  > "${fpath[1]}/_checkfleet"           # zsh
+checkfleet completion fish > ~/.config/fish/completions/checkfleet.fish
+```
+
+Completes subcommands, module names (after `check`/`explain`) and `--output`
+formats.

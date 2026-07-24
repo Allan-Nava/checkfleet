@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.47.0
+
+- DX CLI (CF-54): nuovo `checkfleet explain [module]` — stampa cosa controlla un modulo e le soglie chiave (senza argomento lista i moduli); mappa guidata dal registry con test anti-drift. Nuovo `checkfleet completion <bash|zsh|fish>` — script di completamento per subcomandi, moduli (dopo `check`/`explain`) e formati `--output`. Testati.
+
 ## 0.46.1
 
 - Fix `fuzz.yml`: espressione `fuzztime` con apici raddoppiati (`''60s''`) → "Invalid workflow file". Corretto nel literal valido dell'espressione GitHub (`'60s'`). Il workflow ora è caricabile.

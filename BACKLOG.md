@@ -102,7 +102,7 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 - [ ] **CF-51 — `--diff`**: confronto col run precedente nello storico (`--history`) — mostra solo cosa è cambiato (nuovi/risolti/peggiorati).
 - [x] **CF-52 — Finestre di manutenzione / mute**: `maintenance:` in config — finestre con glob `check`/`target` + range `from`/`to` (RFC3339); `action: mute` (drop, default) o `warn` (cap BAD/ERROR a WARN + nota `[maintenance]`). `engine.ApplyMaintenance` testata; applicata a `check` (prima di `--exit-on-bad`) e `serve`. _(v0.46.0)_
 - [x] **CF-53 — Config dinamica**: interpolazione `${VAR}`, `${VAR:-default}` e `${file:/path}` (secret da file, stile Docker/K8s) nei valori di config, espansa prima del parse; `$${` per `${` letterale; file secret mancante = errore. Testata. (Scelto `${file:…}` come meccanismo generale invece del per-campo `*_file`.) _(v0.45.0)_
-- [ ] **CF-54 — DX CLI**: shell completion (bash/zsh/fish) e `checkfleet explain <modulo>` (cosa controlla e con quali soglie).
+- [x] **CF-54 — DX CLI**: `checkfleet explain [module]` (cosa controlla + soglie, guidato dal registry con test anti-drift) e `checkfleet completion <bash|zsh|fish>` (script che completano subcomandi, moduli e `--output`). _(v0.47.0)_
 
 ## M14 — Distribuzione & supply-chain (fase 3)
 

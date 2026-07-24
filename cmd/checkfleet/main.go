@@ -58,6 +58,16 @@ func main() {
 			fmt.Fprintln(os.Stderr, "checkfleet:", err)
 			os.Exit(1)
 		}
+	case "explain":
+		if err := runExplain(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, "checkfleet:", err)
+			os.Exit(1)
+		}
+	case "completion":
+		if err := runCompletion(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, "checkfleet:", err)
+			os.Exit(1)
+		}
 	default:
 		usage()
 		os.Exit(64)
@@ -70,6 +80,8 @@ func usage() {
   checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s]   # export Prometheus metrics
   checkfleet report-issues --config checkfleet.yml [--dry-run]                 # open/close GitHub issues from BAD findings
   checkfleet validate --config checkfleet.yml                                  # validate the config without running the checks
+  checkfleet explain [module]                                                 # what a module checks and its thresholds
+  checkfleet completion <bash|zsh|fish>                                        # print a shell completion script
   checkfleet version`)
 }
 
