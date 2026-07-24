@@ -33,7 +33,9 @@ checks:
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `timeout_seconds` | int | `30` | Deadline for the entire run. Findings still in flight are cut off. |
+| `timeout_seconds` | int | `30` | Per-check (and per-attempt) deadline. |
+| `retries` | int | `0` | Retry a check that produced an ERROR finding (transient network/handshake), up to this many times. |
+| `retry_backoff_ms` | int | `500` (when `retries`>0) | Base backoff between attempts; doubles each retry. |
 | `checks` | map | — | One entry per module. A module runs only if its key is present. |
 
 A module that is **not** present in `checks` is skipped by `check all`, and

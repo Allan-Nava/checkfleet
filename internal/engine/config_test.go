@@ -48,6 +48,9 @@ checks:
 	if cfg.TimeoutSeconds != 30 {
 		t.Errorf("timeout default: atteso 30, avuto %d", cfg.TimeoutSeconds)
 	}
+	if cfg.Retries != 0 {
+		t.Errorf("retries default: atteso 0, avuto %d", cfg.Retries)
+	}
 	if c := cfg.Checks.Certs; c.WarnDays != 30 || c.CritDays != 7 || c.Port != 443 {
 		t.Errorf("certs default: %+v", c)
 	}
@@ -96,6 +99,10 @@ checks:
 	}
 	if cfg.TimeoutSeconds != 5 {
 		t.Errorf("timeout esplicito perso: %d", cfg.TimeoutSeconds)
+	}
+	// retries>0 senza backoff esplicito → default 500ms.
+	if c2, _ := LoadConfig(writeConfig(t, "retries: 2\nchecks:\n  certs:\n    targets: [x]\n")); c2.RetryBackoffMS != 500 {
+		t.Errorf("retry_backoff default con retries>0: atteso 500, avuto %d", c2.RetryBackoffMS)
 	}
 	if n := cfg.Checks.NATS; n.Port != 9999 || n.LagWarn != 7 || n.LagCrit != 42 {
 		t.Errorf("nats espliciti persi: %+v", n)

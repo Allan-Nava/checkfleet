@@ -108,6 +108,40 @@ func TestRunRunsChecksConcurrently(t *testing.T) {
 	}
 }
 
+// flakyCheck returns ERROR for its first failFor calls, then OK.
+type flakyCheck struct {
+	calls   int
+	failFor int
+}
+
+func (f *flakyCheck) Name() string { return "flaky" }
+func (f *flakyCheck) Run(context.Context) []Finding {
+	f.calls++
+	if f.calls <= f.failFor {
+		return []Finding{{Check: "flaky", Status: ERROR, Message: "transient"}}
+	}
+	return []Finding{{Check: "flaky", Status: OK, Message: "recovered"}}
+}
+
+func TestRetryRecoversTransientError(t *testing.T) {
+	fc := &flakyCheck{failFor: 2} // fails twice, ok on the 3rd attempt
+	res := RunWith(context.Background(), []Check{fc}, Options{Timeout: time.Second, Retries: 3, Backoff: time.Millisecond})
+	if Worst(res.Findings) != OK {
+		t.Errorf("con retry l'ERROR transitorio deve rientrare, avuto %s (%d chiamate)", Worst(res.Findings), fc.calls)
+	}
+	if fc.calls != 3 {
+		t.Errorf("attese 3 chiamate (2 fail + 1 ok), avute %d", fc.calls)
+	}
+}
+
+func TestNoRetryKeepsError(t *testing.T) {
+	fc := &flakyCheck{failFor: 2}
+	res := RunWith(context.Background(), []Check{fc}, Options{Timeout: time.Second}) // Retries 0
+	if Worst(res.Findings) != ERROR || fc.calls != 1 {
+		t.Errorf("senza retry: atteso ERROR con 1 chiamata, avuto %s con %d chiamate", Worst(res.Findings), fc.calls)
+	}
+}
+
 func TestRunPreservesCheckOrderBeforeSort(t *testing.T) {
 	// All findings same severity → order is by the check flattening (stable),
 	// which must follow the input check order deterministically.

@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/Allan-Nava/checkfleet/internal/engine"
 	"github.com/Allan-Nava/checkfleet/internal/issuesync"
@@ -40,7 +39,7 @@ func runReportIssues(args []string) error {
 	}
 
 	ctx := context.Background()
-	res := engine.Run(ctx, checks, time.Duration(cfg.TimeoutSeconds)*time.Second)
+	res := engine.RunWith(ctx, checks, runOptions(cfg))
 
 	client := &ghIssueClient{label: issueLabel}
 	if !*dryRun {

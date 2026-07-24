@@ -12,6 +12,8 @@ import (
 // Config is the root of checkfleet.yml.
 type Config struct {
 	TimeoutSeconds int          `yaml:"timeout_seconds"`
+	Retries        int          `yaml:"retries"`          // retry checks with ERROR findings
+	RetryBackoffMS int          `yaml:"retry_backoff_ms"` // base backoff (default 500 when retries>0)
 	Checks         ChecksConfig `yaml:"checks"`
 }
 
@@ -212,6 +214,9 @@ func parseConfig(path string) (*Config, error) {
 func applyDefaults(cfg *Config) {
 	if cfg.TimeoutSeconds <= 0 {
 		cfg.TimeoutSeconds = 30
+	}
+	if cfg.Retries > 0 && cfg.RetryBackoffMS <= 0 {
+		cfg.RetryBackoffMS = 500
 	}
 	if c := cfg.Checks.Certs; c != nil {
 		if c.WarnDays <= 0 {

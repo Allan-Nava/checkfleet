@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.0
+
+- Retry/backoff su ERROR (CF-35): nuovi `retries` e `retry_backoff_ms` (top-level). Un check che produce finding ERROR (rete/handshake) viene ritentato con backoff esponenziale prima di riportarlo, riducendo i falsi ERROR transitori. Nuova `engine.RunWith(Options)`; `Run` resta come wrapper. Vale per `check`, `serve`, `report-issues`.
+
 ## 0.15.0
 
 - Engine: `Run` esegue i check **in parallelo** (CF-31) — una goroutine per modulo, ciascuna col proprio timeout. Raccolta per-indice + sort stabile: output invariato e deterministico, ma wall-clock ≈ check più lento invece della somma. Test con `-race`.

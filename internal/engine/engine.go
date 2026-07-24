@@ -46,21 +46,32 @@ type Result struct {
 
 // Run executes the checks sequentially, each bounded by timeout.
 // Findings are sorted by severity (worst first), then check, then target.
+// Options tunes a run.
+type Options struct {
+	Timeout time.Duration // per-check (and per-attempt) deadline
+	Retries int           // extra attempts for a check that produced ERROR findings
+	Backoff time.Duration // base backoff between attempts (doubles each retry)
+}
+
+// Run executes the checks with only a timeout (no retries).
 func Run(ctx context.Context, checks []Check, timeout time.Duration) Result {
+	return RunWith(ctx, checks, Options{Timeout: timeout})
+}
+
+// RunWith executes the checks concurrently under opts. Results are collected
+// per-check by index and flattened in check order, so the output is
+// deterministic regardless of completion order (the stable sort below then
+// orders by severity). Checks whose result contains an ERROR finding are
+// retried up to opts.Retries times with exponential backoff.
+func RunWith(ctx context.Context, checks []Check, opts Options) Result {
 	started := time.Now()
-	// Run checks concurrently, each bounded by its own timeout. Results are
-	// collected per-check by index and flattened in check order, so the output
-	// is deterministic regardless of completion order (the stable sort below
-	// then orders by severity).
 	perCheck := make([][]Finding, len(checks))
 	var wg sync.WaitGroup
 	for i, c := range checks {
 		wg.Add(1)
 		go func(i int, c Check) {
 			defer wg.Done()
-			cctx, cancel := context.WithTimeout(ctx, timeout)
-			defer cancel()
-			perCheck[i] = c.Run(cctx)
+			perCheck[i] = runWithRetry(ctx, c, opts)
 		}(i, c)
 	}
 	wg.Wait()
@@ -78,6 +89,37 @@ func Run(ctx context.Context, checks []Check, timeout time.Duration) Result {
 		return findings[i].Target < findings[j].Target
 	})
 	return Result{Findings: findings, Started: started, Duration: time.Since(started)}
+}
+
+// runWithRetry runs one check, retrying (with exponential backoff) while its
+// result still contains an ERROR finding — a check that couldn't measure
+// (network, handshake) is often a transient.
+func runWithRetry(ctx context.Context, c Check, opts Options) []Finding {
+	attempts := 1 + opts.Retries
+	var res []Finding
+	for a := 0; a < attempts; a++ {
+		cctx, cancel := context.WithTimeout(ctx, opts.Timeout)
+		res = c.Run(cctx)
+		cancel()
+		if a == attempts-1 || !hasError(res) {
+			break
+		}
+		select {
+		case <-time.After(opts.Backoff << a):
+		case <-ctx.Done():
+			return res
+		}
+	}
+	return res
+}
+
+func hasError(findings []Finding) bool {
+	for _, f := range findings {
+		if f.Status == ERROR {
+			return true
+		}
+	}
+	return false
 }
 
 // Summarize counts findings per status.

@@ -117,7 +117,7 @@ func runCheck(args []string) error {
 		return fmt.Errorf("nessun modulo selezionato (niente configurato per %q)", module)
 	}
 
-	res := engine.Run(context.Background(), selected, time.Duration(cfg.TimeoutSeconds)*time.Second)
+	res := engine.RunWith(context.Background(), selected, runOptions(cfg))
 
 	switch *format {
 	case "text":
@@ -154,6 +154,15 @@ func runCheck(args []string) error {
 		}
 	}
 	return nil
+}
+
+// runOptions builds the engine run options from the config.
+func runOptions(cfg *engine.Config) engine.Options {
+	return engine.Options{
+		Timeout: time.Duration(cfg.TimeoutSeconds) * time.Second,
+		Retries: cfg.Retries,
+		Backoff: time.Duration(cfg.RetryBackoffMS) * time.Millisecond,
+	}
 }
 
 // loadConfig loads the base config, overlaying a stack profile when set.
@@ -218,12 +227,12 @@ func runServe(args []string) error {
 	if len(checks) == 0 {
 		return fmt.Errorf("nessun modulo configurato in %s", *configPath)
 	}
-	timeout := time.Duration(cfg.TimeoutSeconds) * time.Second
+	opts := runOptions(cfg)
 
 	var mu sync.Mutex
 	var latest engine.Result
 	runOnce := func() {
-		res := engine.Run(context.Background(), checks, timeout)
+		res := engine.RunWith(context.Background(), checks, opts)
 		mu.Lock()
 		latest = res
 		mu.Unlock()

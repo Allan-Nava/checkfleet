@@ -68,7 +68,7 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 - [ ] **CF-32 — Storico & flap/trend**: persistenza dei run (valutare `modernc.org/sqlite` puro-Go o file JSON), detection di flapping e trend; base per "finding persistenti" di CF-7.
 - [ ] **CF-33 — `checkfleet validate`**: valida la config senza eseguire i check (schema, target, soglie coerenti); exit ≠0 su config errata. Utile in CI/pre-commit.
 - [ ] **CF-34 — Filtri finding**: `--only <check[,check]>`, `--min-severity warn|bad`, `--target <glob>` per ridurre il rumore in output/alerting.
-- [ ] **CF-35 — Retry/backoff su ERROR**: ritenta i soli finding ERROR (rete/handshake) con backoff prima di riportarli, per ridurre i falsi ERROR transitori.
+- [x] **CF-35 — Retry/backoff su ERROR**: `retries`/`retry_backoff_ms` in config; il runner ritenta un check che produce finding ERROR (rete/handshake) con backoff esponenziale prima di riportarlo. `engine.RunWith(Options)`. _(v0.16.0)_
 
 ## M9 — Qualità (fase 2)
 
