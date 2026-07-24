@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.50.0
+
+- **Cambio licenza: da MIT a PolyForm Noncommercial 1.0.0** (source-available). Dal v0.50.0 in poi l'uso è libero solo per scopi **non commerciali** (personale, ricerca, istruzione, organizzazioni no-profit, enti pubblici); qualsiasi uso commerciale richiede una licenza separata dall'autore. Le release **fino al v0.49.0 restano sotto MIT** (il cambio non è retroattivo). Testo verbatim dalla fonte ufficiale con riga `Required Notice`. Aggiornati README (badge + sezione License), footer/badge del sito docs, about dell'app desktop (`main.go`/`wails.json`), CLAUDE/AGENTS. Non è consulenza legale.
+
 ## 0.49.0
 
 - `--diff` (CF-51): con `--history <file>`, `checkfleet check … --diff` mostra solo cosa è cambiato rispetto al run precedente registrato — finding **new / resolved / worsened / improved** per check/target — invece della tabella completa. Utile per un cron che riporta solo i delta. `engine.DiffStatus` pura e testata; helper CLI `diffFromRecords`/`formatDiff` testati. **Chiude M13.**

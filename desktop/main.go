@@ -36,7 +36,7 @@ func main() {
 			TitleBar: mac.TitleBarHiddenInset(),
 			About: &mac.AboutInfo{
 				Title:   "checkfleet",
-				Message: "A fleet of domain-aware infrastructure checks.\nMIT — github.com/Allan-Nava/checkfleet",
+				Message: "A fleet of domain-aware infrastructure checks.\nPolyForm Noncommercial 1.0.0 — github.com/Allan-Nava/checkfleet",
 			},
 		},
 	})

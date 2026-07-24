@@ -1,6 +1,6 @@
 # AGENTS.md — checkfleet
 
-**checkfleet**: CLI Go open source di monitoring domain-specific — check pluggabili in un solo binario (`checkfleet check all|certs|http`), output text/markdown/JSON, target anche da inventory Ansible.
+**checkfleet**: CLI Go source-available (PolyForm Noncommercial 1.0.0) di monitoring domain-specific — check pluggabili in un solo binario (`checkfleet check all|certs|http`), output text/markdown/JSON, target anche da inventory Ansible.
 
 Questo file definisce le regole operative per gli agent (Copilot, Claude, altri tool AI) quando lavorano in questo repository.
 

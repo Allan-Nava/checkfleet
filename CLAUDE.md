@@ -1,6 +1,6 @@
 # CLAUDE.md — checkfleet
 
-**checkfleet** (`github.com/Allan-Nava/checkfleet`): CLI Go open source di monitoring domain-specific — una flotta di check pluggabili in un solo binario (`checkfleet check all|certs|http --config checkfleet.yml`). Output text/markdown/JSON, target anche da inventory Ansible. Filosofia: NON rifare Prometheus/Grafana — fare i check che richiedono conoscenza di dominio e delegare grafici/alerting.
+**checkfleet** (`github.com/Allan-Nava/checkfleet`): CLI Go source-available (PolyForm Noncommercial 1.0.0, dal v0.50.0; prima MIT) di monitoring domain-specific — una flotta di check pluggabili in un solo binario (`checkfleet check all|certs|http --config checkfleet.yml`). Output text/markdown/JSON, target anche da inventory Ansible. Filosofia: NON rifare Prometheus/Grafana — fare i check che richiedono conoscenza di dominio e delegare grafici/alerting.
 
 ## Regole di lavoro (SEMPRE)
 

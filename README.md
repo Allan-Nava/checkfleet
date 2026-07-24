@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://github.com/Allan-Nava/checkfleet/releases"><img alt="Latest release" src="https://img.shields.io/github/v/tag/Allan-Nava/checkfleet?label=release&sort=semver&color=10b981"></a>
   <a href="https://github.com/Allan-Nava/checkfleet/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Allan-Nava/checkfleet/actions/workflows/ci.yml/badge.svg"></a>
-  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-10b981"></a>
+  <a href="LICENSE"><img alt="License: PolyForm Noncommercial 1.0.0" src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-f59e0b"></a>
   <img alt="Go" src="https://img.shields.io/github/go-mod/go-version/Allan-Nava/checkfleet?color=10b981">
 </p>
 
@@ -147,4 +147,4 @@ It never runs under `go test ./...`. CI runs it in its own workflow
 
 ## License
 
-MIT
+[PolyForm Noncommercial License 1.0.0](LICENSE) — source-available, free for **noncommercial** use (personal, research, education, nonprofits, government). Any commercial use requires a separate license from the author. Releases published before v0.50.0 remain under the MIT license they shipped with.
