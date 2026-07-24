@@ -54,11 +54,16 @@ homebrew_casks:
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     homepage: "https://github.com/Allan-Nava/checkfleet"
     description: "A fleet of domain-aware infrastructure checks in one binary"
-    # Cask is generated but NOT pushed until the tap is set up. To publish:
-    #   1) create the repo Allan-Nava/homebrew-tap
-    #   2) add repo secret HOMEBREW_TAP_GITHUB_TOKEN (a PAT with repo scope)
-    #   3) set skip_upload: "false" below
-    skip_upload: "true"
+    # Published to Allan-Nava/homebrew-tap on every v* tag (repo + secret
+    # HOMEBREW_TAP_GITHUB_TOKEN are set up). Unsigned binary: strip the
+    # quarantine attribute on install so Gatekeeper doesn't block it.
+    hooks:
+      post:
+        install: |
+          if system_command "/usr/bin/xattr", args: ["-h"], print_stderr: false
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/checkfleet"]
+          end
+    skip_upload: "false"
 
 release:
   draft: false

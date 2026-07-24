@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.31.2
+
+- Homebrew: tap `Allan-Nava/homebrew-tap` attivata. `skip_upload: "false"` in `.goreleaser.yaml` → a ogni tag `v*` goreleaser pubblica il cask sulla tap, quindi `brew install Allan-Nava/tap/checkfleet` funziona (repo tap + secret `HOMEBREW_TAP_GITHUB_TOKEN` già configurati). Il cask distribuisce il binario precompilato (darwin amd64/arm64) e rimuove l'attributo `com.apple.quarantine` all'installazione (binario non firmato). Solo i tag successivi all'attivazione portano il cask.
+
 ## 0.31.0
 
 - Release: l'app desktop Wails viene allegata a **ogni** GitHub Release (tag `v*`). Il workflow `desktop.yml` builda per macOS (`.app` universale), Linux e Windows, aspetta che goreleaser abbia creato la release e vi carica gli eseguibili (`checkfleet-desktop_<versione>_<os>_<arch>.zip|.tar.gz`). Resta un workflow separato: se il build desktop fallisce, la release del CLI non si blocca. Eseguibile anche a mano via `workflow_dispatch` (carica gli artifact del workflow).

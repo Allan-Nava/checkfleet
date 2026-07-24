@@ -24,6 +24,6 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Empty until the Homebrew tap is set up; the formula step skips while
-          # skip_upload is "true" in .goreleaser.yaml.
+          # PAT (repo scope) that lets goreleaser push the cask to
+          # Allan-Nava/homebrew-tap. Required now that skip_upload is "false".
           HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}

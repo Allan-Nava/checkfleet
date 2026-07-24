@@ -102,11 +102,16 @@ goreleaser check                       # lint the config
 goreleaser release --snapshot --clean  # full build + archives into dist/, no upload
 ```
 
-**Enabling the Homebrew tap** (one-time): the cask is generated but not pushed
-(`skip_upload: "true"`). To publish it:
+**Homebrew tap**: enabled. On every `v*` tag goreleaser pushes the cask to
+[`Allan-Nava/homebrew-tap`](https://github.com/Allan-Nava/homebrew-tap) (the
+repo and the `HOMEBREW_TAP_GITHUB_TOKEN` secret are set up, `skip_upload:
+"false"`), so:
 
-1. create the repo `Allan-Nava/homebrew-tap`;
-2. add a repo secret `HOMEBREW_TAP_GITHUB_TOKEN` (a PAT with `repo` scope);
-3. set `skip_upload: "false"` in `.goreleaser.yaml`.
+```bash
+brew install Allan-Nava/tap/checkfleet
+```
 
-Then `brew install Allan-Nava/tap/checkfleet` works after the next tag.
+The cask ships the release archive's prebuilt binary (darwin amd64/arm64) and
+strips the `com.apple.quarantine` attribute on install (the binary is
+unsigned). Only tags *after* the tap was enabled carry the cask — older
+releases won't install via brew.
