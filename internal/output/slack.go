@@ -41,7 +41,7 @@ func Slack(res engine.Result, title string) (string, error) {
 		}
 	}
 	if len(problems) == 0 {
-		blocks = append(blocks, slackBlock{Type: "section", Text: &slackText{Type: "mrkdwn", Text: "Tutto verde. :white_check_mark:"}})
+		blocks = append(blocks, slackBlock{Type: "section", Text: &slackText{Type: "mrkdwn", Text: "All green. :white_check_mark:"}})
 	}
 	shown := problems
 	if len(shown) > maxSlackProblems {
@@ -52,7 +52,7 @@ func Slack(res engine.Result, title string) (string, error) {
 		blocks = append(blocks, slackBlock{Type: "section", Text: &slackText{Type: "mrkdwn", Text: line}})
 	}
 	if extra := len(problems) - len(shown); extra > 0 {
-		blocks = append(blocks, slackBlock{Type: "section", Text: &slackText{Type: "mrkdwn", Text: fmt.Sprintf("…e altri %d problemi", extra)}})
+		blocks = append(blocks, slackBlock{Type: "section", Text: &slackText{Type: "mrkdwn", Text: fmt.Sprintf("…and %d more problems", extra)}})
 	}
 
 	out, err := json.MarshalIndent(slackPayload{Blocks: blocks}, "", "  ")

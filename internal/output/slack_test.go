@@ -32,17 +32,17 @@ func TestSlackValidJSONAndBlocks(t *testing.T) {
 		} `json:"blocks"`
 	}
 	if err := json.Unmarshal([]byte(out), &payload); err != nil {
-		t.Fatalf("JSON non valido: %v", err)
+		t.Fatalf("invalid JSON: %v", err)
 	}
 	if payload.Blocks[0].Type != "header" || !strings.Contains(payload.Blocks[0].Text.Text, "all") {
-		t.Errorf("primo blocco: atteso header con titolo, avuto %+v", payload.Blocks[0])
+		t.Errorf("first block: want header with title, got %+v", payload.Blocks[0])
 	}
-	// header + summary + 1 problema (l'OK non compare)
+	// header + summary + 1 problem (the OK does not show)
 	if len(payload.Blocks) != 3 {
-		t.Errorf("attesi 3 blocchi (header, summary, 1 problema), avuti %d", len(payload.Blocks))
+		t.Errorf("want 3 blocks (header, summary, 1 problem), got %d", len(payload.Blocks))
 	}
 	if !strings.Contains(out, "HTTP 500") {
-		t.Errorf("il problema BAD dovrebbe comparire nel payload")
+		t.Errorf("the BAD problem should appear in the payload")
 	}
 }
 
@@ -53,7 +53,7 @@ func TestSlackAllGreen(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !strings.Contains(out, "white_check_mark") {
-		t.Errorf("tutto verde: atteso messaggio positivo, avuto %s", out)
+		t.Errorf("all green: want the positive message, got %s", out)
 	}
 }
 
@@ -66,7 +66,7 @@ func TestSlackCapsProblems(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(out, "e altri 5 problemi") {
-		t.Errorf("cap problemi: attesa nota di troncamento, avuto %s", out)
+	if !strings.Contains(out, "and 5 more problems") {
+		t.Errorf("problem cap: want the truncation note, got %s", out)
 	}
 }

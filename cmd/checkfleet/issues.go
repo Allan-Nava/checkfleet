@@ -24,9 +24,9 @@ const issueLabel = "checkfleet-finding"
 //	checkfleet report-issues --config checkfleet.yml [--stack …] [--dry-run]
 func runReportIssues(args []string) error {
 	fs := flag.NewFlagSet("report-issues", flag.ExitOnError)
-	configPath := fs.String("config", "checkfleet.yml", "file di configurazione YAML")
-	stack := fs.String("stack", "", "profilo stack: sovrappone checkfleet.<stack>.yml alla base")
-	dryRun := fs.Bool("dry-run", false, "stampa le azioni senza toccare le issue")
+	configPath := fs.String("config", "checkfleet.yml", "YAML config file")
+	stack := fs.String("stack", "", "stack profile: overlays checkfleet.<stack>.yml onto the base")
+	dryRun := fs.Bool("dry-run", false, "print the actions without touching any issue")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -36,7 +36,7 @@ func runReportIssues(args []string) error {
 	}
 	checks := registry.Configured(cfg)
 	if len(checks) == 0 {
-		return fmt.Errorf("nessun modulo configurato in %s", *configPath)
+		return fmt.Errorf("no module configured in %s", *configPath)
 	}
 
 	ctx := context.Background()
@@ -50,13 +50,13 @@ func runReportIssues(args []string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("report-issues: %d aperte, %d chiuse, %d invariate (dry-run=%v)\n",
+	fmt.Printf("report-issues: %d opened, %d closed, %d unchanged (dry-run=%v)\n",
 		len(rep.Created), len(rep.Closed), rep.Unchanged, *dryRun)
 	for _, k := range rep.Created {
-		fmt.Printf("  apro   %s\n", k)
+		fmt.Printf("  open   %s\n", k)
 	}
 	for _, k := range rep.Closed {
-		fmt.Printf("  chiudo %s\n", k)
+		fmt.Printf("  close  %s\n", k)
 	}
 	return nil
 }
@@ -94,7 +94,7 @@ func (g *ghIssueClient) Close(_ context.Context, number int, comment string) err
 }
 
 func (g *ghIssueClient) ensureLabel() {
-	_, _ = ghRun("label", "create", g.label, "--color", "b60205", "--description", "Finding BAD/ERROR di checkfleet (gestita da report-issues)")
+	_, _ = ghRun("label", "create", g.label, "--color", "b60205", "--description", "checkfleet BAD/ERROR finding (managed by report-issues)")
 }
 
 func ghRun(args ...string) (string, error) {

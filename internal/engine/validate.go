@@ -19,20 +19,20 @@ func Validate(cfg *Config) []string {
 	if x := c.Certs; x != nil {
 		configured++
 		if len(x.Targets) == 0 && x.AnsibleInventory == "" {
-			add("certs: nessun target né ansible_inventory")
+			add("certs: no target or ansible_inventory")
 		}
 		if x.WarnDays < x.CritDays {
-			add("certs: warn_days (%d) dovrebbe essere >= crit_days (%d)", x.WarnDays, x.CritDays)
+			add("certs: warn_days (%d) should be >= crit_days (%d)", x.WarnDays, x.CritDays)
 		}
 	}
 	if x := c.HTTP; x != nil {
 		configured++
 		if len(x.Targets) == 0 {
-			add("http: nessun target")
+			add("http: no target")
 		}
 		for i, t := range x.Targets {
 			if t.URL == "" {
-				add("http: target #%d senza url", i+1)
+				add("http: target #%d has no url", i+1)
 			}
 		}
 	}
@@ -50,13 +50,13 @@ func Validate(cfg *Config) []string {
 	if x := c.Stream; x != nil {
 		configured++
 		if len(x.Targets) == 0 {
-			add("stream: nessun target")
+			add("stream: no target")
 		}
 		for i, t := range x.Targets {
 			if t.URL == "" {
-				add("stream: target #%d senza url", i+1)
+				add("stream: target #%d has no url", i+1)
 			} else if _, err := url.Parse(t.URL); err != nil {
-				add("stream: url non valido %q: %v", t.URL, err)
+				add("stream: invalid url %q: %v", t.URL, err)
 			}
 		}
 	}
@@ -74,11 +74,11 @@ func Validate(cfg *Config) []string {
 	if x := c.Postgres; x != nil {
 		configured++
 		if len(x.Targets) == 0 {
-			add("postgres: nessun target")
+			add("postgres: no target")
 		}
 		for i, t := range x.Targets {
 			if t.DSN == "" {
-				add("postgres: target #%d (%s) senza dsn", i+1, t.Name)
+				add("postgres: target #%d (%s) has no dsn", i+1, t.Name)
 			}
 		}
 		if x.LagWarnBytes > x.LagCritBytes {
@@ -88,29 +88,29 @@ func Validate(cfg *Config) []string {
 			add("postgres: wraparound_warn_age > wraparound_crit_age")
 		}
 		if x.ConnWarnPct < 0 || x.ConnWarnPct > 100 {
-			add("postgres: conn_warn_pct (%d) fuori da 0-100", x.ConnWarnPct)
+			add("postgres: conn_warn_pct (%d) out of range 0-100", x.ConnWarnPct)
 		}
 	}
 	if x := c.DNS; x != nil {
 		configured++
 		if len(x.Targets) == 0 {
-			add("dns: nessun target")
+			add("dns: no target")
 		}
 		for i, t := range x.Targets {
 			if strings.TrimSpace(t.Name) == "" {
-				add("dns: target #%d senza name", i+1)
+				add("dns: target #%d has no name", i+1)
 			}
 		}
 	}
 
 	if configured == 0 {
-		add("nessun modulo configurato sotto `checks`")
+		add("no module configured under `checks`")
 	}
 	return problems
 }
 
 func requireTargets(add func(string, ...any), module string, nTargets int, inventory string) {
 	if nTargets == 0 && inventory == "" {
-		add("%s: nessun target né ansible_inventory", module)
+		add("%s: no target or ansible_inventory", module)
 	}
 }

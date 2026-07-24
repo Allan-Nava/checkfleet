@@ -20,7 +20,7 @@ var statusIcon = map[engine.Status]string{
 
 func summaryLine(res engine.Result) string {
 	s := engine.Summarize(res.Findings)
-	return fmt.Sprintf("%d check: %d OK, %d WARN, %d BAD, %d ERROR (in %s)",
+	return fmt.Sprintf("%d checks: %d OK, %d WARN, %d BAD, %d ERROR (in %s)",
 		len(res.Findings), s[engine.OK], s[engine.WARN], s[engine.BAD], s[engine.ERROR],
 		res.Duration.Round(time.Millisecond))
 }
@@ -39,7 +39,7 @@ func Text(res engine.Result) string {
 func Markdown(res engine.Result, title string) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "# checkfleet — %s\n\n", title)
-	fmt.Fprintf(&b, "Generato: %s\n\n", res.Started.Format(time.RFC3339))
+	fmt.Fprintf(&b, "Generated: %s\n\n", res.Started.Format(time.RFC3339))
 	fmt.Fprintf(&b, "```\n%s\n```\n\n", summaryLine(res))
 
 	var problems []engine.Finding
@@ -48,18 +48,18 @@ func Markdown(res engine.Result, title string) string {
 			problems = append(problems, f)
 		}
 	}
-	fmt.Fprintf(&b, "## ⚠ Da guardare\n\n")
+	fmt.Fprintf(&b, "## ⚠ Needs attention\n\n")
 	if len(problems) == 0 {
-		fmt.Fprintf(&b, "Niente — tutto verde. ✅\n\n")
+		fmt.Fprintf(&b, "Nothing — all green. ✅\n\n")
 	} else {
-		fmt.Fprintf(&b, "| Stato | Check | Target | Dettaglio |\n|---|---|---|---|\n")
+		fmt.Fprintf(&b, "| Status | Check | Target | Detail |\n|---|---|---|---|\n")
 		for _, f := range problems {
 			fmt.Fprintf(&b, "| %s %s | %s | `%s` | %s |\n", statusIcon[f.Status], f.Status, f.Check, f.Target, f.Message)
 		}
 		fmt.Fprintf(&b, "\n")
 	}
 
-	fmt.Fprintf(&b, "## Tutti i risultati\n\n| Stato | Check | Target | Dettaglio |\n|---|---|---|---|\n")
+	fmt.Fprintf(&b, "## All results\n\n| Status | Check | Target | Detail |\n|---|---|---|---|\n")
 	for _, f := range res.Findings {
 		fmt.Fprintf(&b, "| %s %s | %s | `%s` | %s |\n", statusIcon[f.Status], f.Status, f.Check, f.Target, f.Message)
 	}

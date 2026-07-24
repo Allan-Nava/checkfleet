@@ -65,42 +65,42 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, `uso:
+	fmt.Fprintln(os.Stderr, `usage:
   checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka> --config checkfleet.yml [--output text|markdown|json|junit|prometheus|slack|webhook] [--out-file PATH] [--only ...] [--min-severity warn] [--target glob] [--exit-on-bad]
-  checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s]   # esporta le metriche Prometheus
-  checkfleet report-issues --config checkfleet.yml [--dry-run]                 # apre/chiude issue GitHub dai finding BAD
-  checkfleet validate --config checkfleet.yml                                  # valida la config senza eseguire i check
+  checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s]   # export Prometheus metrics
+  checkfleet report-issues --config checkfleet.yml [--dry-run]                 # open/close GitHub issues from BAD findings
+  checkfleet validate --config checkfleet.yml                                  # validate the config without running the checks
   checkfleet version`)
 }
 
 func runCheck(args []string) error {
 	if len(args) < 1 {
 		usage()
-		return fmt.Errorf("modulo mancante")
+		return fmt.Errorf("missing module")
 	}
 	module := args[0]
 
 	fs := flag.NewFlagSet("check", flag.ExitOnError)
-	configPath := fs.String("config", "checkfleet.yml", "file di configurazione YAML")
-	stack := fs.String("stack", "", "profilo stack: sovrappone checkfleet.<stack>.yml alla base")
-	format := fs.String("output", "text", "formato: text, markdown, json, junit, prometheus, slack, webhook")
-	outFile := fs.String("out-file", "", "scrive l'output su questo file (atomico) invece di stdout")
-	webhookEnv := fs.String("webhook-env", "SLACK_WEBHOOK", "env var con l'URL webhook Slack (output slack)")
-	only := fs.String("only", "", "mostra solo questi check (lista separata da virgole)")
-	minSeverity := fs.String("min-severity", "", "mostra solo finding a partire da: ok|warn|bad|error")
-	targetGlob := fs.String("target", "", "mostra solo i target che matchano questo glob")
-	historyPath := fs.String("history", "", "file JSONL di storico: registra il run e segnala il flapping")
-	flapChanges := fs.Int("flap-changes", 3, "n. minimo di cambi di stato per segnalare flapping")
-	flapWindow := fs.Int("flap-window", 10, "n. di run recenti su cui valutare il flapping")
-	pingURLEnv := fs.String("ping-url-env", "", "env var con l'URL dead-man's-switch (es. Healthchecks.io) da pingare a fine run")
-	exitOnBad := fs.Bool("exit-on-bad", false, "exit code 2 se presenti finding BAD/ERROR")
+	configPath := fs.String("config", "checkfleet.yml", "YAML config file")
+	stack := fs.String("stack", "", "stack profile: overlays checkfleet.<stack>.yml onto the base")
+	format := fs.String("output", "text", "format: text, markdown, json, junit, prometheus, slack, webhook")
+	outFile := fs.String("out-file", "", "write the output to this file (atomically) instead of stdout")
+	webhookEnv := fs.String("webhook-env", "SLACK_WEBHOOK", "env var holding the Slack webhook URL (slack output)")
+	only := fs.String("only", "", "show only these checks (comma-separated list)")
+	minSeverity := fs.String("min-severity", "", "show only findings at or above: ok|warn|bad|error")
+	targetGlob := fs.String("target", "", "show only targets matching this glob")
+	historyPath := fs.String("history", "", "JSONL history file: record the run and flag flapping")
+	flapChanges := fs.Int("flap-changes", 3, "minimum number of state changes to flag flapping")
+	flapWindow := fs.Int("flap-window", 10, "number of recent runs to evaluate flapping over")
+	pingURLEnv := fs.String("ping-url-env", "", "env var holding the dead-man's-switch URL (e.g. Healthchecks.io) to ping at the end of the run")
+	exitOnBad := fs.Bool("exit-on-bad", false, "exit code 2 if any BAD/ERROR finding is present")
 	if err := fs.Parse(args[1:]); err != nil {
 		return err
 	}
 
 	minSev, ok := engine.ParseStatus(*minSeverity)
 	if !ok {
-		return fmt.Errorf("--min-severity %q non valido (usa ok|warn|bad|error)", *minSeverity)
+		return fmt.Errorf("--min-severity %q is not valid (use ok|warn|bad|error)", *minSeverity)
 	}
 	filter := engine.FilterOptions{Only: commaSet(*only), MinSeverity: minSev, TargetGlob: *targetGlob}
 
@@ -119,24 +119,24 @@ func runCheck(args []string) error {
 		known = true
 		if !s.Configured {
 			if module == s.Name {
-				return fmt.Errorf("modulo %q non configurato in %s", s.Name, *configPath)
+				return fmt.Errorf("module %q is not configured in %s", s.Name, *configPath)
 			}
 			continue
 		}
 		selected = append(selected, s.Build())
 	}
 	if !known {
-		return fmt.Errorf("modulo %q sconosciuto", module)
+		return fmt.Errorf("unknown module %q", module)
 	}
 	if len(selected) == 0 {
-		return fmt.Errorf("nessun modulo selezionato (niente configurato per %q)", module)
+		return fmt.Errorf("no module selected (nothing configured for %q)", module)
 	}
 
 	res := engine.RunWith(context.Background(), selected, runOptions(cfg))
 	if *historyPath != "" {
 		flaps, err := recordHistory(*historyPath, res, *flapChanges, *flapWindow)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "checkfleet: storico:", err)
+			fmt.Fprintln(os.Stderr, "checkfleet: history:", err)
 		}
 		res.Findings = append(res.Findings, flaps...)
 	}
@@ -150,12 +150,12 @@ func runCheck(args []string) error {
 		}
 		url := os.Getenv(*webhookEnv)
 		if url == "" {
-			return fmt.Errorf("webhook Slack non impostato: la env %s è vuota", *webhookEnv)
+			return fmt.Errorf("Slack webhook not set: env %s is empty", *webhookEnv)
 		}
 		if err := postJSON(context.Background(), url, payload); err != nil {
 			return err
 		}
-		fmt.Println("checkfleet: report inviato a Slack")
+		fmt.Println("checkfleet: report sent to Slack")
 	case "webhook":
 		payload, err := output.JSON(res)
 		if err != nil {
@@ -163,12 +163,12 @@ func runCheck(args []string) error {
 		}
 		url := os.Getenv(*webhookEnv)
 		if url == "" {
-			return fmt.Errorf("webhook non impostato: la env %s è vuota", *webhookEnv)
+			return fmt.Errorf("webhook not set: env %s is empty", *webhookEnv)
 		}
 		if err := postJSON(context.Background(), url, payload); err != nil {
 			return err
 		}
-		fmt.Println("checkfleet: report inviato al webhook")
+		fmt.Println("checkfleet: report sent to the webhook")
 	default:
 		rendered, err := render(*format, res, module)
 		if err != nil {
@@ -237,7 +237,7 @@ func render(format string, res engine.Result, module string) (string, error) {
 	case "prometheus":
 		return output.Prometheus(res), nil
 	default:
-		return "", fmt.Errorf("formato %q sconosciuto", format)
+		return "", fmt.Errorf("unknown format %q", format)
 	}
 }
 
@@ -266,8 +266,8 @@ func atomicWrite(path, content string) error {
 //	checkfleet validate --config checkfleet.yml [--stack …]
 func runValidate(args []string) error {
 	fs := flag.NewFlagSet("validate", flag.ExitOnError)
-	configPath := fs.String("config", "checkfleet.yml", "file di configurazione YAML")
-	stack := fs.String("stack", "", "profilo stack: sovrappone checkfleet.<stack>.yml alla base")
+	configPath := fs.String("config", "checkfleet.yml", "YAML config file")
+	stack := fs.String("stack", "", "stack profile: overlays checkfleet.<stack>.yml onto the base")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -277,10 +277,10 @@ func runValidate(args []string) error {
 	}
 	problems := engine.Validate(cfg)
 	if len(problems) == 0 {
-		fmt.Printf("checkfleet: %s valida ✅\n", *configPath)
+		fmt.Printf("checkfleet: %s is valid ✅\n", *configPath)
 		return nil
 	}
-	fmt.Fprintf(os.Stderr, "%s: %d problema/i:\n", *configPath, len(problems))
+	fmt.Fprintf(os.Stderr, "%s: %d problem(s):\n", *configPath, len(problems))
 	for _, p := range problems {
 		fmt.Fprintln(os.Stderr, "  -", p)
 	}
@@ -307,7 +307,7 @@ func recordHistory(path string, res engine.Result, minChanges, window int) ([]en
 	for _, fl := range history.Flaps(recent, minChanges) {
 		flaps = append(flaps, engine.Finding{
 			Check: "flap", Target: fl.Key, Status: engine.WARN,
-			Message: fmt.Sprintf("flapping: %d cambi di stato negli ultimi %d run (ora %s)", fl.Changes, len(recent), fl.Last),
+			Message: fmt.Sprintf("flapping: %d state changes in the last %d runs (now %s)", fl.Changes, len(recent), fl.Last),
 		})
 	}
 	return flaps, nil
@@ -348,10 +348,10 @@ func loadConfig(path, stack string) (*engine.Config, error) {
 // an interval. checkfleet serve --config … --listen :9876 --interval 60s
 func runServe(args []string) error {
 	fs := flag.NewFlagSet("serve", flag.ExitOnError)
-	configPath := fs.String("config", "checkfleet.yml", "file di configurazione YAML")
-	stack := fs.String("stack", "", "profilo stack: sovrappone checkfleet.<stack>.yml alla base")
-	listen := fs.String("listen", ":9876", "indirizzo di ascolto")
-	interval := fs.Duration("interval", 60*time.Second, "intervallo di riesecuzione dei check")
+	configPath := fs.String("config", "checkfleet.yml", "YAML config file")
+	stack := fs.String("stack", "", "stack profile: overlays checkfleet.<stack>.yml onto the base")
+	listen := fs.String("listen", ":9876", "listen address")
+	interval := fs.Duration("interval", 60*time.Second, "interval between check re-runs")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -361,7 +361,7 @@ func runServe(args []string) error {
 	}
 	checks := registry.Configured(cfg)
 	if len(checks) == 0 {
-		return fmt.Errorf("nessun modulo configurato in %s", *configPath)
+		return fmt.Errorf("no module configured in %s", *configPath)
 	}
 	opts := runOptions(cfg)
 
@@ -390,9 +390,9 @@ func runServe(args []string) error {
 		fmt.Fprint(w, output.Prometheus(res))
 	})
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "checkfleet %s\n\nmetriche: /metrics\n%d moduli, riesecuzione ogni %s\n", version, len(checks), *interval)
+		fmt.Fprintf(w, "checkfleet %s\n\nmetrics: /metrics\n%d modules, re-run every %s\n", version, len(checks), *interval)
 	})
-	fmt.Fprintf(os.Stderr, "checkfleet serve: %d moduli su %s (intervallo %s)\n", len(checks), *listen, *interval)
+	fmt.Fprintf(os.Stderr, "checkfleet serve: %d modules on %s (interval %s)\n", len(checks), *listen, *interval)
 	return http.ListenAndServe(*listen, nil)
 }
 
@@ -405,11 +405,11 @@ func postJSON(ctx context.Context, url, payload string) error {
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("invio al webhook: %w", err)
+		return fmt.Errorf("sending to the webhook: %w", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("il webhook ha risposto HTTP %d", resp.StatusCode)
+		return fmt.Errorf("the webhook responded HTTP %d", resp.StatusCode)
 	}
 	return nil
 }

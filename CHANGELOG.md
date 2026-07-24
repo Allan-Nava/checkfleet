@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.38.0
+
+- Output in inglese — engine & CLI (CF-58, M15): tradotti `usage`, help dei flag, errori sistemici (`unknown module`, `module %q is not configured`, `no module selected`…), messaggi di `validate` (`… is valid ✅`, `N problem(s):`), i problemi di `engine.Validate` (`no target`, `has no url/dsn`, `should be >=`…), il finding di flapping, i messaggi di `serve`/`report-issues`, e i renderer `internal/output`: summary `N checks: …`, sezioni Markdown `Needs attention`/`All results` (header tabella `Status/Check/Target/Detail`), nota Slack `All green`/`…and N more problems`. Test aggiornati. I **messaggi dei finding dei moduli** restano da tradurre (CF-59, uno per release). CHANGELOG resta in italiano.
+
 ## 0.37.2
 
 - Fix E2E desktop (`desktop-test.yml`): la webview si apriva ma lo screenshot era vuoto (1 colore → job rosso). Su Ubuntu 24.04 `libwebkit2gtk-4.1` è WebKitGTK ≥2.42, che di default usa il **DMABUF renderer**: sotto la GL software di Xvfb dipinge un frame nero. Aggiunto `WEBKIT_DISABLE_DMABUF_RENDERER=1` (+`GDK_BACKEND=x11`) per forzare il path software. La verifica ora **fa polling** dello screenshot (fino a 20 tentativi) invece di un singolo `sleep 3`, e dumpa `app.log` in caso di blank.

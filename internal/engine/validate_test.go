@@ -7,8 +7,8 @@ import (
 
 func TestValidateEmptyConfig(t *testing.T) {
 	p := Validate(&Config{})
-	if len(p) != 1 || !strings.Contains(p[0], "nessun modulo") {
-		t.Errorf("config vuota: atteso 1 problema 'nessun modulo', avuto %v", p)
+	if len(p) != 1 || !strings.Contains(p[0], "no module") {
+		t.Errorf("empty config: want 1 problem 'no module', got %v", p)
 	}
 }
 
@@ -18,7 +18,7 @@ func TestValidateGoodConfig(t *testing.T) {
 		HTTP:  &HTTPConfig{Targets: []HTTPTarget{{URL: "https://x/"}}},
 	}}
 	if p := Validate(cfg); len(p) != 0 {
-		t.Errorf("config valida: attesi 0 problemi, avuto %v", p)
+		t.Errorf("valid config: want 0 problems, got %v", p)
 	}
 }
 
@@ -30,9 +30,9 @@ func TestValidateMissingTargetsAndUrls(t *testing.T) {
 	}}
 	p := Validate(cfg)
 	joined := strings.Join(p, "\n")
-	for _, want := range []string{"nats: nessun target", "http: target #1 senza url", "postgres: target #1 (db) senza dsn"} {
+	for _, want := range []string{"nats: no target", "http: target #1 has no url", "postgres: target #1 (db) has no dsn"} {
 		if !strings.Contains(joined, want) {
-			t.Errorf("atteso problema %q, avuto:\n%s", want, joined)
+			t.Errorf("want problem %q, got:\n%s", want, joined)
 		}
 	}
 }
@@ -44,9 +44,9 @@ func TestValidateThresholdOrder(t *testing.T) {
 	}}
 	joined := strings.Join(Validate(cfg), "\n")
 	if !strings.Contains(joined, "certs: warn_days") {
-		t.Errorf("atteso problema soglia certs, avuto:\n%s", joined)
+		t.Errorf("want certs threshold problem, got:\n%s", joined)
 	}
 	if !strings.Contains(joined, "nats: lag_warn") {
-		t.Errorf("atteso problema soglia nats, avuto:\n%s", joined)
+		t.Errorf("want nats threshold problem, got:\n%s", joined)
 	}
 }
