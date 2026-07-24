@@ -50,3 +50,20 @@ checkfleet check all --config checkfleet.yml --output json | jq '.worst'
 ```
 
 See [CI integration](ci.md) for using `worst` or `--exit-on-bad` to fail a build.
+
+## `slack`
+
+Posts a [Block Kit](https://api.slack.com/block-kit) message to a Slack incoming
+webhook instead of printing: a header, the summary line, then the non-OK
+findings (worst first, capped). The webhook URL is read from an environment
+variable — never passed on the command line or stored in config.
+
+```bash
+export SLACK_WEBHOOK="https://hooks.slack.com/services/…"
+checkfleet check all --config checkfleet.yml --output slack
+# or point at a different env var:
+checkfleet check all --config checkfleet.yml --output slack --webhook-env SLACK_WEBHOOK_OPS
+```
+
+If the env var is empty the command errors (nothing is sent). A run that posts
+successfully prints `report inviato a Slack`.

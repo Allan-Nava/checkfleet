@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.0
+
+- Output `slack` (CF-5): `--output slack` invia un messaggio Block Kit a un webhook Slack (header + summary + problemi worst-first, cap 20). URL del webhook da env (`--webhook-env`, default `SLACK_WEBHOOK`), mai in CLI/config. Renderer `output.Slack` testato (JSON valido, cap); POST thin nel CLI.
+
 ## 0.8.0
 
 - Modulo `dns` (CF-13): health risoluzione DNS con **client DNS minimale in-tree** (zero dipendenze) — query a resolver specifici, TTL e serial SOA.

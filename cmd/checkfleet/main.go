@@ -11,9 +11,11 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"time"
 
@@ -53,7 +55,7 @@ func main() {
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `uso:
-  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns> --config checkfleet.yml [--output text|markdown|json] [--exit-on-bad]
+  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns> --config checkfleet.yml [--output text|markdown|json|slack] [--exit-on-bad]
   checkfleet version`)
 }
 
@@ -66,7 +68,8 @@ func runCheck(args []string) error {
 
 	fs := flag.NewFlagSet("check", flag.ExitOnError)
 	configPath := fs.String("config", "checkfleet.yml", "file di configurazione YAML")
-	format := fs.String("output", "text", "formato: text, markdown, json")
+	format := fs.String("output", "text", "formato: text, markdown, json, slack")
+	webhookEnv := fs.String("webhook-env", "SLACK_WEBHOOK", "env var con l'URL webhook Slack (output slack)")
 	exitOnBad := fs.Bool("exit-on-bad", false, "exit code 2 se presenti finding BAD/ERROR")
 	if err := fs.Parse(args[1:]); err != nil {
 		return err
@@ -135,6 +138,19 @@ func runCheck(args []string) error {
 			return err
 		}
 		fmt.Println(s)
+	case "slack":
+		payload, err := output.Slack(res, module)
+		if err != nil {
+			return err
+		}
+		webhook := os.Getenv(*webhookEnv)
+		if webhook == "" {
+			return fmt.Errorf("webhook Slack non impostato: la env %s è vuota", *webhookEnv)
+		}
+		if err := postSlack(context.Background(), webhook, payload); err != nil {
+			return err
+		}
+		fmt.Println("checkfleet: report inviato a Slack")
 	default:
 		return fmt.Errorf("formato %q sconosciuto", *format)
 	}
@@ -144,6 +160,24 @@ func runCheck(args []string) error {
 		if worst == engine.BAD || worst == engine.ERROR {
 			os.Exit(2)
 		}
+	}
+	return nil
+}
+
+// postSlack sends a Block Kit payload to an incoming webhook URL.
+func postSlack(ctx context.Context, webhook, payload string) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, webhook, bytes.NewBufferString(payload))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("invio a Slack: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("Slack ha risposto HTTP %d", resp.StatusCode)
 	}
 	return nil
 }
