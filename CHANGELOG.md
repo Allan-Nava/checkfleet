@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.30.1
+
+- Desktop: `desktop/go.mod` + `desktop/go.sum` risolti (dep indirette di Wails) così `wails build` gira out-of-the-box; `.gitignore` esteso a `build/darwin`, `build/windows` e al binario vagante. Build verificata in locale: `.app` universale (x86_64+arm64) con frontend embeddato e icona dal logo — conferma che la GUI è un binario nativo unico, non un servizio a parte.
+
 ## 0.30.0
 
 - Modulo `kafka` (CF-43): health cluster via `franz-go`/`kadm`. Controller assente → BAD, broker sotto `expect_brokers` → WARN, partizioni under-replicated → BAD, lag dei consumer group in `groups` oltre `lag_warn`/`lag_crit` → WARN/BAD. TLS+SASL (plain/scram) opzionali, password da env. I/O dietro interfaccia: logica testata con fake (nessun broker reale nei test). Nuove dip: `github.com/twmb/franz-go` (+kadm).
