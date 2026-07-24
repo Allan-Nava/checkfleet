@@ -30,7 +30,15 @@ that one; if it isn't configured, the command fails.
 | `--only` | — | Show only these checks (comma-separated, e.g. `--only certs,http`). |
 | `--min-severity` | — | Show only findings at or above `ok`\|`warn`\|`bad`\|`error`. |
 | `--target` | — | Show only targets matching this glob (e.g. `--target '*.example.com'`). |
+| `--history` | — | JSONL file to append each run to; enables flap detection across runs. |
+| `--flap-changes` | `3` | Minimum status changes in the window to flag flapping. |
+| `--flap-window` | `10` | Number of recent runs to evaluate flapping over. |
 | `--exit-on-bad` | off | Exit `2` when any BAD/ERROR finding is present. For CI gates. |
+
+With `--history <file>`, each run is appended to a JSONL log and any
+`check/target` that changed status at least `--flap-changes` times over the last
+`--flap-window` runs gets an extra `flap` WARN finding — useful to spot
+unstable targets that pass/fail intermittently. Zero dependencies (plain JSONL).
 
 Filters apply to the rendered output (and therefore to `--exit-on-bad` and the
 JSON `worst`), so `--min-severity bad --exit-on-bad` gates only on real

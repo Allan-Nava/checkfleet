@@ -65,7 +65,7 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 ## M8 — Engine & UX (fase 2)
 
 - [x] **CF-31 — Check concorrenti**: il runner esegue i moduli in parallelo (goroutine per check, timeout per-check), raccolta per-indice + sort stabile → output deterministico e wall-clock ≈ check più lento. _(v0.15.0)_
-- [ ] **CF-32 — Storico & flap/trend**: persistenza dei run (valutare `modernc.org/sqlite` puro-Go o file JSON), detection di flapping e trend; base per "finding persistenti" di CF-7.
+- [x] **CF-32 — Storico & flap/trend**: persistenza dei run in **JSONL** (zero dip, scelto vs SQLite); `--history <file>` registra il run e aggiunge finding `flap` (WARN) per i target che cambiano stato ≥ soglia nella finestra recente. Package `internal/history`. _(v0.19.0; SQLite scartato per la filosofia zero-dep)_
 - [x] **CF-33 — `checkfleet validate`**: valida la config senza eseguire i check (target/url/dsn presenti, soglie coerenti, `checks` non vuoto); exit 1 su problemi, elenco leggibile. `engine.Validate`. _(v0.18.0)_
 - [x] **CF-34 — Filtri finding**: `--only <check[,check]>`, `--min-severity ok|warn|bad|error`, `--target <glob>` sul comando `check`; i filtri valgono anche per `--exit-on-bad` e il `worst` JSON. `engine.Filter`. _(v0.17.0)_
 - [x] **CF-35 — Retry/backoff su ERROR**: `retries`/`retry_backoff_ms` in config; il runner ritenta un check che produce finding ERROR (rete/handshake) con backoff esponenziale prima di riportarlo. `engine.RunWith(Options)`. _(v0.16.0)_

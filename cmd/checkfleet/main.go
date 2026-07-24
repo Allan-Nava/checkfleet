@@ -31,6 +31,7 @@ import (
 	"github.com/Allan-Nava/checkfleet/internal/checks/postgres"
 	"github.com/Allan-Nava/checkfleet/internal/checks/stream"
 	"github.com/Allan-Nava/checkfleet/internal/engine"
+	"github.com/Allan-Nava/checkfleet/internal/history"
 	"github.com/Allan-Nava/checkfleet/internal/output"
 )
 
@@ -94,6 +95,9 @@ func runCheck(args []string) error {
 	only := fs.String("only", "", "mostra solo questi check (lista separata da virgole)")
 	minSeverity := fs.String("min-severity", "", "mostra solo finding a partire da: ok|warn|bad|error")
 	targetGlob := fs.String("target", "", "mostra solo i target che matchano questo glob")
+	historyPath := fs.String("history", "", "file JSONL di storico: registra il run e segnala il flapping")
+	flapChanges := fs.Int("flap-changes", 3, "n. minimo di cambi di stato per segnalare flapping")
+	flapWindow := fs.Int("flap-window", 10, "n. di run recenti su cui valutare il flapping")
 	exitOnBad := fs.Bool("exit-on-bad", false, "exit code 2 se presenti finding BAD/ERROR")
 	if err := fs.Parse(args[1:]); err != nil {
 		return err
@@ -134,6 +138,13 @@ func runCheck(args []string) error {
 	}
 
 	res := engine.RunWith(context.Background(), selected, runOptions(cfg))
+	if *historyPath != "" {
+		flaps, err := recordHistory(*historyPath, res, *flapChanges, *flapWindow)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "checkfleet: storico:", err)
+		}
+		res.Findings = append(res.Findings, flaps...)
+	}
 	res.Findings = engine.Filter(res.Findings, filter)
 
 	switch *format {
@@ -198,6 +209,31 @@ func runValidate(args []string) error {
 	}
 	os.Exit(1)
 	return nil
+}
+
+// recordHistory appends this run to the JSONL history and returns WARN
+// findings for keys that are flapping across the recent window.
+func recordHistory(path string, res engine.Result, minChanges, window int) ([]engine.Finding, error) {
+	store := history.Open(path)
+	rec := history.Record{Unix: res.Started.Unix()}
+	for _, f := range res.Findings {
+		rec.Entries = append(rec.Entries, history.Entry{Check: f.Check, Target: f.Target, Status: string(f.Status)})
+	}
+	if err := store.Append(rec); err != nil {
+		return nil, err
+	}
+	recent, err := store.Recent(window)
+	if err != nil {
+		return nil, err
+	}
+	var flaps []engine.Finding
+	for _, fl := range history.Flaps(recent, minChanges) {
+		flaps = append(flaps, engine.Finding{
+			Check: "flap", Target: fl.Key, Status: engine.WARN,
+			Message: fmt.Sprintf("flapping: %d cambi di stato negli ultimi %d run (ora %s)", fl.Changes, len(recent), fl.Last),
+		})
+	}
+	return flaps, nil
 }
 
 // commaSet parses a comma-separated flag into a set (nil when empty).
