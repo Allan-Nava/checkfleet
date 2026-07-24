@@ -41,8 +41,9 @@ go install github.com/Allan-Nava/checkfleet/cmd/checkfleet@latest
 | `haproxy` | Backend/server health from the CSV stats export: servers DOWN/MAINT/DRAIN, backends with no available server, optional session saturation |
 | `stream` | HLS/DASH stream health from the manifest: reachable & valid, complete bitrate ladder, live-edge freshness (live) |
 | `patroni` | Patroni PostgreSQL cluster via the REST API: single leader, replica state, replica lag, timeline divergence |
+| `consul` | Consul cluster via the HTTP API: raft leader & quorum, critical/warning health checks, required KV keys |
 
-More on the way (see [BACKLOG.md](BACKLOG.md)): `postgres`, `consul`, Slack output, Prometheus exporter mode.
+More on the way (see [BACKLOG.md](BACKLOG.md)): `postgres`, `dns`, Slack output, Prometheus exporter mode.
 
 ## Configuration
 

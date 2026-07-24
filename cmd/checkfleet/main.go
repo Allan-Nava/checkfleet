@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/Allan-Nava/checkfleet/internal/checks/certs"
+	"github.com/Allan-Nava/checkfleet/internal/checks/consul"
 	"github.com/Allan-Nava/checkfleet/internal/checks/haproxy"
 	"github.com/Allan-Nava/checkfleet/internal/checks/httpcheck"
 	"github.com/Allan-Nava/checkfleet/internal/checks/nats"
@@ -50,7 +51,7 @@ func main() {
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `uso:
-  checkfleet check <all|certs|http|nats|haproxy|stream|patroni> --config checkfleet.yml [--output text|markdown|json] [--exit-on-bad]
+  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul> --config checkfleet.yml [--output text|markdown|json] [--exit-on-bad]
   checkfleet version`)
 }
 
@@ -104,6 +105,9 @@ func runCheck(args []string) error {
 		return err
 	}
 	if err := add("patroni", func() engine.Check { return patroni.New(*cfg.Checks.Patroni) }, cfg.Checks.Patroni != nil); err != nil {
+		return err
+	}
+	if err := add("consul", func() engine.Check { return consul.New(*cfg.Checks.Consul) }, cfg.Checks.Consul != nil); err != nil {
 		return err
 	}
 	if len(selected) == 0 {

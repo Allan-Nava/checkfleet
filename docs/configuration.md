@@ -182,6 +182,33 @@ checks:
       - 10.20.30.12:8008
 ```
 
+## `checks.consul`
+
+Consul cluster health via the HTTP API. See [Modules → consul](modules.md#consul).
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `targets` | list | — | Consul HTTP API endpoints as `host` or `host:port`. |
+| `port` | int | `8500` | Default API port for targets/inventory hosts without one. |
+| `scheme` | string | `http` | `http` or `https`. |
+| `ansible_inventory` | string | — | Ansible INI inventory; every host becomes an API target on `port`. |
+| `expect_peers` | int | `0` (skip) | Expected raft peers; below quorum → BAD, below expected → WARN. |
+| `token_env` | string | — | Env var holding the ACL token (sent as `X-Consul-Token`). **Never inline the token.** |
+| `kv_keys` | list | — | KV keys that must exist; a missing key is BAD. |
+
+```yaml
+checks:
+  consul:
+    port: 8500
+    expect_peers: 3
+    token_env: CONSUL_HTTP_TOKEN
+    kv_keys:
+      - config/checkfleet/enabled
+    targets:
+      - 10.20.30.11
+      - 10.20.30.12:8500
+```
+
 ## No secrets in config
 
 Keep credentials out of `checkfleet.yml` — checks never log or echo secrets, and

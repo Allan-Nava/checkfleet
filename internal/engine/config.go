@@ -20,6 +20,7 @@ type ChecksConfig struct {
 	HAProxy *HAProxyConfig `yaml:"haproxy"`
 	Stream  *StreamConfig  `yaml:"stream"`
 	Patroni *PatroniConfig `yaml:"patroni"`
+	Consul  *ConsulConfig  `yaml:"consul"`
 }
 
 // CertsConfig configures the TLS certificate expiry check.
@@ -105,6 +106,23 @@ type PatroniConfig struct {
 	LagCritBytes int64 `yaml:"lag_crit_bytes"`
 }
 
+// ConsulConfig configures the Consul cluster health check.
+type ConsulConfig struct {
+	// Consul HTTP API endpoints as host[:port]; Port applies when a target has
+	// none.
+	Targets []string `yaml:"targets"`
+	Port    int      `yaml:"port"`
+	Scheme  string   `yaml:"scheme"`
+	// Optional Ansible INI inventory: every host becomes an API target.
+	AnsibleInventory string `yaml:"ansible_inventory"`
+	// Optional expected number of raft peers; fewer than this is WARN.
+	ExpectPeers int `yaml:"expect_peers"`
+	// Optional ACL token, read from this env var (X-Consul-Token); never inline.
+	TokenEnv string `yaml:"token_env"`
+	// Optional KV keys that must exist; a missing key is BAD.
+	KVKeys []string `yaml:"kv_keys"`
+}
+
 // HTTPConfig configures the HTTP probe check.
 type HTTPConfig struct {
 	Targets []HTTPTarget `yaml:"targets"`
@@ -176,6 +194,11 @@ func LoadConfig(path string) (*Config, error) {
 		}
 		if p.LagCritBytes <= 0 {
 			p.LagCritBytes = 128 << 20 // 128 MiB
+		}
+	}
+	if cn := cfg.Checks.Consul; cn != nil {
+		if cn.Port <= 0 {
+			cn.Port = 8500
 		}
 	}
 	if s := cfg.Checks.Stream; s != nil {

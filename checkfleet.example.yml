@@ -67,3 +67,14 @@ checks:
       - 10.20.30.11                   # any Patroni node (they proxy the cluster view)
       - 10.20.30.12:8008
     # ansible_inventory: /path/to/inventory/patroni
+
+  consul:
+    port: 8500                        # Consul HTTP API port
+    scheme: http                      # http | https
+    expect_peers: 3                   # WARN if fewer raft peers; BAD if quorum lost
+    # token_env: CONSUL_HTTP_TOKEN    # ACL token from this env var (never inline)
+    # kv_keys:                        # keys that must exist (missing → BAD)
+    #   - config/checkfleet/enabled
+    targets:
+      - 10.20.30.11                   # any Consul agent (cluster-wide status)
+      - 10.20.30.12:8500

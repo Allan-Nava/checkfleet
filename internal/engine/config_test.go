@@ -30,6 +30,8 @@ checks:
     targets: [10.0.0.2]
   patroni:
     targets: [10.0.0.3]
+  consul:
+    targets: [10.0.0.4]
   stream:
     targets:
       - url: https://cdn/live.m3u8
@@ -57,6 +59,9 @@ checks:
 	}
 	if p := cfg.Checks.Patroni; p.Port != 8008 || p.LagWarnBytes != 32<<20 || p.LagCritBytes != 128<<20 {
 		t.Errorf("patroni default: %+v", p)
+	}
+	if cn := cfg.Checks.Consul; cn.Port != 8500 {
+		t.Errorf("consul default: %+v", cn)
 	}
 	// Live target gets freshness defaults; non-live target must NOT.
 	if s := cfg.Checks.Stream.Targets[0]; s.MaxAgeWarnSeconds != 30 || s.MaxAgeCritSeconds != 60 {
@@ -98,7 +103,7 @@ func TestLoadConfigAbsentModulesAreNil(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Checks.HTTP != nil || cfg.Checks.NATS != nil || cfg.Checks.HAProxy != nil || cfg.Checks.Stream != nil || cfg.Checks.Patroni != nil {
+	if cfg.Checks.HTTP != nil || cfg.Checks.NATS != nil || cfg.Checks.HAProxy != nil || cfg.Checks.Stream != nil || cfg.Checks.Patroni != nil || cfg.Checks.Consul != nil {
 		t.Errorf("i moduli non configurati devono restare nil: %+v", cfg.Checks)
 	}
 }

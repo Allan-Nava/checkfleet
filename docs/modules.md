@@ -9,9 +9,9 @@ nav_order: 5
 
 Each module is a self-contained check that knows what "healthy" means for one
 kind of target. Shipping today: `certs`, `http`, `nats`, `haproxy`, `stream`,
-`patroni`. The
+`patroni`, `consul`. The
 [backlog](https://github.com/Allan-Nava/checkfleet/blob/main/BACKLOG.md) tracks
-what's next (`postgres`, `consul`, …).
+what's next (`postgres`, `dns`, …).
 
 ## `certs`
 
@@ -126,14 +126,31 @@ findings are labelled by member name.
 
 See [Configuration → checks.patroni](configuration.md#checkspatroni).
 
+## `consul`
+
+Consul cluster health via the HTTP API — read-only.
+
+- **Raft leader**: `/v1/status/leader` empty → `BAD` (no leader elected).
+- **Raft peers**: `/v1/status/peers` count vs `expect_peers` — below quorum
+  (majority) → `BAD`, below expected but with quorum → `WARN`.
+- **Service/node health**: every check in `/v1/health/state/critical` → `BAD`,
+  every one in `.../warning` → `WARN`, labelled `service@node`.
+- **KV keys**: each key in `kv_keys` missing (`/v1/kv/<key>` → 404) → `BAD`.
+
+Any agent answers cluster-wide, so one endpoint is enough; extras add
+redundancy (an unreachable one is `ERROR`). An ACL token can be supplied via
+`token_env` (read from the environment, never stored in config).
+
+See [Configuration → checks.consul](configuration.md#checksconsul).
+
 ## Ansible inventory as a target source
 
-The `certs`, `nats`, `haproxy` and `patroni` modules can read a standard Ansible
-**INI** inventory (a file or a directory of files):
+The `certs`, `nats`, `haproxy`, `patroni` and `consul` modules can read a
+standard Ansible **INI** inventory (a file or a directory of files):
 
 - host lines and their `ansible_host=` value are used;
 - `:vars` and `:children` sections are ignored;
 - hosts are de-duplicated.
 
 Every discovered host becomes a target on the module's `port` (443 for `certs`,
-8222 for `nats`, 8404 for `haproxy`, 8008 for `patroni`).
+8222 for `nats`, 8404 for `haproxy`, 8008 for `patroni`, 8500 for `consul`).

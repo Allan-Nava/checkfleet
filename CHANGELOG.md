@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.0
+
+- Modulo `consul` (CF-12): health cluster Consul via HTTP API, sola lettura.
+  - Leader raft assente → BAD; peer sotto quorum → BAD, sotto l'atteso ma con quorum → WARN.
+  - Health check in `critical` → BAD, in `warning` → WARN (etichetta `service@node`).
+  - Chiavi KV mancanti (`kv_keys`) → BAD. ACL token opzionale da env (`token_env`), mai in config.
+  - Config `checks.consul` (default `port: 8500`); target espliciti + inventory Ansible.
+- CLI: `checkfleet check consul`. Docs e config d'esempio aggiornate.
+
 ## 0.5.0
 
 - Modulo `patroni` (CF-4): health cluster PostgreSQL gestito da Patroni via REST API (`/cluster`), sola lettura.
