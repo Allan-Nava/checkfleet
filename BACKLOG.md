@@ -4,7 +4,7 @@ Sorgente unica dei todo. Id stabili `CF-n`; spuntare, non cancellare.
 
 > **Sync automatico issue**: questo file è la fonte di verità. Ogni `CF-n` diventa una issue GitHub (label `backlog`, milestone per sezione) via `cmd/backlog-sync` + workflow `.github/workflows/backlog-sync.yml`. Spuntare un item (`[x]`) chiude la issue al prossimo push; toglierlo la riapre. Idempotente. Non aprire/chiudere le issue a mano: edita qui.
 
-Roadmap a milestone: prima **cosa monitorare** (M1→M3), poi **come consegnarlo** (M4) e **come usarlo** (M5). Le versioni sono indicative: ogni modulo/output è comunque una release taggata a sé.
+Roadmap a milestone. **Fase 1 (completa)**: cosa monitorare (M1→M3), come consegnarlo (M4), rilascio. **Fase 2**: usarlo meglio (M5 app desktop), più domini (M6), più alerting (M7), engine più solido (M8), qualità (M9). Le versioni sono indicative: ogni modulo/output è comunque una release taggata a sé. **Prossimo:** M5 (Wails), poi M6.
 
 ## M1 — Rete & delivery (~v0.2) — il cuore hiway media
 
@@ -43,3 +43,34 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 
 - [x] **CF-9 — goreleaser** (linux/darwin/windows, amd64/arm64) + archivi + checksums + Homebrew cask. Tap pronto ma disattivo (`skip_upload`) finché non si crea `Allan-Nava/homebrew-tap` + secret. Validato con `goreleaser check` + `--snapshot`. _(v0.13.0)_
 - [x] **CF-10 — Docs sito**: sito con tema custom (hero, ricerca, TOC, pagine per-modulo con esempi config), ricette CI GitHub Actions + TeamCity + cron, README ricco. GIF demo rimandata (asset binario, non generabile qui; c'è la demo testuale). _(v0.14.0)_
+
+## M6 — Più moduli di dominio (fase 2)
+
+- [ ] **CF-19 — Modulo `redis`/`valkey`**: reachability (`PING`), `INFO` → uso memoria vs `maxmemory`, stato replica (`role`, link up/down, lag), persistenza (rdb/aof last-save), client bloccati. Solo comandi di lettura; password da env.
+- [ ] **CF-20 — Modulo `keycloak`**: health/ready endpoint, token endpoint del realm risponde, certificati/allineamento issuer, versione. Nessuna credenziale in config (client-credentials da env se serve).
+- [ ] **CF-21 — Modulo `mediamtx`**: API di mediamtx — path attivi, reader/publisher per path, path attesi presenti, ingest fermi. Codifica l'uso hiway (KV_mediamtx nel runbook NATS).
+- [ ] **CF-22 — Modulo `ingest` (RTMP/SRT)**: l'endpoint di ingest accetta connessioni (handshake TCP/RTMP, o SRT), latenza. Segnale "lo streamer riesce a pubblicare?".
+- [ ] **CF-23 — Modulo `s3`/object storage**: bucket raggiungibile, oggetto sentinella presente e fresco (last-modified sotto soglia), spazio/quota se esposta. Credenziali da env.
+- [ ] **CF-24 — Modulo `smtp`**: il relay accetta connessioni, STARTTLS ok, cert del relay non scaduto, banner atteso. Nessun invio reale.
+- [ ] **CF-25 — Modulo `elasticsearch`/`opensearch`**: `_cluster/health` (green/yellow/red), shard unassigned, nodi attesi presenti, disk watermark.
+
+## M7 — Alerting & output (fase 2)
+
+- [ ] **CF-26 — Issue GitLab**: implementa `issuesync.Client` per GitLab (via `glab`/API), stessa logica di CF-7. Selezione forge in config/flag.
+- [ ] **CF-27 — Webhook Discord/Teams**: output verso Discord/Teams (come Slack), payload adatti, URL da env.
+- [ ] **CF-28 — Alert PagerDuty/Opsgenie**: crea/risolve alert per finding BAD/ERROR (dedup per check+target), chiave di routing da env.
+- [ ] **CF-29 — Report HTML**: `--output html` — report statico autoconsistente (summary, "Da guardare", tabella), tema coerente col sito.
+- [ ] **CF-30 — Export OTLP**: esporta i finding come metriche/eventi OpenTelemetry (OTLP), per chi non usa lo scrape Prometheus.
+
+## M8 — Engine & UX (fase 2)
+
+- [ ] **CF-31 — Check concorrenti**: il runner esegue i moduli in parallelo (ora è sequenziale), con cap di concorrenza e timeout per-check; ordine dei finding invariato (sort stabile).
+- [ ] **CF-32 — Storico & flap/trend**: persistenza dei run (valutare `modernc.org/sqlite` puro-Go o file JSON), detection di flapping e trend; base per "finding persistenti" di CF-7.
+- [ ] **CF-33 — `checkfleet validate`**: valida la config senza eseguire i check (schema, target, soglie coerenti); exit ≠0 su config errata. Utile in CI/pre-commit.
+- [ ] **CF-34 — Filtri finding**: `--only <check[,check]>`, `--min-severity warn|bad`, `--target <glob>` per ridurre il rumore in output/alerting.
+- [ ] **CF-35 — Retry/backoff su ERROR**: ritenta i soli finding ERROR (rete/handshake) con backoff prima di riportarli, per ridurre i falsi ERROR transitori.
+
+## M9 — Qualità (fase 2)
+
+- [ ] **CF-36 — Fuzz dei parser**: `go test -fuzz` su m3u8 (stream), wire DNS, CSV HAProxy, `/jsz` NATS — i parser che leggono input esterno non fidato.
+- [ ] **CF-37 — Suite d'integrazione opt-in**: harness con docker-compose (nats, haproxy, postgres, consul, redis…) dietro build tag/flag, fuori dai unit test; gira in CI separata, mai nei `go test ./...` di default.

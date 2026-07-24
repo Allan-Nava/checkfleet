@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.14.1
+
+- Roadmap fase 2: nuove milestone e feature candidate nel BACKLOG.
+  - **M6 — Più moduli di dominio**: `redis`/`valkey`, `keycloak`, `mediamtx`, ingest RTMP/SRT, `s3`, `smtp`, `elasticsearch` (CF-19..25).
+  - **M7 — Alerting & output**: issue GitLab, webhook Discord/Teams, PagerDuty/Opsgenie, report HTML, export OTLP (CF-26..30).
+  - **M8 — Engine & UX**: check concorrenti, storico+flap/trend, `validate`, filtri finding, retry/backoff (CF-31..35).
+  - **M9 — Qualità**: fuzz dei parser, suite integrazione opt-in con docker-compose (CF-36..37).
+  - Priorità invariata: prossimo M5 (Wails), poi M6. Al push `backlog-sync` apre le 19 nuove issue.
+
 ## 0.14.0
 
 - Docs (CF-10): ricetta CI **TeamCity** (build step con `--exit-on-bad` + service message) in `docs/ci.md`, accanto a GitHub Actions e cron. README con opzioni d'installazione (Homebrew/archivio) e link al sito. Chiude M4/Rilascio insieme al sito a tema custom (hero, ricerca, TOC, pagine per-modulo con esempi). GIF demo rimandata (non generabile qui; resta la demo testuale).
