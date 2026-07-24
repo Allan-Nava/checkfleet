@@ -34,6 +34,7 @@ that one; if it isn't configured, the command fails.
 | `--history` | — | JSONL file to append each run to; enables flap detection across runs. |
 | `--flap-changes` | `3` | Minimum status changes in the window to flag flapping. |
 | `--flap-window` | `10` | Number of recent runs to evaluate flapping over. |
+| `--ping-url-env` | — | Env var with a dead-man's-switch URL (e.g. Healthchecks.io) to ping at the end of the run. |
 | `--exit-on-bad` | off | Exit `2` when any BAD/ERROR finding is present. For CI gates. |
 
 With `--history <file>`, each run is appended to a JSONL log and any
@@ -44,6 +45,10 @@ unstable targets that pass/fail intermittently. Zero dependencies (plain JSONL).
 Filters apply to the rendered output (and therefore to `--exit-on-bad` and the
 JSON `worst`), so `--min-severity bad --exit-on-bad` gates only on real
 problems.
+
+With `--ping-url-env`, checkfleet pings a dead-man's-switch at the end of the
+run: the base URL on success, `<url>/fail` when the worst finding is BAD/ERROR.
+Combined with cron it also catches the case where checkfleet didn't run at all.
 
 ## The `serve` command
 

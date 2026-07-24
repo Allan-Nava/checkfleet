@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.36.0
+
+- Dead-man's-switch (CF-48): `--ping-url-env <ENV>` pinga un URL (stile Healthchecks.io) a fine run — base URL su successo, `<url>/fail` se il worst è BAD/ERROR. Best-effort (non fa fallire il comando). Con cron rileva anche il caso 'checkfleet non ha girato'.
+
 ## 0.35.0
 
 - Output `prometheus` (CF-47): `--output prometheus` emette il formato text-exposition (le stesse metriche di `serve`) per un run one-shot. Nuovo `--out-file` scrive l'output in modo atomico (temp+rename) su file — adatto al textfile collector di node_exporter; vale per ogni formato stampabile.

@@ -92,6 +92,7 @@ func runCheck(args []string) error {
 	historyPath := fs.String("history", "", "file JSONL di storico: registra il run e segnala il flapping")
 	flapChanges := fs.Int("flap-changes", 3, "n. minimo di cambi di stato per segnalare flapping")
 	flapWindow := fs.Int("flap-window", 10, "n. di run recenti su cui valutare il flapping")
+	pingURLEnv := fs.String("ping-url-env", "", "env var con l'URL dead-man's-switch (es. Healthchecks.io) da pingare a fine run")
 	exitOnBad := fs.Bool("exit-on-bad", false, "exit code 2 se presenti finding BAD/ERROR")
 	if err := fs.Parse(args[1:]); err != nil {
 		return err
@@ -168,11 +169,40 @@ func runCheck(args []string) error {
 		}
 	}
 
+	if *pingURLEnv != "" {
+		if url := os.Getenv(*pingURLEnv); url != "" {
+			if err := pingDeadman(context.Background(), url, engine.Worst(res.Findings)); err != nil {
+				fmt.Fprintln(os.Stderr, "checkfleet: dead-man ping:", err)
+			}
+		}
+	}
+
 	if *exitOnBad {
 		worst := engine.Worst(res.Findings)
 		if worst == engine.BAD || worst == engine.ERROR {
 			os.Exit(2)
 		}
+	}
+	return nil
+}
+
+// pingDeadman pings a dead-man's-switch URL (Healthchecks.io-style): the base
+// URL on success, base+"/fail" when the worst finding is BAD/ERROR.
+func pingDeadman(ctx context.Context, url string, worst engine.Status) error {
+	if worst == engine.BAD || worst == engine.ERROR {
+		url = strings.TrimRight(url, "/") + "/fail"
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("HTTP %d", resp.StatusCode)
 	}
 	return nil
 }
