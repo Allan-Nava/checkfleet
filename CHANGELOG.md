@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.17.0
+
+- Filtri finding (CF-34) sul comando `check`: `--only <check,...>`, `--min-severity ok|warn|bad|error`, `--target <glob>`. Si applicano all'output renderizzato e quindi anche a `--exit-on-bad` e al `worst` JSON. Funzione `engine.Filter` + `engine.ParseStatus`, testate.
+
 ## 0.16.0
 
 - Retry/backoff su ERROR (CF-35): nuovi `retries` e `retry_backoff_ms` (top-level). Un check che produce finding ERROR (rete/handshake) viene ritentato con backoff esponenziale prima di riportarlo, riducendo i falsi ERROR transitori. Nuova `engine.RunWith(Options)`; `Run` resta come wrapper. Vale per `check`, `serve`, `report-issues`.

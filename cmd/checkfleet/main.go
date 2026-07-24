@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -66,7 +67,7 @@ func main() {
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `uso:
-  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns> --config checkfleet.yml [--output text|markdown|json|slack] [--exit-on-bad]
+  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns> --config checkfleet.yml [--output text|markdown|json|slack] [--only ...] [--min-severity warn] [--target glob] [--exit-on-bad]
   checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s]   # esporta le metriche Prometheus
   checkfleet report-issues --config checkfleet.yml [--dry-run]                 # apre/chiude issue GitHub dai finding BAD
   checkfleet version`)
@@ -84,10 +85,19 @@ func runCheck(args []string) error {
 	stack := fs.String("stack", "", "profilo stack: sovrappone checkfleet.<stack>.yml alla base")
 	format := fs.String("output", "text", "formato: text, markdown, json, slack")
 	webhookEnv := fs.String("webhook-env", "SLACK_WEBHOOK", "env var con l'URL webhook Slack (output slack)")
+	only := fs.String("only", "", "mostra solo questi check (lista separata da virgole)")
+	minSeverity := fs.String("min-severity", "", "mostra solo finding a partire da: ok|warn|bad|error")
+	targetGlob := fs.String("target", "", "mostra solo i target che matchano questo glob")
 	exitOnBad := fs.Bool("exit-on-bad", false, "exit code 2 se presenti finding BAD/ERROR")
 	if err := fs.Parse(args[1:]); err != nil {
 		return err
 	}
+
+	minSev, ok := engine.ParseStatus(*minSeverity)
+	if !ok {
+		return fmt.Errorf("--min-severity %q non valido (usa ok|warn|bad|error)", *minSeverity)
+	}
+	filter := engine.FilterOptions{Only: commaSet(*only), MinSeverity: minSev, TargetGlob: *targetGlob}
 
 	cfg, err := loadConfig(*configPath, *stack)
 	if err != nil {
@@ -118,6 +128,7 @@ func runCheck(args []string) error {
 	}
 
 	res := engine.RunWith(context.Background(), selected, runOptions(cfg))
+	res.Findings = engine.Filter(res.Findings, filter)
 
 	switch *format {
 	case "text":
@@ -154,6 +165,20 @@ func runCheck(args []string) error {
 		}
 	}
 	return nil
+}
+
+// commaSet parses a comma-separated flag into a set (nil when empty).
+func commaSet(s string) map[string]bool {
+	if strings.TrimSpace(s) == "" {
+		return nil
+	}
+	set := map[string]bool{}
+	for _, p := range strings.Split(s, ",") {
+		if p = strings.TrimSpace(p); p != "" {
+			set[p] = true
+		}
+	}
+	return set
 }
 
 // runOptions builds the engine run options from the config.

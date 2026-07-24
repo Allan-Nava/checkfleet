@@ -27,7 +27,14 @@ that one; if it isn't configured, the command fails.
 | `--stack` | — | Overlay a per-stack profile `checkfleet.<stack>.yml` on the base config. See [Configuration → multi-stack](configuration.md#multi-stack-profiles). |
 | `--output` | `text` | Output format: `text`, `markdown`, `json`, or `slack`. See [Output formats](output.md). |
 | `--webhook-env` | `SLACK_WEBHOOK` | Env var holding the Slack webhook URL (used by `--output slack`). |
+| `--only` | — | Show only these checks (comma-separated, e.g. `--only certs,http`). |
+| `--min-severity` | — | Show only findings at or above `ok`\|`warn`\|`bad`\|`error`. |
+| `--target` | — | Show only targets matching this glob (e.g. `--target '*.example.com'`). |
 | `--exit-on-bad` | off | Exit `2` when any BAD/ERROR finding is present. For CI gates. |
+
+Filters apply to the rendered output (and therefore to `--exit-on-bad` and the
+JSON `worst`), so `--min-severity bad --exit-on-bad` gates only on real
+problems.
 
 ## The `serve` command
 
