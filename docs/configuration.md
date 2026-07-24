@@ -513,3 +513,21 @@ checks:
 
 A missing `${file:…}` is a hard error. Use `$${` for a literal `${`. This keeps
 secrets out of `checkfleet.yml` while staying friendly to `*_env` module fields.
+
+## Maintenance windows
+
+Suppress or downgrade findings during planned work so they don't page. Each
+window matches by `check`/`target` glob (empty = all) and an optional
+`from`/`to` (RFC3339) range; the first matching, active window wins.
+
+```yaml
+maintenance:
+  - check: postgres            # mute (drop) all postgres findings in the range
+    from: 2026-08-01T22:00:00Z
+    to:   2026-08-01T23:30:00Z
+  - target: "cdn.*"            # keep visible but cap BAD/ERROR at WARN
+    action: warn               # message gets a " [maintenance]" note
+```
+
+`action: mute` (default) drops the finding; `action: warn` caps `BAD`/`ERROR` at
+`WARN`. Applies to `check` (before `--exit-on-bad`) and to `serve`.

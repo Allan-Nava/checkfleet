@@ -140,6 +140,7 @@ func runCheck(args []string) error {
 		}
 		res.Findings = append(res.Findings, flaps...)
 	}
+	res.Findings = engine.ApplyMaintenance(res.Findings, cfg.Maintenance, time.Now())
 	res.Findings = engine.Filter(res.Findings, filter)
 
 	switch *format {
@@ -379,6 +380,7 @@ func runServe(args []string) error {
 	var latest engine.Result
 	runOnce := func() {
 		res := engine.RunWith(context.Background(), checks, opts)
+		res.Findings = engine.ApplyMaintenance(res.Findings, cfg.Maintenance, time.Now())
 		mu.Lock()
 		latest = res
 		mu.Unlock()

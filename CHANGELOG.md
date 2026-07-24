@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.46.0
+
+- Finestre di manutenzione (CF-52): sezione `maintenance:` in config — finestre con glob `check`/`target` e range `from`/`to` (RFC3339). `action: mute` (default) elimina i finding nella finestra, `action: warn` declassa BAD/ERROR a WARN annotando ` [maintenance]`. La prima finestra attiva che matcha vince. `engine.ApplyMaintenance` testata; applicata al comando `check` (prima di `--exit-on-bad`) e a `serve`.
+
 ## 0.45.0
 
 - Config dinamica (CF-53): i valori di `checkfleet.yml` supportano l'interpolazione `${VAR}`, `${VAR:-default}` e `${file:/path}` (secret da file, stile Docker/K8s), espansa prima del parse; `$${` per un `${` letterale. Un file secret mancante è errore. `engine.expandVars` testato. Tiene i segreti fuori dalla config restando compatibile coi campi `*_env` dei moduli.

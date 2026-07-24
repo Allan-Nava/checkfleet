@@ -16,6 +16,19 @@ type Config struct {
 	Retries        int          `yaml:"retries"`          // retry checks with ERROR findings
 	RetryBackoffMS int          `yaml:"retry_backoff_ms"` // base backoff (default 500 when retries>0)
 	Checks         ChecksConfig `yaml:"checks"`
+
+	// Maintenance windows: findings matching an active window are muted or
+	// downgraded so scheduled work doesn't page. See ApplyMaintenance.
+	Maintenance []MaintenanceWindow `yaml:"maintenance"`
+}
+
+// MaintenanceWindow suppresses (or downgrades) findings during a time range.
+type MaintenanceWindow struct {
+	Check  string `yaml:"check"`  // glob on the check name; "" = all
+	Target string `yaml:"target"` // glob on the target; "" = all
+	From   string `yaml:"from"`   // RFC3339 start (inclusive); "" = unbounded
+	To     string `yaml:"to"`     // RFC3339 end (inclusive); "" = unbounded
+	Action string `yaml:"action"` // "mute" (drop, default) or "warn" (cap at WARN)
 }
 
 type ChecksConfig struct {
