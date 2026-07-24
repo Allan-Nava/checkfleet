@@ -209,6 +209,43 @@ checks:
       - 10.20.30.12:8500
 ```
 
+## `checks.postgres`
+
+PostgreSQL health via read-only SQL. See [Modules → postgres](modules.md#postgres).
+
+Top-level thresholds:
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `lag_warn_bytes` | int | `33554432` (32 MiB) | Replica lag → WARN. |
+| `lag_crit_bytes` | int | `134217728` (128 MiB) | Replica lag → BAD. |
+| `conn_warn_pct` | int | `80` | WARN when connections reach this % of `max_connections`. |
+| `wraparound_warn_age` | int | `1500000000` | `age(datfrozenxid)` → WARN. |
+| `wraparound_crit_age` | int | `1900000000` | `age(datfrozenxid)` → BAD. |
+| `slot_warn_bytes` | int | `536870912` (512 MiB) | Inactive slot retained WAL → WARN. |
+| `slot_crit_bytes` | int | `2147483648` (2 GiB) | Inactive slot retained WAL → BAD. |
+
+`checks.postgres.targets` is a list of:
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `dsn` | string | — | libpq DSN or URL, **without the password**. Required. |
+| `name` | string | the DSN | Display label for the findings. |
+| `password_env` | string | — | Env var holding the password. **Never inline it.** |
+
+```yaml
+checks:
+  postgres:
+    conn_warn_pct: 80
+    targets:
+      - name: pg-prod-primary
+        dsn: "host=10.20.30.11 port=5432 user=monitor dbname=postgres sslmode=require"
+        password_env: PG_PROD_PASS
+```
+
+The monitoring role needs only read access (it queries `pg_stat_*`,
+`pg_database`, `pg_replication_slots`, `pg_settings`).
+
 ## No secrets in config
 
 Keep credentials out of `checkfleet.yml` — checks never log or echo secrets, and

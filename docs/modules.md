@@ -9,9 +9,9 @@ nav_order: 5
 
 Each module is a self-contained check that knows what "healthy" means for one
 kind of target. Shipping today: `certs`, `http`, `nats`, `haproxy`, `stream`,
-`patroni`, `consul`. The
+`patroni`, `consul`, `postgres`. The
 [backlog](https://github.com/Allan-Nava/checkfleet/blob/main/BACKLOG.md) tracks
-what's next (`postgres`, `dns`, …).
+what's next (`dns`, `endpoint`/`disk`, …).
 
 ## `certs`
 
@@ -142,6 +142,29 @@ redundancy (an unreachable one is `ERROR`). An ACL token can be supplied via
 `token_env` (read from the environment, never stored in config).
 
 See [Configuration → checks.consul](configuration.md#checksconsul).
+
+## `postgres`
+
+PostgreSQL health via **read-only SQL** (using the `pgx` driver — the module's
+own dependency). It never runs DDL or writes.
+
+- **Reachability**: a failed connect or query is `ERROR`; otherwise `OK` with
+  the role (`primary`/`replica`, from `pg_is_in_recovery()`).
+- **Transaction wraparound**: `max(age(datfrozenxid))` past
+  `wraparound_warn_age`/`wraparound_crit_age` → `WARN`/`BAD` (wraparound looms
+  near ~2.1e9).
+- **Connection saturation**: `WARN` when active connections reach
+  `conn_warn_pct`% of `max_connections`.
+- **Inactive replication slots**: an inactive slot is `WARN`; if it retains WAL
+  past `slot_warn_bytes`/`slot_crit_bytes` → `WARN`/`BAD` (disk-fill risk).
+- **Replica lag** (primary only, from `pg_stat_replication`): `WARN`/`BAD` past
+  `lag_warn_bytes`/`lag_crit_bytes`.
+
+Findings are labelled `name`, `name [wraparound]`, `name [connections]`,
+`name [slot:<name>]`, `name [repl:<client>]`. The password is read from the
+target's `password_env` — never stored in the config.
+
+See [Configuration → checks.postgres](configuration.md#checkspostgres).
 
 ## Ansible inventory as a target source
 

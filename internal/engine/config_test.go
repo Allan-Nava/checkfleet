@@ -32,6 +32,9 @@ checks:
     targets: [10.0.0.3]
   consul:
     targets: [10.0.0.4]
+  postgres:
+    targets:
+      - {name: db1, dsn: "host=x"}
   stream:
     targets:
       - url: https://cdn/live.m3u8
@@ -62,6 +65,10 @@ checks:
 	}
 	if cn := cfg.Checks.Consul; cn.Port != 8500 {
 		t.Errorf("consul default: %+v", cn)
+	}
+	if pg := cfg.Checks.Postgres; pg.LagWarnBytes != 32<<20 || pg.ConnWarnPct != 80 ||
+		pg.WraparoundWarnAge != 1_500_000_000 || pg.SlotCritBytes != 2<<30 {
+		t.Errorf("postgres default: %+v", pg)
 	}
 	// Live target gets freshness defaults; non-live target must NOT.
 	if s := cfg.Checks.Stream.Targets[0]; s.MaxAgeWarnSeconds != 30 || s.MaxAgeCritSeconds != 60 {
@@ -103,7 +110,7 @@ func TestLoadConfigAbsentModulesAreNil(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Checks.HTTP != nil || cfg.Checks.NATS != nil || cfg.Checks.HAProxy != nil || cfg.Checks.Stream != nil || cfg.Checks.Patroni != nil || cfg.Checks.Consul != nil {
+	if cfg.Checks.HTTP != nil || cfg.Checks.NATS != nil || cfg.Checks.HAProxy != nil || cfg.Checks.Stream != nil || cfg.Checks.Patroni != nil || cfg.Checks.Consul != nil || cfg.Checks.Postgres != nil {
 		t.Errorf("i moduli non configurati devono restare nil: %+v", cfg.Checks)
 	}
 }

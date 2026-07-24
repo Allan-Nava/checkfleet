@@ -14,13 +14,14 @@ type Config struct {
 }
 
 type ChecksConfig struct {
-	Certs   *CertsConfig   `yaml:"certs"`
-	HTTP    *HTTPConfig    `yaml:"http"`
-	NATS    *NATSConfig    `yaml:"nats"`
-	HAProxy *HAProxyConfig `yaml:"haproxy"`
-	Stream  *StreamConfig  `yaml:"stream"`
-	Patroni *PatroniConfig `yaml:"patroni"`
-	Consul  *ConsulConfig  `yaml:"consul"`
+	Certs    *CertsConfig    `yaml:"certs"`
+	HTTP     *HTTPConfig     `yaml:"http"`
+	NATS     *NATSConfig     `yaml:"nats"`
+	HAProxy  *HAProxyConfig  `yaml:"haproxy"`
+	Stream   *StreamConfig   `yaml:"stream"`
+	Patroni  *PatroniConfig  `yaml:"patroni"`
+	Consul   *ConsulConfig   `yaml:"consul"`
+	Postgres *PostgresConfig `yaml:"postgres"`
 }
 
 // CertsConfig configures the TLS certificate expiry check.
@@ -123,6 +124,31 @@ type ConsulConfig struct {
 	KVKeys []string `yaml:"kv_keys"`
 }
 
+// PostgresConfig configures the PostgreSQL health check (read-only SQL).
+type PostgresConfig struct {
+	Targets []PostgresTarget `yaml:"targets"`
+	// Replica lag thresholds in bytes (WARN/BAD).
+	LagWarnBytes int64 `yaml:"lag_warn_bytes"`
+	LagCritBytes int64 `yaml:"lag_crit_bytes"`
+	// WARN when connections reach this percent of max_connections.
+	ConnWarnPct int `yaml:"conn_warn_pct"`
+	// Transaction-id age thresholds (WARN/BAD) for wraparound risk.
+	WraparoundWarnAge int64 `yaml:"wraparound_warn_age"`
+	WraparoundCritAge int64 `yaml:"wraparound_crit_age"`
+	// Retained-WAL thresholds for inactive replication slots (WARN/BAD).
+	SlotWarnBytes int64 `yaml:"slot_warn_bytes"`
+	SlotCritBytes int64 `yaml:"slot_crit_bytes"`
+}
+
+type PostgresTarget struct {
+	// Display label; defaults to the DSN host.
+	Name string `yaml:"name"`
+	// libpq DSN or URL, WITHOUT the password.
+	DSN string `yaml:"dsn"`
+	// Password read from this env var (never store it in the config).
+	PasswordEnv string `yaml:"password_env"`
+}
+
 // HTTPConfig configures the HTTP probe check.
 type HTTPConfig struct {
 	Targets []HTTPTarget `yaml:"targets"`
@@ -199,6 +225,29 @@ func LoadConfig(path string) (*Config, error) {
 	if cn := cfg.Checks.Consul; cn != nil {
 		if cn.Port <= 0 {
 			cn.Port = 8500
+		}
+	}
+	if pg := cfg.Checks.Postgres; pg != nil {
+		if pg.LagWarnBytes <= 0 {
+			pg.LagWarnBytes = 32 << 20 // 32 MiB
+		}
+		if pg.LagCritBytes <= 0 {
+			pg.LagCritBytes = 128 << 20 // 128 MiB
+		}
+		if pg.ConnWarnPct <= 0 {
+			pg.ConnWarnPct = 80
+		}
+		if pg.WraparoundWarnAge <= 0 {
+			pg.WraparoundWarnAge = 1_500_000_000
+		}
+		if pg.WraparoundCritAge <= 0 {
+			pg.WraparoundCritAge = 1_900_000_000
+		}
+		if pg.SlotWarnBytes <= 0 {
+			pg.SlotWarnBytes = 512 << 20 // 512 MiB
+		}
+		if pg.SlotCritBytes <= 0 {
+			pg.SlotCritBytes = 2 << 30 // 2 GiB
 		}
 	}
 	if s := cfg.Checks.Stream; s != nil {

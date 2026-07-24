@@ -78,3 +78,16 @@ checks:
     targets:
       - 10.20.30.11                   # any Consul agent (cluster-wide status)
       - 10.20.30.12:8500
+
+  postgres:
+    lag_warn_bytes: 33554432          # replica lag → WARN (default 32 MiB)
+    lag_crit_bytes: 134217728         # replica lag → BAD  (default 128 MiB)
+    conn_warn_pct: 80                 # WARN when connections reach % of max_connections
+    wraparound_warn_age: 1500000000   # age(datfrozenxid) → WARN
+    wraparound_crit_age: 1900000000   # age(datfrozenxid) → BAD (wraparound at ~2.1e9)
+    slot_warn_bytes: 536870912        # inactive slot retained WAL → WARN (512 MiB)
+    slot_crit_bytes: 2147483648       # inactive slot retained WAL → BAD  (2 GiB)
+    targets:
+      - name: pg-prod-primary
+        dsn: "host=10.20.30.11 port=5432 user=monitor dbname=postgres sslmode=require"
+        password_env: PG_PROD_PASS    # password from this env var, never inline
