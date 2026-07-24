@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.12.0
+
+- Comando `report-issues` (CF-7): trasforma i finding BAD/ERROR in issue GitHub (una per `check/target`, dedup), aperte al fallimento e **chiuse automaticamente al rientro**. Idempotente, `--dry-run`, label `checkfleet-finding`; usa `gh`.
+- Core di reconcile in `internal/issuesync` (interfaccia tracker + logica pura), testato con client finto; adattatore `gh` nel CLI. GitLab pluggabile in futuro (stessa interfaccia). **Chiude M4 (output & integrazione).**
+
 ## 0.11.0
 
 - Config multi-stack (CF-8): flag `--stack <name>` (per `check` e `serve`) sovrappone `checkfleet.<stack>.yml` alla base. Merge per modulo (un modulo nello stack sostituisce quello base e riprende i suoi default), `timeout_seconds` sovrascritto solo se impostato.

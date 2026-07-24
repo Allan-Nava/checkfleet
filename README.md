@@ -82,6 +82,7 @@ checkfleet check http  --config checkfleet.yml --output json      # machine-read
 checkfleet check all   --config checkfleet.yml --exit-on-bad      # exit 2 on BAD/ERROR, for CI gates
 checkfleet check all   --config checkfleet.yml --output slack     # post a Block Kit report to a Slack webhook
 checkfleet serve       --config checkfleet.yml --listen :9876     # Prometheus exporter (metrics at /metrics)
+checkfleet report-issues --config checkfleet.yml                  # open/close GitHub issues from BAD findings
 ```
 
 Finding statuses: `OK`, `WARN` (threshold crossed), `BAD` (target unhealthy), `ERROR` (the check itself could not measure — network, handshake).

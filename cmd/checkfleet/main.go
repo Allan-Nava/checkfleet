@@ -53,6 +53,11 @@ func main() {
 			fmt.Fprintln(os.Stderr, "checkfleet:", err)
 			os.Exit(1)
 		}
+	case "report-issues":
+		if err := runReportIssues(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, "checkfleet:", err)
+			os.Exit(1)
+		}
 	default:
 		usage()
 		os.Exit(64)
@@ -63,6 +68,7 @@ func usage() {
 	fmt.Fprintln(os.Stderr, `uso:
   checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns> --config checkfleet.yml [--output text|markdown|json|slack] [--exit-on-bad]
   checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s]   # esporta le metriche Prometheus
+  checkfleet report-issues --config checkfleet.yml [--dry-run]                 # apre/chiude issue GitHub dai finding BAD
   checkfleet version`)
 }
 

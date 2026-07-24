@@ -57,6 +57,28 @@ Metrics exposed:
 This is the bridge to Grafana/alerting: checkfleet keeps the domain logic, and
 Prometheus does the graphing and alerting — it doesn't replace them.
 
+## The `report-issues` command
+
+Turn BAD/ERROR findings into GitHub issues: one issue per `check/target`, opened
+when it fails and **closed automatically when it recovers**. Idempotent — safe
+to run on a schedule.
+
+```bash
+checkfleet report-issues --config checkfleet.yml            # apply
+checkfleet report-issues --config checkfleet.yml --dry-run  # preview, no changes
+```
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `--config` | `checkfleet.yml` | Path to the YAML config. |
+| `--stack` | — | Overlay a stack profile (see [multi-stack](configuration.md#multi-stack-profiles)). |
+| `--dry-run` | off | Print what would open/close without touching any issue. |
+
+Managed issues carry the `checkfleet-finding` label and a `[checkfleet] check/target`
+title (the dedup key). Requires the [`gh`](https://cli.github.com/) CLI,
+authenticated; in CI provide `GH_TOKEN`. GitLab isn't supported yet — the
+tracker is behind an interface, so it can be added later.
+
 ## Finding statuses
 
 | Status | Meaning |
