@@ -68,8 +68,9 @@ See [Installation](https://allan-nava.github.io/checkfleet/installation/) for al
 | `rabbitmq` | RabbitMQ via the management API: nodes running & alarm-free, queue depth & consumer presence |
 | `grpc` | gRPC Health Checking Protocol over HTTP/2+TLS (protobuf hand-rolled, no gRPC dep) |
 | `ldap` | LDAP directory: connect, bind (anon or creds), optional sanity search |
+| `kafka` | Kafka via kadm: controller present, broker count, under-replicated partitions, consumer-group lag |
 
-More modules on the roadmap (see [BACKLOG.md](BACKLOG.md)): `kafka`, `mongodb`, plus more alerting outputs.
+More modules on the roadmap (see [BACKLOG.md](BACKLOG.md)): `mongodb`, plus more alerting outputs.
 
 ## Configuration
 

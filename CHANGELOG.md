@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.30.0
+
+- Modulo `kafka` (CF-43): health cluster via `franz-go`/`kadm`. Controller assente → BAD, broker sotto `expect_brokers` → WARN, partizioni under-replicated → BAD, lag dei consumer group in `groups` oltre `lag_warn`/`lag_crit` → WARN/BAD. TLS+SASL (plain/scram) opzionali, password da env. I/O dietro interfaccia: logica testata con fake (nessun broker reale nei test). Nuove dip: `github.com/twmb/franz-go` (+kadm).
+
 ## 0.29.0
 
 - Modulo `ldap` (CF-42): connect + bind (anonimo o con credenziali da env) + search di sanity opzionale (≥ `min_entries` sotto `base_dn`). Bind fallito → BAD, connessione → ERROR. `ldaps`/StartTLS supportati. Accesso LDAP dietro interfaccia `session`: logica testata con fake; adattatore `go-ldap` sottile. Nuova dip: `github.com/go-ldap/ldap/v3`.

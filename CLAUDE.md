@@ -37,7 +37,7 @@ go vet ./...
 - Lo stato ERROR significa "il check non è riuscito a misurare" (rete, handshake), non "target malato": non confonderlo con BAD.
 - I test dei moduli creano server locali in-test (TLS con cert generati al volo a scadenza nota, `httptest`): ogni nuovo modulo deve fare lo stesso — un test che tocca internet o infra reale è un bug.
 - Il sort dei finding è worst-first, stabile per check/target: l'ordine è API di fatto per chi parsa l'output text.
-- Dipendenze: `gopkg.in/yaml.v3` (config) e `github.com/jackc/pgx/v5` (driver del modulo `postgres`, SQL indispensabile — unica eccezione motivata). Aggiungerne altre solo con forte motivazione. Moduli che parlano HTTP/JSON (nats, haproxy, consul, patroni, stream) NON devono introdurre driver: stdlib.
+- Dipendenze: `gopkg.in/yaml.v3` (config). I moduli che parlano un protocollo di dominio senza equivalente stdlib usano un driver dedicato — eccezioni motivate: `jackc/pgx` (postgres/SQL), `go-ldap/ldap` (ldap/ASN.1-BER), `twmb/franz-go` (kafka). Tutto il resto è **zero-dep** e resta tale: HTTP/JSON (nats, haproxy, consul, patroni, stream, keycloak, rabbitmq) e protocolli semplici scritti a mano (dns, redis/RESP, ntp/SNTP, grpc/health su HTTP2, tcp, tls) NON devono introdurre driver. Aggiungerne di nuovi solo con forte motivazione.
 - Il campo `version` è iniettato dalla CI sui tag: non hardcodarlo.
 
 ## Puntatori

@@ -460,6 +460,30 @@ LDAP bind + search. See [Modules → ldap](modules.md#ldap).
 | `filter` | string | `(objectClass=*)` | Search filter. |
 | `min_entries` | int | `1` (when base_dn set) | Minimum results, else BAD. |
 
+## `checks.kafka`
+
+Kafka cluster health. See [Modules → kafka](modules.md#kafka).
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `brokers` | list | — | Seed brokers `host:port`. Required. |
+| `tls` | bool | `false` | Dial over TLS. |
+| `sasl_user` | string | — | SASL username (enables SASL). |
+| `sasl_mechanism` | string | `plain` | `plain`, `scram-sha-256`, `scram-sha-512`. |
+| `sasl_password_env` | string | — | Env var with the SASL password. **Never inline.** |
+| `expect_brokers` | int | `0` | Fewer brokers than this → WARN. |
+| `groups` | list | — | Consumer groups whose total lag to check. |
+| `lag_warn` | int | `1000` | Group lag → WARN. |
+| `lag_crit` | int | `100000` | Group lag → BAD. |
+
+```yaml
+checks:
+  kafka:
+    brokers: [10.20.30.70:9092]
+    expect_brokers: 3
+    groups: [ingest-consumers]
+```
+
 ## No secrets in config
 
 Keep credentials out of `checkfleet.yml` — checks never log or echo secrets, and

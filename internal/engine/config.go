@@ -35,6 +35,7 @@ type ChecksConfig struct {
 	RabbitMQ *RabbitMQConfig `yaml:"rabbitmq"`
 	GRPC     *GRPCConfig     `yaml:"grpc"`
 	LDAP     *LDAPConfig     `yaml:"ldap"`
+	Kafka    *KafkaConfig    `yaml:"kafka"`
 }
 
 // CertsConfig configures the TLS certificate expiry check.
@@ -298,6 +299,22 @@ type LDAPTarget struct {
 	MinEntries int    `yaml:"min_entries"`
 }
 
+// KafkaConfig configures the Kafka cluster health check.
+type KafkaConfig struct {
+	Brokers []string `yaml:"brokers"`
+	TLS     bool     `yaml:"tls"`
+	// Optional SASL: mechanism plain|scram-sha-256|scram-sha-512; password from env.
+	SASLUser        string `yaml:"sasl_user"`
+	SASLMechanism   string `yaml:"sasl_mechanism"`
+	SASLPasswordEnv string `yaml:"sasl_password_env"`
+	// Optional expected broker count; fewer is WARN.
+	ExpectBrokers int `yaml:"expect_brokers"`
+	// Consumer groups whose lag to check.
+	Groups  []string `yaml:"groups"`
+	LagWarn int64    `yaml:"lag_warn"`
+	LagCrit int64    `yaml:"lag_crit"`
+}
+
 // HTTPConfig configures the HTTP probe check.
 type HTTPConfig struct {
 	Targets []HTTPTarget `yaml:"targets"`
@@ -404,6 +421,14 @@ func applyDefaults(cfg *Config) {
 		}
 		if t.CritDays <= 0 {
 			t.CritDays = 7
+		}
+	}
+	if k := cfg.Checks.Kafka; k != nil {
+		if k.LagWarn <= 0 {
+			k.LagWarn = 1000
+		}
+		if k.LagCrit <= 0 {
+			k.LagCrit = 100000
 		}
 	}
 	if l := cfg.Checks.LDAP; l != nil {

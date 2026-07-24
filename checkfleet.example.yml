@@ -123,6 +123,17 @@ checks:
       - hiway
       - partners
 
+  kafka:
+    brokers: [10.20.30.70:9092, 10.20.30.71:9092]
+    # tls: true
+    # sasl_user: monitor
+    # sasl_mechanism: scram-sha-256
+    # sasl_password_env: KAFKA_PASS
+    expect_brokers: 3
+    lag_warn: 1000
+    lag_crit: 100000
+    groups: [ingest-consumers, analytics]
+
   ldap:
     targets:
       - name: dir-prod

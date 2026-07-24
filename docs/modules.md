@@ -5,9 +5,9 @@ nav_order: 5
 
 Each module is a self-contained check that knows what "healthy" means for one
 kind of target. Shipping today: `certs`, `http`, `nats`, `haproxy`, `stream`,
-`patroni`, `consul`, `postgres`, `dns`, `redis`, `keycloak`, `tcp`, `tls`, `ntp`, `rabbitmq`, `grpc`, `ldap`. The
+`patroni`, `consul`, `postgres`, `dns`, `redis`, `keycloak`, `tcp`, `tls`, `ntp`, `rabbitmq`, `grpc`, `ldap`, `kafka`. The
 [backlog](https://github.com/Allan-Nava/checkfleet/blob/main/BACKLOG.md) tracks
-what's next (`kafka`, `mongodb`, …).
+what's next (`mongodb`, …).
 
 ## `certs`
 
@@ -300,6 +300,23 @@ LDAP directory health via bind + an optional sanity search (uses `go-ldap`).
   from `password_env`, never config.
 
 See [Configuration → checks.ldap](configuration.md#checksldap).
+
+## `kafka`
+
+Kafka cluster health via `franz-go`/`kadm` (admin metadata only).
+
+- Metadata unreachable → `ERROR`; no controller → `BAD`; fewer than
+  `expect_brokers` → `WARN`.
+- Any under-replicated partition (ISR < replicas) → `BAD`.
+- Per consumer group in `groups`: total lag past `lag_warn`/`lag_crit` →
+  `WARN`/`BAD`.
+
+Findings: `cluster`, `partitions`, `group/<name>`. Optional TLS and SASL
+(plain/scram); the SASL password comes from `sasl_password_env`, never config.
+The Kafka I/O is behind an interface, so the finding logic is unit-tested with
+a fake — no real broker in tests.
+
+See [Configuration → checks.kafka](configuration.md#checkskafka).
 
 ## Ansible inventory as a target source
 
