@@ -80,6 +80,8 @@ checkfleet check postgres --config checkfleet.yml                 # PostgreSQL (
 checkfleet check dns   --config checkfleet.yml                    # DNS resolution & drift
 checkfleet check http  --config checkfleet.yml --output json      # machine-readable (includes "worst")
 checkfleet check all   --config checkfleet.yml --exit-on-bad      # exit 2 on BAD/ERROR, for CI gates
+checkfleet check all   --config checkfleet.yml --output slack     # post a Block Kit report to a Slack webhook
+checkfleet serve       --config checkfleet.yml --listen :9876     # Prometheus exporter (metrics at /metrics)
 ```
 
 Finding statuses: `OK`, `WARN` (threshold crossed), `BAD` (target unhealthy), `ERROR` (the check itself could not measure — network, handshake).

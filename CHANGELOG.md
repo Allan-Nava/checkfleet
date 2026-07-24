@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.0
+
+- Comando `serve` (CF-6): modalità exporter Prometheus. `checkfleet serve --listen :9876 --interval 60s` riesegue i check a intervallo ed espone su `/metrics`: `checkfleet_finding_status{check,target}` (severity 0-3, worst per coppia), `checkfleet_findings_total{status}`, `checkfleet_worst_status`, durata e timestamp dell'ultimo run.
+- Renderer `output.Prometheus` testato (formato, dedup-worst su serie duplicate, escaping label).
+- Refactor: registry moduli unico (`modules()`) condiviso da `check` e `serve`.
+
 ## 0.9.0
 
 - Output `slack` (CF-5): `--output slack` invia un messaggio Block Kit a un webhook Slack (header + summary + problemi worst-first, cap 20). URL del webhook da env (`--webhook-env`, default `SLACK_WEBHOOK`), mai in CLI/config. Renderer `output.Slack` testato (JSON valido, cap); POST thin nel CLI.

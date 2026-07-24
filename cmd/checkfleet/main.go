@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/Allan-Nava/checkfleet/internal/checks/certs"
@@ -47,6 +48,11 @@ func main() {
 			fmt.Fprintln(os.Stderr, "checkfleet:", err)
 			os.Exit(1)
 		}
+	case "serve":
+		if err := runServe(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, "checkfleet:", err)
+			os.Exit(1)
+		}
 	default:
 		usage()
 		os.Exit(64)
@@ -56,6 +62,7 @@ func main() {
 func usage() {
 	fmt.Fprintln(os.Stderr, `uso:
   checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns> --config checkfleet.yml [--output text|markdown|json|slack] [--exit-on-bad]
+  checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s]   # esporta le metriche Prometheus
   checkfleet version`)
 }
 
@@ -80,49 +87,27 @@ func runCheck(args []string) error {
 		return err
 	}
 
+	specs := modules(cfg)
 	var selected []engine.Check
-	add := func(name string, build func() engine.Check, configured bool) error {
-		if module != "all" && module != name {
-			return nil
+	known := module == "all"
+	for _, s := range specs {
+		if module != "all" && module != s.name {
+			continue
 		}
-		if !configured {
-			if module == name {
-				return fmt.Errorf("modulo %q non configurato in %s", name, *configPath)
+		known = true
+		if !s.configured {
+			if module == s.name {
+				return fmt.Errorf("modulo %q non configurato in %s", s.name, *configPath)
 			}
-			return nil
+			continue
 		}
-		selected = append(selected, build())
-		return nil
+		selected = append(selected, s.build())
 	}
-	if err := add("certs", func() engine.Check { return certs.New(*cfg.Checks.Certs) }, cfg.Checks.Certs != nil); err != nil {
-		return err
-	}
-	if err := add("http", func() engine.Check { return httpcheck.New(*cfg.Checks.HTTP) }, cfg.Checks.HTTP != nil); err != nil {
-		return err
-	}
-	if err := add("nats", func() engine.Check { return nats.New(*cfg.Checks.NATS) }, cfg.Checks.NATS != nil); err != nil {
-		return err
-	}
-	if err := add("haproxy", func() engine.Check { return haproxy.New(*cfg.Checks.HAProxy) }, cfg.Checks.HAProxy != nil); err != nil {
-		return err
-	}
-	if err := add("stream", func() engine.Check { return stream.New(*cfg.Checks.Stream) }, cfg.Checks.Stream != nil); err != nil {
-		return err
-	}
-	if err := add("patroni", func() engine.Check { return patroni.New(*cfg.Checks.Patroni) }, cfg.Checks.Patroni != nil); err != nil {
-		return err
-	}
-	if err := add("consul", func() engine.Check { return consul.New(*cfg.Checks.Consul) }, cfg.Checks.Consul != nil); err != nil {
-		return err
-	}
-	if err := add("postgres", func() engine.Check { return postgres.New(*cfg.Checks.Postgres) }, cfg.Checks.Postgres != nil); err != nil {
-		return err
-	}
-	if err := add("dns", func() engine.Check { return dns.New(*cfg.Checks.DNS) }, cfg.Checks.DNS != nil); err != nil {
-		return err
+	if !known {
+		return fmt.Errorf("modulo %q sconosciuto", module)
 	}
 	if len(selected) == 0 {
-		return fmt.Errorf("nessun modulo selezionato (modulo %q sconosciuto o niente configurato)", module)
+		return fmt.Errorf("nessun modulo selezionato (niente configurato per %q)", module)
 	}
 
 	res := engine.Run(context.Background(), selected, time.Duration(cfg.TimeoutSeconds)*time.Second)
@@ -162,6 +147,92 @@ func runCheck(args []string) error {
 		}
 	}
 	return nil
+}
+
+// moduleSpec ties a module name to whether it's configured and how to build it.
+type moduleSpec struct {
+	name       string
+	configured bool
+	build      func() engine.Check
+}
+
+// modules is the single registry of check modules, shared by `check` and
+// `serve` so the wiring lives in one place.
+func modules(cfg *engine.Config) []moduleSpec {
+	c := cfg.Checks
+	return []moduleSpec{
+		{"certs", c.Certs != nil, func() engine.Check { return certs.New(*c.Certs) }},
+		{"http", c.HTTP != nil, func() engine.Check { return httpcheck.New(*c.HTTP) }},
+		{"nats", c.NATS != nil, func() engine.Check { return nats.New(*c.NATS) }},
+		{"haproxy", c.HAProxy != nil, func() engine.Check { return haproxy.New(*c.HAProxy) }},
+		{"stream", c.Stream != nil, func() engine.Check { return stream.New(*c.Stream) }},
+		{"patroni", c.Patroni != nil, func() engine.Check { return patroni.New(*c.Patroni) }},
+		{"consul", c.Consul != nil, func() engine.Check { return consul.New(*c.Consul) }},
+		{"postgres", c.Postgres != nil, func() engine.Check { return postgres.New(*c.Postgres) }},
+		{"dns", c.DNS != nil, func() engine.Check { return dns.New(*c.DNS) }},
+	}
+}
+
+// configuredChecks builds every configured module (used by `serve`).
+func configuredChecks(cfg *engine.Config) []engine.Check {
+	var checks []engine.Check
+	for _, s := range modules(cfg) {
+		if s.configured {
+			checks = append(checks, s.build())
+		}
+	}
+	return checks
+}
+
+// runServe exposes the findings as Prometheus metrics, re-running the checks on
+// an interval. checkfleet serve --config … --listen :9876 --interval 60s
+func runServe(args []string) error {
+	fs := flag.NewFlagSet("serve", flag.ExitOnError)
+	configPath := fs.String("config", "checkfleet.yml", "file di configurazione YAML")
+	listen := fs.String("listen", ":9876", "indirizzo di ascolto")
+	interval := fs.Duration("interval", 60*time.Second, "intervallo di riesecuzione dei check")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	cfg, err := engine.LoadConfig(*configPath)
+	if err != nil {
+		return err
+	}
+	checks := configuredChecks(cfg)
+	if len(checks) == 0 {
+		return fmt.Errorf("nessun modulo configurato in %s", *configPath)
+	}
+	timeout := time.Duration(cfg.TimeoutSeconds) * time.Second
+
+	var mu sync.Mutex
+	var latest engine.Result
+	runOnce := func() {
+		res := engine.Run(context.Background(), checks, timeout)
+		mu.Lock()
+		latest = res
+		mu.Unlock()
+	}
+	runOnce()
+	go func() {
+		t := time.NewTicker(*interval)
+		defer t.Stop()
+		for range t.C {
+			runOnce()
+		}
+	}()
+
+	http.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		res := latest
+		mu.Unlock()
+		w.Header().Set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
+		fmt.Fprint(w, output.Prometheus(res))
+	})
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "checkfleet %s\n\nmetriche: /metrics\n%d moduli, riesecuzione ogni %s\n", version, len(checks), *interval)
+	})
+	fmt.Fprintf(os.Stderr, "checkfleet serve: %d moduli su %s (intervallo %s)\n", len(checks), *listen, *interval)
+	return http.ListenAndServe(*listen, nil)
 }
 
 // postSlack sends a Block Kit payload to an incoming webhook URL.

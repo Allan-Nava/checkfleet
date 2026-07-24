@@ -28,6 +28,34 @@ that one; if it isn't configured, the command fails.
 | `--webhook-env` | `SLACK_WEBHOOK` | Env var holding the Slack webhook URL (used by `--output slack`). |
 | `--exit-on-bad` | off | Exit `2` when any BAD/ERROR finding is present. For CI gates. |
 
+## The `serve` command
+
+Run checkfleet as a Prometheus exporter: it re-runs the configured checks on an
+interval and exposes the latest findings as metrics on `/metrics`.
+
+```bash
+checkfleet serve --config checkfleet.yml --listen :9876 --interval 60s
+```
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `--config` | `checkfleet.yml` | Path to the YAML config. |
+| `--listen` | `:9876` | Address to listen on. |
+| `--interval` | `60s` | How often to re-run the checks. |
+
+Metrics exposed:
+
+| Metric | Meaning |
+|---|---|
+| `checkfleet_finding_status{check,target}` | Severity of each finding: `0`=OK, `1`=WARN, `2`=BAD, `3`=ERROR (worst wins per check/target). |
+| `checkfleet_findings_total{status}` | Count of findings per status. |
+| `checkfleet_worst_status` | Worst severity across the run. |
+| `checkfleet_run_duration_seconds` | Duration of the last run. |
+| `checkfleet_last_run_timestamp_seconds` | Unix time of the last run. |
+
+This is the bridge to Grafana/alerting: checkfleet keeps the domain logic, and
+Prometheus does the graphing and alerting — it doesn't replace them.
+
 ## Finding statuses
 
 | Status | Meaning |
