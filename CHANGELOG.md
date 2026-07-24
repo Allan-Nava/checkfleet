@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.37.2
+
+- Fix E2E desktop (`desktop-test.yml`): la webview si apriva ma lo screenshot era vuoto (1 colore → job rosso). Su Ubuntu 24.04 `libwebkit2gtk-4.1` è WebKitGTK ≥2.42, che di default usa il **DMABUF renderer**: sotto la GL software di Xvfb dipinge un frame nero. Aggiunto `WEBKIT_DISABLE_DMABUF_RENDERER=1` (+`GDK_BACKEND=x11`) per forzare il path software. La verifica ora **fa polling** dello screenshot (fino a 20 tentativi) invece di un singolo `sleep 3`, e dumpa `app.log` in caso di blank.
+
 ## 0.37.1
 
 - Pianificata la migrazione dell'output in **inglese** (M15 · CF-58..60 nel BACKLOG): CF-58 engine & CLI, CF-59 messaggi dei finding per modulo (uno per release), CF-60 sweep & guardrail. Il desktop è già in inglese (v0.36.1); il CHANGELOG resta in italiano.

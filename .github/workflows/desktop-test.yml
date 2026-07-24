@@ -87,8 +87,14 @@ jobs:
           Xvfb :99 -screen 0 1280x800x24 >/tmp/xvfb.log 2>&1 &
           sleep 2
           # Software rendering so webkit works without a GPU.
-          export WEBKIT_DISABLE_COMPOSITING_MODE=1
+          export GDK_BACKEND=x11
           export LIBGL_ALWAYS_SOFTWARE=1
+          export WEBKIT_DISABLE_COMPOSITING_MODE=1
+          # WebKitGTK ≥2.42 (shipped by libwebkit2gtk-4.1 on Ubuntu 24.04)
+          # defaults to the DMABUF renderer, which paints a blank/black frame
+          # under Xvfb's software GL — the window maps but renders nothing.
+          # Disabling it makes the webview paint via the software path.
+          export WEBKIT_DISABLE_DMABUF_RENDERER=1
           # A reachable TCP target for the tcp check, then open the app on it.
           python3 -m http.server 9999 >/tmp/listener.log 2>&1 &
           printf 'timeout_seconds: 5\nchecks:\n  tcp:\n    targets:\n      - address: "127.0.0.1:9999"\n' > "$PWD/checkfleet.yml"
@@ -103,13 +109,19 @@ jobs:
             sleep 1
           done
           [ -n "$ok" ] || { echo "::error::app window never appeared"; cat /tmp/app.log; exit 1; }
-          sleep 3   # let the auto-run render its findings
-          import -window root e2e.png
-          colors=$(identify -format '%k' e2e.png)
-          echo "unique colors in screenshot: $colors"
+          # WebKit paint timing varies; poll the screenshot until it's non-blank
+          # instead of betting on a single fixed sleep.
+          colors=0
+          for i in $(seq 1 20); do
+            import -window root e2e.png >/dev/null 2>&1 || true
+            colors=$(identify -format '%k' e2e.png 2>/dev/null || echo 0)
+            echo "attempt $i: unique colors = $colors"
+            [ "${colors:-0}" -gt 20 ] && break
+            sleep 1
+          done
           kill "$APP" 2>/dev/null || true
-          [ "${colors:-0}" -gt 20 ] || { echo "::error::window looks blank ($colors colors)"; exit 1; }
-          echo "E2E OK: the packaged app launched and rendered a non-blank window"
+          [ "${colors:-0}" -gt 20 ] || { echo "::error::window looks blank ($colors colors)"; echo '--- app.log ---'; cat /tmp/app.log; exit 1; }
+          echo "E2E OK: the packaged app launched and rendered a non-blank window ($colors colors)"
       - name: Upload screenshot
         if: always()
         uses: actions/upload-artifact@v4
