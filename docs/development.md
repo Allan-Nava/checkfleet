@@ -57,6 +57,23 @@ docker compose -f docker-compose.integration.yml down -v
 - CI runs all of this in `.github/workflows/integration.yml`, a job kept
   separate from the `test` job in `ci.yml`.
 
+## Fuzzing the parsers
+
+The parsers that read untrusted external input are fuzzed (CF-36): `parseM3U8`
+(HLS manifests), `parseMessage` (the hand-rolled DNS wire decoder), `parseCSV`
+(HAProxy stats), and the `/jsz` decode + meta-cluster analysis (NATS). Each has
+a white-box `Fuzz*` target in its package.
+
+```bash
+go test ./internal/checks/dns -run '^$' -fuzz '^FuzzParseMessage$' -fuzztime=30s
+```
+
+The seed corpora run as ordinary tests under `go test ./...`, so a known
+crasher can never regress. The [`Fuzz`](https://github.com/Allan-Nava/checkfleet/actions/workflows/fuzz.yml)
+workflow fuzzes every target on a schedule, on demand, and on PRs that touch a
+parser; any crasher lands in `internal/checks/<mod>/testdata/fuzz/` and is
+uploaded as an artifact.
+
 ## Conventions
 
 - Status `ERROR` means "the check could not measure" (network, handshake) — not

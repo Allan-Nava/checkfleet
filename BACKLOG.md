@@ -72,7 +72,7 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 
 ## M9 — Qualità (fase 2)
 
-- [ ] **CF-36 — Fuzz dei parser**: `go test -fuzz` su m3u8 (stream), wire DNS, CSV HAProxy, `/jsz` NATS — i parser che leggono input esterno non fidato.
+- [x] **CF-36 — Fuzz dei parser**: `go test -fuzz` su m3u8 (stream), wire DNS, CSV HAProxy, `/jsz` NATS — i parser che leggono input esterno non fidato. Fuzz target white-box in ciascun package; i seed girano nei unit test, il workflow `fuzz.yml` fuzza attivamente (schedule/dispatch/PR). _(v0.42.0)_
 - [x] **CF-37 — Suite d'integrazione opt-in**: harness con docker-compose (nats, haproxy, postgres, consul, redis, patroni+etcd, keycloak) dietro build tag `integration` in `test/integration/`, fuori dai unit test; gira nel workflow separato `integration.yml`, mai nei `go test ./...` di default. _(v0.25.0)_
 
 ## M10 — Check generici & protocollo (fase 3)

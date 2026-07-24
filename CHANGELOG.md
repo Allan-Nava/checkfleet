@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.42.0
+
+- Fuzz dei parser (CF-36, **chiude M9**): fuzz target `go test -fuzz` sui parser che leggono input esterno non fidato — `parseM3U8` (stream/HLS), `parseMessage` (DNS wire, parsing byte a mano con compression pointer), `parseCSV` (HAProxy stats), decode `/jsz` + `analyzeMeta` (NATS). White-box, in-package; i seed girano già come unit test in `go test ./...`. Nessun crasher trovato (~4.7M esecuzioni totali in locale, 15s/target).
+- Nuovo workflow `fuzz.yml`: fuzza attivamente ogni target (matrice) — settimanale, `workflow_dispatch` (con `fuzztime` configurabile) e sulle PR che toccano un parser; carica gli eventuali crasher da `testdata/fuzz/` come artifact.
+
 ## 0.41.0
 
 - Docs: nuova pagina **Desktop app** (`docs/desktop.md`) con demo dell'app GUI — screenshot dark+light (retina) del frontend reale e walkthrough della fleet view (toolbar, summary, tabella finding, filtri, export, stack, auto-refresh, tema), avvio con `CHECKFLEET_CONFIG`/`CHECKFLEET_AUTORUN`, download dalle release e build da sorgente. Aggiunta alla nav e alla home; CI/Development rinumerati.

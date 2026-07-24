@@ -1,0 +1,59 @@
+name: Fuzz
+
+# CF-36: fuzz the parsers that read untrusted external input (m3u8, DNS wire,
+# HAProxy CSV, NATS /jsz). The seed corpora already run under `go test ./...`
+# in ci.yml; this job actively fuzzes each target for a bounded time to hunt new
+# crashers — weekly, on demand, and on PRs that touch a parser or its fuzz test.
+
+on:
+  schedule:
+    - cron: "0 4 * * 1" # Mondays 04:00 UTC
+  workflow_dispatch:
+    inputs:
+      fuzztime:
+        description: "Per-target fuzz duration (e.g. 60s, 5m)"
+        required: false
+        default: "60s"
+  pull_request:
+    paths:
+      - "internal/checks/stream/**"
+      - "internal/checks/dns/**"
+      - "internal/checks/haproxy/**"
+      - "internal/checks/nats/**"
+      - ".github/workflows/fuzz.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - pkg: internal/checks/stream
+            target: FuzzParseM3U8
+          - pkg: internal/checks/dns
+            target: FuzzParseMessage
+          - pkg: internal/checks/haproxy
+            target: FuzzParseCSV
+          - pkg: internal/checks/nats
+            target: FuzzParseJSZ
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+      - name: Fuzz ${{ matrix.target }}
+        run: |
+          go test ./${{ matrix.pkg }} \
+            -run '^$' -fuzz '^${{ matrix.target }}$' \
+            -fuzztime '${{ github.event.inputs.fuzztime || ''60s'' }}'
+      - name: Upload crashers
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-crashers-${{ matrix.target }}
+          path: ${{ matrix.pkg }}/testdata/fuzz/
+          if-no-files-found: ignore
