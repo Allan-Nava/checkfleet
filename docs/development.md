@@ -32,6 +32,31 @@ they are the same checks CI runs.
    cert generated on the fly with a known expiry. A test that touches the
    internet or real infrastructure is a bug.
 
+## Integration suite (opt-in)
+
+Unit tests must stay offline (in-test servers only). To exercise the modules
+against **real** services there's a separate, opt-in suite gated behind the
+`integration` build tag, so `go test ./...` never runs it.
+
+```bash
+docker compose -f docker-compose.integration.yml up -d --build --wait
+go test -tags integration -v ./test/integration/...
+checkfleet check all --config checkfleet.integration.yml   # end-to-end smoke
+docker compose -f docker-compose.integration.yml down -v
+```
+
+- `docker-compose.integration.yml` brings up redis, nats, consul, haproxy,
+  postgres, patroni (+etcd), and keycloak, each published on `127.0.0.1` with a
+  healthcheck so `--wait` makes readiness deterministic. Support files live in
+  `deploy/integration/` (HAProxy config, the in-compose Patroni image).
+- `checkfleet.integration.yml` points every module at those local ports.
+- The suite's contract is deliberately loose: it asserts **reachability** — at
+  least one non-`ERROR` finding per module — not exact status (that stays
+  covered by the unit tests). NATS runs standalone, so its meta-cluster finding
+  is `BAD` by design (a single node is not an HA cluster); it's exit-neutral.
+- CI runs all of this in `.github/workflows/integration.yml`, a job kept
+  separate from the `test` job in `ci.yml`.
+
 ## Conventions
 
 - Status `ERROR` means "the check could not measure" (network, handshake) — not

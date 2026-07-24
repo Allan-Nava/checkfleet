@@ -1,0 +1,124 @@
+# checkfleet — integration stack (CF-37).
+#
+# Brings up real services so the opt-in integration suite (build tag
+# `integration`) and the `checkfleet check all` smoke run can exercise the
+# modules against them. This is NEVER used by `go test ./...` (unit tests use
+# in-test servers and must stay offline).
+#
+#   docker compose -f docker-compose.integration.yml up -d --wait
+#   go test -tags integration ./test/integration/...
+#   docker compose -f docker-compose.integration.yml down -v
+#
+# Every service publishes on 127.0.0.1 with the ports checkfleet.integration.yml
+# expects. Healthchecks + `--wait` make readiness deterministic in CI.
+name: checkfleet-integration
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  nats:
+    image: nats:2.10-alpine
+    # Standalone JetStream. NOTE: a single node has no meta raft group, so the
+    # `nats` module correctly reports BAD "no meta-leader" — expected here, and
+    # exit-code-neutral (the smoke run doesn't pass --exit-on-bad). A clean
+    # meta-cluster would need ≥3 nodes; that's out of scope for the smoke stack.
+    command: ["-js", "-m", "8222"]
+    ports:
+      - "127.0.0.1:4222:4222"
+      - "127.0.0.1:8222:8222"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:8222/healthz"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  consul:
+    image: hashicorp/consul:1.19
+    command: ["agent", "-dev", "-client=0.0.0.0"]
+    ports:
+      - "127.0.0.1:8500:8500"
+    healthcheck:
+      test: ["CMD", "consul", "members"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  haproxy:
+    image: haproxy:2.9-alpine
+    volumes:
+      - ./deploy/integration/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - "127.0.0.1:8404:8404"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:8404/stats;csv"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.15
+    command:
+      - /usr/local/bin/etcd
+      - --name=node1
+      - --data-dir=/etcd-data
+      - --advertise-client-urls=http://etcd:2379
+      - --listen-client-urls=http://0.0.0.0:2379
+      - --initial-advertise-peer-urls=http://etcd:2380
+      - --listen-peer-urls=http://0.0.0.0:2380
+      - --initial-cluster=node1=http://etcd:2380
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  patroni:
+    build: ./deploy/integration/patroni
+    depends_on:
+      etcd:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8008:8008"
+      - "127.0.0.1:5433:5432"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8008/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 40
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    command: ["start-dev"]
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:9000:9000"
+    healthcheck:
+      # The management port (9000) serves /health/ready on KC 25+.
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000; echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3; grep -q UP <&3"]
+      interval: 5s
+      timeout: 3s
+      retries: 40

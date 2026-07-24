@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.25.0
+
+- Suite d'integrazione opt-in (CF-37): stack `docker-compose.integration.yml` con servizi reali (redis, nats, consul, haproxy, postgres, patroni+etcd, keycloak) e `checkfleet.integration.yml` che li punta su `127.0.0.1`.
+  - Test in `test/integration/` dietro build tag `integration`: `go test -tags integration ./test/integration/...`. **Fuori** dai unit test — `go test ./...` resta offline (server in-test) e non li esegue.
+  - Contratto d'integrazione volutamente lasco: reachability (≥1 finding non-ERROR per modulo), non lo status esatto — quello resta coperto dai unit test.
+  - Workflow CI separato `.github/workflows/integration.yml` (push/PR + `workflow_dispatch`): alza lo stack con `docker compose up --build --wait`, gira la suite e lo smoke `checkfleet check all`, poi `down -v`. Non tocca il job `test` di `ci.yml`.
+  - Patroni: immagine single-node costruita in-compose (`deploy/integration/patroni/`) su base `postgres:16` + `patroni[etcd3]`; HAProxy con `deploy/integration/haproxy.cfg` (stats CSV su :8404). NATS standalone segnala BAD "no meta-leader" (atteso: un nodo singolo non è un cluster HA; exit-code-neutral).
+
 ## 0.24.0
 
 - Modulo `ntp` (CF-40): offset dell'orologio via query SNTP a mano (UDP, zero dip); WARN/BAD oltre `offset_warn_ms`/`offset_crit_ms`, BAD se server non sincronizzato (stratum 0/≥16). Query isolata dietro funzione per test deterministici delle soglie.

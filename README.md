@@ -129,6 +129,18 @@ go build -o checkfleet ./cmd/checkfleet
 
 Adding a module: implement `engine.Check` in `internal/checks/<name>`, add its typed config in `internal/engine/config.go`, wire it in `cmd/checkfleet/main.go`, and test it against a local fixture server.
 
+**Opt-in integration suite** — the unit tests above stay offline; a separate,
+tag-gated suite exercises the modules against real services in Docker:
+
+```bash
+docker compose -f docker-compose.integration.yml up -d --build --wait
+go test -tags integration ./test/integration/...
+docker compose -f docker-compose.integration.yml down -v
+```
+
+It never runs under `go test ./...`. CI runs it in its own workflow
+(`.github/workflows/integration.yml`), separate from the unit-test job.
+
 ## License
 
 MIT

@@ -1,0 +1,48 @@
+# Config for the integration stack (docker-compose.integration.yml).
+# Targets the services on 127.0.0.1. Used by the `check all` smoke run and as a
+# reference by the integration suite. Never point this at real infrastructure.
+timeout_seconds: 20
+
+checks:
+  redis:
+    port: 6379
+    targets:
+      - 127.0.0.1
+
+  nats:
+    port: 8222
+    scheme: http
+    targets:
+      - 127.0.0.1
+
+  consul:
+    port: 8500
+    scheme: http
+    expect_peers: 1          # -dev mode is a single-node cluster
+    targets:
+      - 127.0.0.1
+
+  haproxy:
+    port: 8404
+    scheme: http
+    path: /stats;csv
+    targets:
+      - 127.0.0.1
+
+  postgres:
+    targets:
+      - name: pg-integration
+        dsn: "host=127.0.0.1 port=5432 user=postgres dbname=postgres sslmode=disable"
+        password_env: CF_PG_PASSWORD    # exported to "postgres" by the workflow
+
+  patroni:
+    port: 8008
+    scheme: http
+    targets:
+      - 127.0.0.1
+
+  keycloak:
+    base_url: http://127.0.0.1:8080
+    health_url: http://127.0.0.1:9000/health/ready
+    realms:
+      - master

@@ -1,0 +1,48 @@
+name: Integration
+
+# Opt-in integration suite (CF-37): runs the check modules against real
+# services from docker-compose.integration.yml. Kept SEPARATE from the `test`
+# job in ci.yml — the default `go test ./...` never touches this.
+
+on:
+  push:
+    branches: ["master", "main"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      COMPOSE_FILE: docker-compose.integration.yml
+      CF_PG_PASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
+      - name: Bring up the integration stack
+        run: docker compose up -d --build --wait --wait-timeout 600
+
+      - name: Show container status
+        if: always()
+        run: docker compose ps
+
+      - name: Run the integration suite
+        run: go test -tags integration -v -timeout 5m ./test/integration/...
+
+      - name: Smoke run — checkfleet check all
+        run: |
+          go build -o checkfleet ./cmd/checkfleet
+          ./checkfleet check all --config checkfleet.integration.yml --output markdown
+
+      - name: Dump service logs on failure
+        if: failure()
+        run: docker compose logs --no-color --tail=200
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
