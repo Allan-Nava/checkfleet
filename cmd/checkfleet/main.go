@@ -81,7 +81,7 @@ func main() {
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `usage:
-  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka> --config checkfleet.yml [--output text|markdown|json|junit|html|prometheus|slack|discord|teams|webhook] [--out-file PATH] [--only ...] [--min-severity warn] [--target glob] [--watch 5s] [--history F --diff] [--exit-on-bad]
+  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka> --config checkfleet.yml [--output text|markdown|json|junit|html|prometheus|otlp|slack|discord|teams|webhook] [--out-file PATH] [--only ...] [--min-severity warn] [--target glob] [--watch 5s] [--history F --diff] [--exit-on-bad]
   checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s]   # export Prometheus metrics
   checkfleet report-issues --config checkfleet.yml [--forge github|gitlab]     # open/close tracker issues from BAD findings
   checkfleet alert --config checkfleet.yml --provider pagerduty --key-env K    # create/resolve on-call alerts from BAD/ERROR
@@ -101,7 +101,7 @@ func runCheck(args []string) error {
 	fs := flag.NewFlagSet("check", flag.ExitOnError)
 	configPath := fs.String("config", "checkfleet.yml", "YAML config file")
 	stack := fs.String("stack", "", "stack profile: overlays checkfleet.<stack>.yml onto the base")
-	format := fs.String("output", "text", "format: text, markdown, json, junit, html, prometheus, slack, discord, teams, webhook")
+	format := fs.String("output", "text", "format: text, markdown, json, junit, html, prometheus, otlp, slack, discord, teams, webhook")
 	outFile := fs.String("out-file", "", "write the output to this file (atomically) instead of stdout")
 	webhookEnv := fs.String("webhook-env", "SLACK_WEBHOOK", "env var holding the Slack webhook URL (slack output)")
 	only := fs.String("only", "", "show only these checks (comma-separated list)")
@@ -307,6 +307,9 @@ func render(format string, res engine.Result, module string) (string, error) {
 		return output.HTML(res, module), nil
 	case "prometheus":
 		return output.Prometheus(res), nil
+	case "otlp":
+		s, err := output.OTLP(res)
+		return s + "\n", err
 	default:
 		return "", fmt.Errorf("unknown format %q", format)
 	}

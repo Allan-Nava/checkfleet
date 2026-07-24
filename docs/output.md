@@ -128,3 +128,16 @@ export MY_HOOK="https://hooks.example/checkfleet"
 checkfleet check all --config checkfleet.yml --output webhook --webhook-env MY_HOOK
 ```
 
+
+## `otlp`
+
+An OTLP/HTTP **metrics** request in JSON encoding — the same gauges as
+`prometheus` (`checkfleet.finding.status`, `.findings.total`, `.worst.status`),
+hand-built with **zero dependencies** (no OpenTelemetry SDK). POST it to a
+collector's `/v1/metrics`:
+
+```bash
+checkfleet check all --config checkfleet.yml --output otlp \
+  | curl -s --data-binary @- -H 'content-type: application/json' \
+      http://otel-collector:4318/v1/metrics
+```

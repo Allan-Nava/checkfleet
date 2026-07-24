@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.53.0
+
+- Export OTLP (CF-30): `--output otlp` emette una richiesta OTLP/HTTP **metrics** in codifica JSON — gli stessi gauge del formato `prometheus` (`checkfleet.finding.status`, `.findings.total`, `.worst.status`) — costruita a mano **senza dipendenze** (niente SDK OpenTelemetry). Si POSTa al `/v1/metrics` di un collector. `output.OTLP` testato. **Chiude M7 (alerting & output).**
+
 ## 0.52.0
 
 - Alert PagerDuty/Opsgenie (CF-28): nuovo `checkfleet alert --provider pagerduty|opsgenie --key-env <ENV>` — crea alert per i finding BAD/ERROR (dedup per `check/target`) e, con `--history`, risolve quelli rientrati rispetto al run precedente. Package `internal/alert` con `Plan` (trigger/resolve) e i payload PagerDuty (Events API v2) / Opsgenie testati; poster HTTP sottile. Chiave da env, mai in CLI/config.

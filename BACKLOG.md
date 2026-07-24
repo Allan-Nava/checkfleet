@@ -60,7 +60,7 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 - [x] **CF-27 — Webhook Discord/Teams**: `--output discord` (embed) e `--output teams` (MessageCard) — summary + problemi worst-first (cap), colore per worst status; URL da `--webhook-env` (mai in CLI). Renderer `output.Discord`/`output.Teams` testati; helper `postRendered` condiviso. _(v0.44.0)_
 - [x] **CF-28 — Alert PagerDuty/Opsgenie**: `checkfleet alert --provider pagerduty|opsgenie --key-env K` crea/risolve alert per finding BAD/ERROR (dedup check/target); con `--history` risolve i rientri vs il run precedente. Chiave da env. Core `internal/alert` (`Plan` + payload PagerDuty/Opsgenie) testato; poster HTTP sottile. _(v0.52.0)_
 - [x] **CF-29 — Report HTML**: `--output html` — report statico autoconsistente (summary + tiles, "Needs attention", tabella completa), CSS inline, tema coerente col sito, messaggi HTML-escaped. Renderer `output.HTML` testato. _(v0.43.0)_
-- [ ] **CF-30 — Export OTLP**: esporta i finding come metriche/eventi OpenTelemetry (OTLP), per chi non usa lo scrape Prometheus.
+- [x] **CF-30 — Export OTLP**: `--output otlp` emette una richiesta OTLP/HTTP **metrics** in JSON (stessi gauge di `prometheus`), hand-built **zero-dep** (niente SDK otel), da POSTare a `/v1/metrics` di un collector. Renderer `output.OTLP` testato. **Chiude M7.** _(v0.53.0)_
 
 ## M8 — Engine & UX (fase 2)
 
