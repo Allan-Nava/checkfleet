@@ -28,8 +28,11 @@ Don't rebuild Prometheus or Grafana. checkfleet fills the layer they can't: chec
 
 ```bash
 go install github.com/Allan-Nava/checkfleet/cmd/checkfleet@latest
-# or download a binary from the GitHub releases
+# or: brew install Allan-Nava/tap/checkfleet   (once the tap is published)
+# or: download a release archive (tar.gz/zip + checksums.txt) from GitHub Releases
 ```
+
+See [Installation](https://allan-nava.github.io/checkfleet/installation/) for all options.
 
 ## Modules
 

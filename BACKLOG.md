@@ -42,4 +42,4 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 ## Rilascio
 
 - [x] **CF-9 — goreleaser** (linux/darwin/windows, amd64/arm64) + archivi + checksums + Homebrew cask. Tap pronto ma disattivo (`skip_upload`) finché non si crea `Allan-Nava/homebrew-tap` + secret. Validato con `goreleaser check` + `--snapshot`. _(v0.13.0)_
-- [ ] **CF-10 — Docs sito** (README ricco con GIF, esempi per modulo, ricette CI TeamCity/GitHub Actions).
+- [x] **CF-10 — Docs sito**: sito con tema custom (hero, ricerca, TOC, pagine per-modulo con esempi config), ricette CI GitHub Actions + TeamCity + cron, README ricco. GIF demo rimandata (asset binario, non generabile qui; c'è la demo testuale). _(v0.14.0)_

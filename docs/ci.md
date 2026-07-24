@@ -56,6 +56,32 @@ case "$worst" in
 esac
 ```
 
+## TeamCity
+
+A single command-line build step. Install (or download) checkfleet, run the
+checks, and let `--exit-on-bad` fail the build; emit a TeamCity service message
+so the failure is readable in the build log.
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+go install github.com/Allan-Nava/checkfleet/cmd/checkfleet@latest
+export PATH="$PATH:$(go env GOPATH)/bin"
+
+# Human report into the build log.
+checkfleet check all --config checkfleet.yml --output markdown
+
+# Gate the build; surface a build problem on BAD/ERROR.
+if ! checkfleet check all --config checkfleet.yml --exit-on-bad; then
+  echo "##teamcity[buildProblem description='checkfleet: fleet unhealthy (BAD/ERROR)']"
+  exit 1
+fi
+```
+
+Schedule it with a TeamCity **cron trigger** for periodic fleet checks, or wire
+the [`serve`](usage.md#the-serve-command) exporter into your Prometheus and
+alert there instead.
+
 ## Cron
 
 ```cron
