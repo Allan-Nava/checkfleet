@@ -75,6 +75,7 @@ func runCheck(args []string) error {
 
 	fs := flag.NewFlagSet("check", flag.ExitOnError)
 	configPath := fs.String("config", "checkfleet.yml", "file di configurazione YAML")
+	stack := fs.String("stack", "", "profilo stack: sovrappone checkfleet.<stack>.yml alla base")
 	format := fs.String("output", "text", "formato: text, markdown, json, slack")
 	webhookEnv := fs.String("webhook-env", "SLACK_WEBHOOK", "env var con l'URL webhook Slack (output slack)")
 	exitOnBad := fs.Bool("exit-on-bad", false, "exit code 2 se presenti finding BAD/ERROR")
@@ -82,7 +83,7 @@ func runCheck(args []string) error {
 		return err
 	}
 
-	cfg, err := engine.LoadConfig(*configPath)
+	cfg, err := loadConfig(*configPath, *stack)
 	if err != nil {
 		return err
 	}
@@ -149,6 +150,14 @@ func runCheck(args []string) error {
 	return nil
 }
 
+// loadConfig loads the base config, overlaying a stack profile when set.
+func loadConfig(path, stack string) (*engine.Config, error) {
+	if stack != "" {
+		return engine.LoadConfigStack(path, stack)
+	}
+	return engine.LoadConfig(path)
+}
+
 // moduleSpec ties a module name to whether it's configured and how to build it.
 type moduleSpec struct {
 	name       string
@@ -189,12 +198,13 @@ func configuredChecks(cfg *engine.Config) []engine.Check {
 func runServe(args []string) error {
 	fs := flag.NewFlagSet("serve", flag.ExitOnError)
 	configPath := fs.String("config", "checkfleet.yml", "file di configurazione YAML")
+	stack := fs.String("stack", "", "profilo stack: sovrappone checkfleet.<stack>.yml alla base")
 	listen := fs.String("listen", ":9876", "indirizzo di ascolto")
 	interval := fs.Duration("interval", 60*time.Second, "intervallo di riesecuzione dei check")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	cfg, err := engine.LoadConfig(*configPath)
+	cfg, err := loadConfig(*configPath, *stack)
 	if err != nil {
 		return err
 	}

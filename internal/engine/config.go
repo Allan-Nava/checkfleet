@@ -3,6 +3,8 @@ package engine
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -184,6 +186,17 @@ type HTTPTarget struct {
 
 // LoadConfig reads and validates checkfleet.yml, applying defaults.
 func LoadConfig(path string) (*Config, error) {
+	cfg, err := parseConfig(path)
+	if err != nil {
+		return nil, err
+	}
+	applyDefaults(cfg)
+	return cfg, nil
+}
+
+// parseConfig reads and unmarshals a config file WITHOUT applying defaults, so
+// callers can overlay one config on another before defaults kick in.
+func parseConfig(path string) (*Config, error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("config: %w", err)
@@ -192,6 +205,11 @@ func LoadConfig(path string) (*Config, error) {
 	if err := yaml.Unmarshal(raw, &cfg); err != nil {
 		return nil, fmt.Errorf("config %s: %w", path, err)
 	}
+	return &cfg, nil
+}
+
+// applyDefaults fills in per-module defaults on a parsed config.
+func applyDefaults(cfg *Config) {
 	if cfg.TimeoutSeconds <= 0 {
 		cfg.TimeoutSeconds = 30
 	}
@@ -283,5 +301,63 @@ func LoadConfig(path string) (*Config, error) {
 			}
 		}
 	}
-	return &cfg, nil
+}
+
+// LoadConfigStack loads a base config and overlays a per-stack file
+// (checkfleet.<stack>.yml next to the base), applying defaults after the
+// merge. A module present in the stack replaces the base's module wholesale.
+func LoadConfigStack(basePath, stack string) (*Config, error) {
+	base, err := parseConfig(basePath)
+	if err != nil {
+		return nil, err
+	}
+	over, err := parseConfig(StackPath(basePath, stack))
+	if err != nil {
+		return nil, fmt.Errorf("stack %q: %w", stack, err)
+	}
+	base.overlay(over)
+	applyDefaults(base)
+	return base, nil
+}
+
+// overlay merges over on top of c: a set timeout and any non-nil module win.
+func (c *Config) overlay(over *Config) {
+	if over.TimeoutSeconds > 0 {
+		c.TimeoutSeconds = over.TimeoutSeconds
+	}
+	o := over.Checks
+	if o.Certs != nil {
+		c.Checks.Certs = o.Certs
+	}
+	if o.HTTP != nil {
+		c.Checks.HTTP = o.HTTP
+	}
+	if o.NATS != nil {
+		c.Checks.NATS = o.NATS
+	}
+	if o.HAProxy != nil {
+		c.Checks.HAProxy = o.HAProxy
+	}
+	if o.Stream != nil {
+		c.Checks.Stream = o.Stream
+	}
+	if o.Patroni != nil {
+		c.Checks.Patroni = o.Patroni
+	}
+	if o.Consul != nil {
+		c.Checks.Consul = o.Consul
+	}
+	if o.Postgres != nil {
+		c.Checks.Postgres = o.Postgres
+	}
+	if o.DNS != nil {
+		c.Checks.DNS = o.DNS
+	}
+}
+
+// StackPath derives the per-stack config path from the base path:
+// "checkfleet.yml" + "prod" → "checkfleet.prod.yml".
+func StackPath(basePath, stack string) string {
+	ext := filepath.Ext(basePath) // ".yml"
+	return strings.TrimSuffix(basePath, ext) + "." + stack + ext
 }

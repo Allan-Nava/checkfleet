@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.11.0
+
+- Config multi-stack (CF-8): flag `--stack <name>` (per `check` e `serve`) sovrappone `checkfleet.<stack>.yml` alla base. Merge per modulo (un modulo nello stack sostituisce quello base e riprende i suoi default), `timeout_seconds` sovrascritto solo se impostato.
+- Refactor `LoadConfig` in `parseConfig` + `applyDefaults` + `overlay`; nuove `LoadConfigStack`/`StackPath`. Test dedicati (overlay, ereditarietà, path, errori).
+
 ## 0.10.0
 
 - Comando `serve` (CF-6): modalità exporter Prometheus. `checkfleet serve --listen :9876 --interval 60s` riesegue i check a intervallo ed espone su `/metrics`: `checkfleet_finding_status{check,target}` (severity 0-3, worst per coppia), `checkfleet_findings_total{status}`, `checkfleet_worst_status`, durata e timestamp dell'ultimo run.

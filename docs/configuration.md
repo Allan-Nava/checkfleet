@@ -271,6 +271,31 @@ checks:
       - {name: hiway.media, type: SOA}
 ```
 
+## Multi-stack profiles
+
+`--stack <name>` overlays a per-stack file on the base config, so you can keep
+one set of defaults and a small override per environment. Given
+`--config checkfleet.yml --stack prod-cologno`, checkfleet loads
+`checkfleet.yml` then overlays `checkfleet.prod-cologno.yml` (same directory).
+
+The merge is **per module**: a module present in the stack file replaces the
+base's module entirely (so the module gets its own defaults again); a module
+absent from the stack is inherited from the base. `timeout_seconds` is
+overridden only if the stack sets it. `--stack` works with both `check` and
+`serve`.
+
+```bash
+checkfleet check all  --config checkfleet.yml --stack prod-cologno
+checkfleet serve      --config checkfleet.yml --stack prod-cologno
+```
+
+```yaml
+# checkfleet.prod-cologno.yml — overrides only what differs from the base
+checks:
+  certs:
+    targets: [edge.cologno.hiway.media]
+```
+
 ## No secrets in config
 
 Keep credentials out of `checkfleet.yml` — checks never log or echo secrets, and

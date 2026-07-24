@@ -28,7 +28,7 @@ Roadmap a milestone: prima **cosa monitorare** (M1→M3), poi **come consegnarlo
 - [x] **CF-5 — Output Slack** (Block Kit): `--output slack --webhook-env SLACK_WEBHOOK` con summary + problemi (worst-first, cap 20). Webhook da env, mai in CLI/config. _(v0.9.0)_
 - [x] **CF-6 — Modalità exporter Prometheus**: `checkfleet serve --listen :9876 --interval 60s` espone i finding come metriche (gauge severity per check/target + rollup) rieseguendo i check a intervallo. _(v0.10.0; registry moduli condiviso check/serve)_
 - [ ] **CF-7 — Findings → issue GitHub/GitLab**: apre/aggiorna una issue per i finding BAD persistenti (dedup per check+target).
-- [ ] **CF-8 — Config multi-stack**: più file/profili (`--stack prod-cologno`) con merge dei default.
+- [x] **CF-8 — Config multi-stack**: `--stack prod-cologno` sovrappone `checkfleet.<stack>.yml` alla base (merge per modulo, timeout se impostato). Vale per `check` e `serve`. _(v0.11.0)_
 
 ## M5 — App desktop Wails (~v0.6) — "così è più semplice da usare"
 
