@@ -119,8 +119,17 @@ func (a *App) ListStacks(configPath string) []string {
 		if ext != ".yml" && ext != ".yaml" {
 			continue
 		}
-		mid := strings.TrimSuffix(strings.TrimPrefix(name, prefix), ext)
-		if strings.HasPrefix(name, prefix) && mid != "" {
+		if !strings.HasPrefix(name, prefix) {
+			continue
+		}
+		// Require the shape checkfleet.<stack>.<ext>: the part after the prefix
+		// must still carry the extension, otherwise this is the base file
+		// itself (checkfleet.yml → "yml" is the extension, not a stack).
+		afterPrefix := strings.TrimPrefix(name, prefix)
+		if !strings.HasSuffix(afterPrefix, ext) {
+			continue
+		}
+		if mid := strings.TrimSuffix(afterPrefix, ext); mid != "" {
 			stacks = append(stacks, mid)
 		}
 	}

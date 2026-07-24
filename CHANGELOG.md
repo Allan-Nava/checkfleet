@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.32.0
+
+- Test dell'app desktop in CI (nuovo workflow `desktop-test.yml`, gira su push/PR che toccano `desktop/**`):
+  - **Binding Go** (`desktop/app_test.go`): `RunChecks` end-to-end offline (check `tcp` verso un listener locale → OK, moduli/finding/summary corretti), errori di config, `ListStacks`, `DefaultConfigPath`, export Markdown/JSON.
+  - **Smoke test frontend**: carica `frontend/dist/index.html` in headless Chrome (backend mock) e verifica che la vista fleet si renderizzi davvero (summary, worst=ERROR, badge di stato, tabella finding popolata).
+- Fix (trovato dai test): `ListStacks` scambiava il file base `checkfleet.yml` per uno stack `"yml"`; ora richiede la forma `checkfleet.<stack>.<ext>`.
+
 ## 0.31.2
 
 - Homebrew: tap `Allan-Nava/homebrew-tap` attivata. `skip_upload: "false"` in `.goreleaser.yaml` → a ogni tag `v*` goreleaser pubblica il cask sulla tap, quindi `brew install Allan-Nava/tap/checkfleet` funziona (repo tap + secret `HOMEBREW_TAP_GITHUB_TOKEN` già configurati). Il cask distribuisce il binario precompilato (darwin amd64/arm64) e rimuove l'attributo `com.apple.quarantine` all'installazione (binario non firmato). Solo i tag successivi all'attivazione portano il cask.
