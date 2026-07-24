@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.41.0
+
+- Docs: nuova pagina **Desktop app** (`docs/desktop.md`) con demo dell'app GUI — screenshot dark+light (retina) del frontend reale e walkthrough della fleet view (toolbar, summary, tabella finding, filtri, export, stack, auto-refresh, tema), avvio con `CHECKFLEET_CONFIG`/`CHECKFLEET_AUTORUN`, download dalle release e build da sorgente. Aggiunta alla nav e alla home; CI/Development rinumerati.
+
 ## 0.40.0
 
 - Guardrail English-output + sweep finale (CF-60, **chiude M15**):

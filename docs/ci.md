@@ -1,6 +1,6 @@
 ---
 title: CI integration
-nav_order: 7
+nav_order: 8
 ---
 
 checkfleet is built to run in a pipeline. Because a check that ran is a

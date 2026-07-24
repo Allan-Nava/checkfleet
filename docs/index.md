@@ -25,6 +25,7 @@ go build -o checkfleet ./cmd/checkfleet
 - [Usage](usage.md) — commands, flags, output formats, exit codes
 - [Modules](modules.md) — what each check knows how to verify
 - [Output formats](output.md) — text, markdown, JSON
+- [Desktop app](desktop.md) — the Wails GUI over the same engine
 - [CI integration](ci.md) — gating a pipeline on findings
 - [Development](development.md) — adding a module
 
