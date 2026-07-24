@@ -58,7 +58,11 @@ services:
     ports:
       - "127.0.0.1:8404:8404"
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O-", "http://localhost:8404/stats;csv"]
+      # Force IPv4: haproxy `bind *:8404` listens on 0.0.0.0 only, but the
+      # container's /etc/hosts also maps `localhost` to ::1. On runners where
+      # busybox wget prefers IPv6 the check hits [::1]:8404 (no listener) and
+      # fails forever. 127.0.0.1 matches the bind (and the module's target).
+      test: ["CMD", "wget", "-q", "-O-", "http://127.0.0.1:8404/stats;csv"]
       interval: 3s
       timeout: 3s
       retries: 20

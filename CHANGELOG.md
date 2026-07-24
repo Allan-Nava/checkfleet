@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.28.1
+
+- CI integration: healthcheck HAProxy corretto (workflow `Integration` rosso). `bind *:8404` ascolta solo IPv4 ma `/etc/hosts` mappa `localhost` anche a `::1`; sui runner dove busybox `wget` preferisce IPv6 l'healthcheck colpiva `[::1]:8404` (nessun listener) e falliva sempre → `docker compose up --wait` in errore. Ora punta a `http://127.0.0.1:8404/stats;csv` (coerente col bind e col target del modulo). Gli altri servizi non sono affetti (nats/patroni/keycloak ascoltano dual-stack).
+
 ## 0.28.0
 
 - Modulo `grpc` (CF-41): gRPC Health Checking Protocol (`grpc.health.v1.Health/Check`) su **HTTP/2 + TLS** con protobuf/framing gRPC scritti a mano — **zero dipendenze** (niente libreria gRPC; h2c plaintext non supportato). SERVING=OK, NOT_SERVING/SERVICE_UNKNOWN=BAD, UNKNOWN=WARN; grpc-status 12 (UNIMPLEMENTED)=WARN, 5 (NOT_FOUND)=BAD. Testato contro un finto server gRPC h2/TLS in-test.
