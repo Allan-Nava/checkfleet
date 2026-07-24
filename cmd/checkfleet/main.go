@@ -58,6 +58,11 @@ func main() {
 			fmt.Fprintln(os.Stderr, "checkfleet:", err)
 			os.Exit(1)
 		}
+	case "alert":
+		if err := runAlert(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, "checkfleet:", err)
+			os.Exit(1)
+		}
 	case "explain":
 		if err := runExplain(os.Args[2:]); err != nil {
 			fmt.Fprintln(os.Stderr, "checkfleet:", err)
@@ -78,7 +83,8 @@ func usage() {
 	fmt.Fprintln(os.Stderr, `usage:
   checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka> --config checkfleet.yml [--output text|markdown|json|junit|html|prometheus|slack|discord|teams|webhook] [--out-file PATH] [--only ...] [--min-severity warn] [--target glob] [--watch 5s] [--history F --diff] [--exit-on-bad]
   checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s]   # export Prometheus metrics
-  checkfleet report-issues --config checkfleet.yml [--dry-run]                 # open/close GitHub issues from BAD findings
+  checkfleet report-issues --config checkfleet.yml [--forge github|gitlab]     # open/close tracker issues from BAD findings
+  checkfleet alert --config checkfleet.yml --provider pagerduty --key-env K    # create/resolve on-call alerts from BAD/ERROR
   checkfleet validate --config checkfleet.yml                                  # validate the config without running the checks
   checkfleet explain [module]                                                 # what a module checks and its thresholds
   checkfleet completion <bash|zsh|fish>                                        # print a shell completion script

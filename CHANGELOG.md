@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.52.0
+
+- Alert PagerDuty/Opsgenie (CF-28): nuovo `checkfleet alert --provider pagerduty|opsgenie --key-env <ENV>` — crea alert per i finding BAD/ERROR (dedup per `check/target`) e, con `--history`, risolve quelli rientrati rispetto al run precedente. Package `internal/alert` con `Plan` (trigger/resolve) e i payload PagerDuty (Events API v2) / Opsgenie testati; poster HTTP sottile. Chiave da env, mai in CLI/config.
+
 ## 0.51.1
 
 - Rimossi i riferimenti aziendali dal progetto (sviluppato a titolo personale): contatto della licenza commerciale (`COMMERCIAL.md`) sull'email personale dell'autore (`allannava95@gmail.com`); neutralizzati gli host d'esempio in `checkfleet.example.yml` (dominio aziendale → `example.com`, DN LDAP, realm, service gRPC); ripuliti i riferimenti in `BACKLOG.md`, nel fixture di `internal/backlog`, nel commento di `internal/checks/nats` e il puntatore runbook in `CLAUDE.md`. Licenziante (`LICENSE`) e contatto coincidono con l'autore.

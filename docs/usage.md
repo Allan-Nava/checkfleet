@@ -100,9 +100,8 @@ installed and authenticated.
 | `--dry-run` | off | Print what would open/close without touching any issue. |
 
 Managed issues carry the `checkfleet-finding` label and a `[checkfleet] check/target`
-title (the dedup key). Requires the [`gh`](https://cli.github.com/) CLI,
-authenticated; in CI provide `GH_TOKEN`. GitLab isn't supported yet — the
-tracker is behind an interface, so it can be added later.
+title (the dedup key). Requires the matching CLI authenticated: `gh` for GitHub
+(in CI provide `GH_TOKEN`) or `glab` for GitLab (`--forge gitlab`).
 
 ## The `validate` command
 
@@ -180,4 +179,15 @@ full table. Great for a cron that only reports deltas.
 
 ```bash
 checkfleet check all --config checkfleet.yml --history runs.jsonl --diff
+```
+
+## The `alert` command
+
+Create/resolve on-call alerts from BAD/ERROR findings (dedup by `check/target`)
+on **PagerDuty** (Events API v2) or **Opsgenie**. With `--history` it resolves
+alerts that recovered since the previous run. The key is read from an env var.
+
+```bash
+checkfleet alert --config checkfleet.yml --provider pagerduty --key-env PD_ROUTING_KEY --history runs.jsonl
+checkfleet alert --config checkfleet.yml --provider opsgenie  --key-env OPSGENIE_KEY --dry-run
 ```
