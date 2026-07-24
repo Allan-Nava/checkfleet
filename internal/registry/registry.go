@@ -8,6 +8,7 @@ import (
 	"github.com/Allan-Nava/checkfleet/internal/checks/certs"
 	"github.com/Allan-Nava/checkfleet/internal/checks/consul"
 	"github.com/Allan-Nava/checkfleet/internal/checks/dns"
+	"github.com/Allan-Nava/checkfleet/internal/checks/grpccheck"
 	"github.com/Allan-Nava/checkfleet/internal/checks/haproxy"
 	"github.com/Allan-Nava/checkfleet/internal/checks/httpcheck"
 	"github.com/Allan-Nava/checkfleet/internal/checks/keycloak"
@@ -49,6 +50,7 @@ func Modules(cfg *engine.Config) []Spec {
 		{"tls", c.TLS != nil, func() engine.Check { return tlscheck.New(*c.TLS) }},
 		{"ntp", c.NTP != nil, func() engine.Check { return ntp.New(*c.NTP) }},
 		{"rabbitmq", c.RabbitMQ != nil, func() engine.Check { return rabbitmq.New(*c.RabbitMQ) }},
+		{"grpc", c.GRPC != nil, func() engine.Check { return grpccheck.New(*c.GRPC) }},
 	}
 }
 

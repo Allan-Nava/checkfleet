@@ -5,9 +5,9 @@ nav_order: 5
 
 Each module is a self-contained check that knows what "healthy" means for one
 kind of target. Shipping today: `certs`, `http`, `nats`, `haproxy`, `stream`,
-`patroni`, `consul`, `postgres`, `dns`, `redis`, `keycloak`, `tcp`, `tls`, `ntp`, `rabbitmq`. The
+`patroni`, `consul`, `postgres`, `dns`, `redis`, `keycloak`, `tcp`, `tls`, `ntp`, `rabbitmq`, `grpc`. The
 [backlog](https://github.com/Allan-Nava/checkfleet/blob/main/BACKLOG.md) tracks
-what's next (`grpc`, `ldap`, `kafka`, `mongodb`, …).
+what's next (`ldap`, `kafka`, `mongodb`, …).
 
 ## `certs`
 
@@ -271,6 +271,22 @@ are labelled `node/<name>` and `queue/<vhost>/<name>`. The password is read from
 `password_env`, never stored in config.
 
 See [Configuration → checks.rabbitmq](configuration.md#checksrabbitmq).
+
+## `grpc`
+
+gRPC Health Checking Protocol (`grpc.health.v1.Health/Check`) over **HTTP/2 +
+TLS**, with the protobuf messages encoded by hand — no gRPC library dependency.
+(Plaintext h2c isn't supported; TLS endpoints only.)
+
+- `SERVING` → `OK`; `NOT_SERVING` / `SERVICE_UNKNOWN` → `BAD`; `UNKNOWN` → `WARN`.
+- `grpc-status 12` (UNIMPLEMENTED, no health service) → `WARN`; `5` (NOT_FOUND,
+  unknown service) → `BAD`.
+- Connection/handshake failure → `ERROR`.
+
+Set `service` to check a specific gRPC service, or leave empty for whole-server
+health. `insecure_skip_verify` for internal self-signed endpoints.
+
+See [Configuration → checks.grpc](configuration.md#checksgrpc).
 
 ## Ansible inventory as a target source
 

@@ -422,6 +422,26 @@ checks:
     targets: [10.20.30.60]
 ```
 
+## `checks.grpc`
+
+gRPC health checking (TLS/h2). See [Modules → grpc](modules.md#grpc).
+
+`checks.grpc.targets` is a list of:
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `address` | string | — | `host:port` of the gRPC TLS endpoint. Required. |
+| `name` | string | address | Display label. |
+| `service` | string | — | gRPC service to check; empty = whole-server. |
+| `insecure_skip_verify` | bool | `false` | Skip TLS cert verification (internal self-signed). |
+
+```yaml
+checks:
+  grpc:
+    targets:
+      - {name: api, address: api.hiway.media:443, service: hiway.api.v1.API}
+```
+
 ## No secrets in config
 
 Keep credentials out of `checkfleet.yml` — checks never log or echo secrets, and

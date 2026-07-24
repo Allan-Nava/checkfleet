@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.28.0
+
+- Modulo `grpc` (CF-41): gRPC Health Checking Protocol (`grpc.health.v1.Health/Check`) su **HTTP/2 + TLS** con protobuf/framing gRPC scritti a mano — **zero dipendenze** (niente libreria gRPC; h2c plaintext non supportato). SERVING=OK, NOT_SERVING/SERVICE_UNKNOWN=BAD, UNKNOWN=WARN; grpc-status 12 (UNIMPLEMENTED)=WARN, 5 (NOT_FOUND)=BAD. Testato contro un finto server gRPC h2/TLS in-test.
+
 ## 0.27.0
 
 - Modulo `rabbitmq` (CF-45): health via management HTTP API (zero-dip). Reachability+versione (`/api/overview`), nodi non-running o con memory/disk alarm → BAD (`/api/nodes`), profondità code oltre `queue_warn_depth`/`queue_crit_depth` → WARN/BAD e backlog senza consumer → WARN (`/api/queues`). Basic-auth con password da env. Testato con httptest.

@@ -123,6 +123,11 @@ checks:
       - hiway
       - partners
 
+  grpc:
+    targets:
+      - {name: api, address: api.hiway.media:443, service: hiway.api.v1.API}
+      - {address: internal.svc:8443, insecure_skip_verify: true}   # self-signed interno
+
   rabbitmq:
     port: 15672
     username: monitoring

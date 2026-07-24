@@ -33,6 +33,7 @@ type ChecksConfig struct {
 	TLS      *TLSConfig      `yaml:"tls"`
 	NTP      *NTPConfig      `yaml:"ntp"`
 	RabbitMQ *RabbitMQConfig `yaml:"rabbitmq"`
+	GRPC     *GRPCConfig     `yaml:"grpc"`
 }
 
 // CertsConfig configures the TLS certificate expiry check.
@@ -256,6 +257,22 @@ type RabbitMQConfig struct {
 	// Queue depth thresholds (messages ready+unacked).
 	QueueWarnDepth int `yaml:"queue_warn_depth"`
 	QueueCritDepth int `yaml:"queue_crit_depth"`
+}
+
+// GRPCConfig configures the gRPC health-checking-protocol check (TLS/h2 only).
+type GRPCConfig struct {
+	Targets []GRPCTarget `yaml:"targets"`
+}
+
+type GRPCTarget struct {
+	// Optional display label; defaults to Address (+ service).
+	Name string `yaml:"name"`
+	// host:port of the gRPC (TLS) endpoint. Required.
+	Address string `yaml:"address"`
+	// Optional gRPC service name to check; empty = whole-server health.
+	Service string `yaml:"service"`
+	// Skip TLS certificate verification (internal self-signed endpoints).
+	InsecureSkipVerify bool `yaml:"insecure_skip_verify"`
 }
 
 // HTTPConfig configures the HTTP probe check.
