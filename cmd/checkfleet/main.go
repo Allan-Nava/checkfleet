@@ -66,7 +66,7 @@ func main() {
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `uso:
-  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka> --config checkfleet.yml [--output text|markdown|json|junit|prometheus|slack] [--out-file PATH] [--only ...] [--min-severity warn] [--target glob] [--exit-on-bad]
+  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka> --config checkfleet.yml [--output text|markdown|json|junit|prometheus|slack|webhook] [--out-file PATH] [--only ...] [--min-severity warn] [--target glob] [--exit-on-bad]
   checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s]   # esporta le metriche Prometheus
   checkfleet report-issues --config checkfleet.yml [--dry-run]                 # apre/chiude issue GitHub dai finding BAD
   checkfleet validate --config checkfleet.yml                                  # valida la config senza eseguire i check
@@ -83,7 +83,7 @@ func runCheck(args []string) error {
 	fs := flag.NewFlagSet("check", flag.ExitOnError)
 	configPath := fs.String("config", "checkfleet.yml", "file di configurazione YAML")
 	stack := fs.String("stack", "", "profilo stack: sovrappone checkfleet.<stack>.yml alla base")
-	format := fs.String("output", "text", "formato: text, markdown, json, junit, prometheus, slack")
+	format := fs.String("output", "text", "formato: text, markdown, json, junit, prometheus, slack, webhook")
 	outFile := fs.String("out-file", "", "scrive l'output su questo file (atomico) invece di stdout")
 	webhookEnv := fs.String("webhook-env", "SLACK_WEBHOOK", "env var con l'URL webhook Slack (output slack)")
 	only := fs.String("only", "", "mostra solo questi check (lista separata da virgole)")
@@ -142,20 +142,34 @@ func runCheck(args []string) error {
 	}
 	res.Findings = engine.Filter(res.Findings, filter)
 
-	if *format == "slack" {
+	switch *format {
+	case "slack":
 		payload, err := output.Slack(res, module)
 		if err != nil {
 			return err
 		}
-		webhook := os.Getenv(*webhookEnv)
-		if webhook == "" {
+		url := os.Getenv(*webhookEnv)
+		if url == "" {
 			return fmt.Errorf("webhook Slack non impostato: la env %s è vuota", *webhookEnv)
 		}
-		if err := postSlack(context.Background(), webhook, payload); err != nil {
+		if err := postJSON(context.Background(), url, payload); err != nil {
 			return err
 		}
 		fmt.Println("checkfleet: report inviato a Slack")
-	} else {
+	case "webhook":
+		payload, err := output.JSON(res)
+		if err != nil {
+			return err
+		}
+		url := os.Getenv(*webhookEnv)
+		if url == "" {
+			return fmt.Errorf("webhook non impostato: la env %s è vuota", *webhookEnv)
+		}
+		if err := postJSON(context.Background(), url, payload); err != nil {
+			return err
+		}
+		fmt.Println("checkfleet: report inviato al webhook")
+	default:
 		rendered, err := render(*format, res, module)
 		if err != nil {
 			return err
@@ -382,20 +396,20 @@ func runServe(args []string) error {
 	return http.ListenAndServe(*listen, nil)
 }
 
-// postSlack sends a Block Kit payload to an incoming webhook URL.
-func postSlack(ctx context.Context, webhook, payload string) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, webhook, bytes.NewBufferString(payload))
+// postJSON POSTs a JSON payload to a webhook URL, accepting any 2xx response.
+func postJSON(ctx context.Context, url, payload string) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBufferString(payload))
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("invio a Slack: %w", err)
+		return fmt.Errorf("invio al webhook: %w", err)
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Slack ha risposto HTTP %d", resp.StatusCode)
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("il webhook ha risposto HTTP %d", resp.StatusCode)
 	}
 	return nil
 }

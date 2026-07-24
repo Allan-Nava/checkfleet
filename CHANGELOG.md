@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.37.0
+
+- Output `webhook` (CF-49): `--output webhook` invia l'output JSON in POST a un URL generico (da `--webhook-env`), per qualsiasi sink che ingerisce JSON. Slack e webhook condividono l'helper `postJSON` (accetta 2xx). Telegram/syslog rimandati. **Chiude M12 (output & sink).**
+
 ## 0.36.1
 
 - Desktop: stringhe user-facing portate in inglese (etichette UI, placeholder, header tabella, messaggi di stato/errore, titoli dei dialoghi, dati mock di anteprima). Coerente con la scelta di tenere codice e UI del desktop in inglese. Il CLI/engine resta in italiano per ora (le finding reali arrivano da lì).

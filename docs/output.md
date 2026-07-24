@@ -91,3 +91,14 @@ checkfleet check all --config checkfleet.yml --output slack --webhook-env SLACK_
 
 If the env var is empty the command errors (nothing is sent). A run that posts
 successfully prints `report inviato a Slack`.
+
+## `webhook`
+
+POSTs the JSON output to a generic webhook (URL from `--webhook-env`), for any
+system that ingests JSON — a Teams/Discord relay, a custom collector, etc.
+
+```bash
+export MY_HOOK="https://hooks.example/checkfleet"
+checkfleet check all --config checkfleet.yml --output webhook --webhook-env MY_HOOK
+```
+
