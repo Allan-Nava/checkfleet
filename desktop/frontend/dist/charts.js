@@ -220,5 +220,30 @@
       `<rect class="${cls}" x="0" y="0" width="${fmt(w * p / 100)}" height="${h}" rx="${r}"/></svg>`;
   }
 
-  return { LAYERS, total, niceMax, stackedPolys, donutArcs, svgArea, svgDonut, svgBand, svgHeatmap, svgMeter };
+  // svgLine draws a metric line chart over time. points: [{unix, value}]. The
+  // y-range hugs the data (with a little headroom) so variation is visible.
+  function svgLine(points, opts) {
+    opts = opts || {};
+    const w = opts.w || 640, h = opts.h || 170, pad = opts.pad || 30;
+    if (!points.length) return "";
+    const vals = points.map((p) => Number(p.value) || 0);
+    let lo = Math.min(...vals), hi = Math.max(...vals);
+    if (lo === hi) { lo -= 1; hi += 1; } else { const m = (hi - lo) * 0.12; lo -= m; hi += m; }
+    const range = hi - lo || 1, n = points.length;
+    const x = (i) => (n === 1 ? w / 2 : pad + (i * (w - 2 * pad)) / (n - 1));
+    const y = (v) => h - pad - ((v - lo) / range) * (h - 2 * pad);
+
+    const grid = [hi, (hi + lo) / 2, lo].map((t) => {
+      const yy = fmt(y(t));
+      return `<line class="grid" x1="${pad}" y1="${yy}" x2="${w - pad}" y2="${yy}"/>` +
+        `<text class="axis" x="${pad - 6}" y="${fmt(y(t) + 3)}" text-anchor="end">${fmt(Math.round(t * 10) / 10)}</text>`;
+    }).join("");
+
+    const pts = points.map((p, i) => [x(i), y(Number(p.value) || 0)]);
+    const line = `<polyline class="line-path" fill="none" points="${pts.map(([a, b]) => fmt(a) + "," + fmt(b)).join(" ")}"/>`;
+    const dots = pts.map(([a, b]) => `<circle class="line-dot" cx="${fmt(a)}" cy="${fmt(b)}" r="2.5"/>`).join("");
+    return svgWrap(w, h, "Metric over time", grid + line + dots);
+  }
+
+  return { LAYERS, total, niceMax, stackedPolys, donutArcs, svgArea, svgDonut, svgBand, svgHeatmap, svgMeter, svgLine };
 });

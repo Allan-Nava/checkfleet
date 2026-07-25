@@ -374,6 +374,35 @@ func TestWorseOf(t *testing.T) {
 	}
 }
 
+func TestMetrics(t *testing.T) {
+	addr := startTCP(t)
+	dir := t.TempDir()
+	cfg := dir + "/checkfleet.yml"
+	if err := os.WriteFile(cfg,
+		[]byte("timeout_seconds: 5\nchecks:\n  tcp:\n    targets:\n      - address: \""+addr+"\"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	app := NewApp("test")
+	app.RunChecks(cfg, "")
+	app.RunChecks(cfg, "")
+
+	series, err := app.Metrics(cfg, 10)
+	if err != nil {
+		t.Fatalf("Metrics: %v", err)
+	}
+	// tcp attaches a ms latency, so exactly one series with two points.
+	if len(series) != 1 || series[0].Check != "tcp" || series[0].Unit != "ms" {
+		t.Fatalf("series = %+v, want one tcp/ms series", series)
+	}
+	if len(series[0].Points) != 2 {
+		t.Fatalf("want 2 points, got %d", len(series[0].Points))
+	}
+
+	if s, err := app.Metrics("", 10); err != nil || s != nil {
+		t.Errorf("empty path: want nil,nil got %v,%v", s, err)
+	}
+}
+
 func TestPct(t *testing.T) {
 	if got := pct(0, 0); got != 0 {
 		t.Errorf("pct(0,0) = %v, want 0 (no divide-by-zero)", got)

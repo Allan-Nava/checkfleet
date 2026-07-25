@@ -80,6 +80,16 @@
         ],
       };
     },
+    Metrics: async () => {
+      const now = Math.floor(Date.now() / 1000);
+      const mk = (base, amp) => Array.from({ length: 12 }, (_, i) =>
+        ({ unix: now - (12 - i) * 3600, value: Math.round((base + Math.sin(i / 1.7) * amp) * 10) / 10 }));
+      return [
+        { check: "http", target: "https://example.com/health", unit: "ms", points: mk(140, 45) },
+        { check: "certs", target: "api.example.com:443", unit: "days", points: mk(30, 4) },
+        { check: "tcp", target: "db.internal:5432", unit: "ms", points: mk(12, 7) },
+      ];
+    },
     ScheduleSnippet: async (path, interval) =>
       "# cron — run every 5 min:\n*/5 * * * * checkfleet check all --config " +
       (path || "checkfleet.yml") + " --exit-on-bad\n\n" +
@@ -94,6 +104,7 @@
   let editorOn = false;
   let dashboardOn = false;
   let moduleTrend = { modules: [], runs: [] };
+  let metricSeries = [];
 
   /* ---------------- rendering ---------------- */
   function severityAllowed(status, min) {
@@ -350,6 +361,32 @@
     try { av = await Backend.Availability($("configPath").value, 60); }
     catch (_) { av = null; }
     renderAvailability(av);
+
+    // Metric-over-time series (CF-94) — from the numeric Finding.Value in history.
+    try { metricSeries = (await Backend.Metrics($("configPath").value, 60)) || []; }
+    catch (_) { metricSeries = []; }
+    populateMetricSel();
+    drawMetric();
+  }
+
+  // populateMetricSel fills the series picker, keeping the current pick if valid.
+  function populateMetricSel() {
+    const sel = $("metricSel");
+    const cur = sel.value;
+    sel.innerHTML = metricSeries.map((s, i) =>
+      `<option value="${i}">${escapeHtml(s.check)} ${escapeHtml(s.target)} (${escapeHtml(s.unit || "")})</option>`).join("");
+    if (cur && metricSeries[cur]) sel.value = cur;
+  }
+
+  // drawMetric renders the selected series as a line chart (or an empty note).
+  function drawMetric() {
+    const host = $("chartLine");
+    if (!metricSeries.length) {
+      host.innerHTML = `<p class="chart-empty">No numeric metrics in history yet — run modules that measure a value (http/tcp latency, ntp offset, certs expiry).</p>`;
+      return;
+    }
+    const idx = Math.min(metricSeries.length - 1, Math.max(0, parseInt($("metricSel").value, 10) || 0));
+    host.innerHTML = CFCharts.svgLine(metricSeries[idx].points, { w: 680, h: 180 });
   }
 
   // renderAvailability paints the uptime hero + the least-available targets.
@@ -481,14 +518,34 @@
     $("drawerScrim").hidden = true;
   }
 
-  function showFindingDetail(f) {
+  async function showFindingDetail(f) {
     const text = `${f.status} ${f.check} ${f.target} — ${f.message}`;
+    const hasMetric = f.value != null;
+    const metricRow = hasMetric
+      ? `<div class="kv"><span>Metric</span><b class="mono">${escapeHtml(String(f.value))} ${escapeHtml(f.unit || "")}</b></div>`
+      : "";
     openDrawer("Finding", `
       <div class="kv"><span>Status</span><span class="badge ${f.status}">${f.status}</span></div>
       <div class="kv"><span>Check</span><b class="mono">${escapeHtml(f.check)}</b></div>
       <div class="kv"><span>Target</span><b class="mono">${escapeHtml(f.target)}</b></div>
+      ${metricRow}
       <p class="drawer-msg">${escapeHtml(f.message)}</p>
+      ${hasMetric ? `<div class="finding-trend" id="findingTrend"><p class="chart-empty">loading trend…</p></div>` : ""}
       <button class="btn copy-btn" data-copy="${escapeHtml(text)}">Copy</button>`);
+
+    // Metric-carrying findings get their history line right in the drawer (CF-94).
+    if (hasMetric) {
+      let series = [];
+      try { series = (await Backend.Metrics($("configPath").value, 60)) || []; } catch (_) {}
+      const s = series.find((x) => x.check === f.check && x.target === f.target);
+      const el = $("findingTrend");
+      if (el) {
+        el.innerHTML = s && s.points && s.points.length
+          ? `<div class="kv"><span>${escapeHtml(f.check)} trend</span><span>${escapeHtml(s.unit || "")}</span></div>` +
+            CFCharts.svgLine(s.points, { w: 340, h: 120 })
+          : `<p class="chart-empty">No history series yet for this target.</p>`;
+      }
+    }
   }
 
   async function showExplain(module) {
@@ -568,6 +625,7 @@
     $("groupBy").addEventListener("change", () => { render(); saveSettings(); });
     $("dashToggle").addEventListener("click", () => setDashboard(dashboardOn ? false : true));
     $("dashRefresh").addEventListener("click", renderDashboard);
+    $("metricSel").addEventListener("change", drawMetric);
     $("chartHeatmap").addEventListener("click", (e) => {
       const el = e.target.closest("[data-module]");
       if (el) showModuleDrill(el.getAttribute("data-module"));

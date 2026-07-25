@@ -99,6 +99,21 @@ test("svgHeatmap is a no-op without modules or runs", () => {
   assert.equal(C.svgHeatmap(["certs"], [], {}), "");
 });
 
+test("svgLine draws a polyline with a dot per point and no NaN", () => {
+  const pts = [{ unix: 1, value: 140 }, { unix: 2, value: 155 }, { unix: 3, value: 120 }];
+  const svg = C.svgLine(pts, {});
+  assert.match(svg, /^<svg class="chart"/);
+  assert.match(svg, /class="line-path"/);
+  assert.equal((svg.match(/class="line-dot"/g) || []).length, 3);
+  assert.doesNotMatch(svg, /NaN/);
+});
+
+test("svgLine handles a flat/single series and empty input", () => {
+  assert.doesNotMatch(C.svgLine([{ unix: 1, value: 5 }, { unix: 2, value: 5 }], {}), /NaN/); // flat line, no divide-by-zero
+  assert.doesNotMatch(C.svgLine([{ unix: 1, value: 7 }], {}), /NaN/); // single point centered
+  assert.equal(C.svgLine([], {}), "");
+});
+
 test("svgMeter classes the fill by SLO thresholds and clamps", () => {
   assert.match(C.svgMeter(100, {}), /meter-ok/);
   assert.match(C.svgMeter(99, {}), /meter-ok/);

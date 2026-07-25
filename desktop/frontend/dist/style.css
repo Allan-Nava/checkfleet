@@ -335,6 +335,17 @@ select { cursor: pointer; }
 .legend .sw.bad { background: var(--bad); } .legend .sw.error { background: var(--err); }
 .band-axis { display: flex; justify-content: space-between; margin-top: 6px; font-size: 10.5px; color: var(--muted); font-family: ui-monospace, Menlo, monospace; }
 
+/* metric line chart (CF-94) */
+.metric-sel {
+  height: 26px; padding: 0 8px; border-radius: 8px; font-size: 12px;
+  background: var(--bg-2); color: var(--text); border: 1px solid var(--border);
+  font-weight: 400; max-width: 320px;
+}
+.chart .line-path { stroke: var(--brand-2); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart .line-dot { fill: var(--brand-2); }
+#chartLine .chart-empty, .chart-empty { color: var(--muted); font-size: 12.5px; padding: 8px 2px; }
+.finding-trend { margin: 14px 0; }
+
 /* availability / SLO (CF-95) */
 .slo { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
 .slo-hero {

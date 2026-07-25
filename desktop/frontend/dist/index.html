@@ -135,6 +135,14 @@
           <div class="slo" id="sloBox"></div>
         </figure>
         <figure class="card card-wide">
+          <figcaption>Metric over time
+            <span>latency / expiry per target</span>
+            <span class="spacer"></span>
+            <select id="metricSel" class="metric-sel" title="Pick a metric series"></select>
+          </figcaption>
+          <div class="chart-host" id="chartLine"></div>
+        </figure>
+        <figure class="card card-wide">
           <figcaption>By module <span>worst status per run · click a row to drill in</span></figcaption>
           <div class="chart-host hm-host" id="chartHeatmap"></div>
         </figure>

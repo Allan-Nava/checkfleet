@@ -319,6 +319,59 @@ func pct(num, den int) float64 {
 	return float64(num) / float64(den) * 100
 }
 
+// MetricPoint is one value of a metric at a run's timestamp.
+type MetricPoint struct {
+	Unix  int64   `json:"unix"`
+	Value float64 `json:"value"`
+}
+
+// MetricSeries is a check/target's numeric metric over the recent runs (CF-94).
+type MetricSeries struct {
+	Check  string        `json:"check"`
+	Target string        `json:"target"`
+	Unit   string        `json:"unit"`
+	Points []MetricPoint `json:"points"`
+}
+
+// Metrics extracts, from the last n persisted runs, one series per check/target
+// that carries a numeric Value (CF-91) — for the dashboard line chart. Series
+// are sorted by check then target; a series keeps the newest run's unit.
+func (a *App) Metrics(configPath string, n int) ([]MetricSeries, error) {
+	p := historyPath(configPath)
+	if p == "" {
+		return nil, nil
+	}
+	records, err := history.Open(p).Recent(n)
+	if err != nil {
+		return nil, err
+	}
+	idx := map[string]int{}
+	var series []MetricSeries
+	for _, r := range records {
+		for _, e := range r.Entries {
+			if e.Value == nil {
+				continue
+			}
+			key := e.Check + diffSep + e.Target
+			i, ok := idx[key]
+			if !ok {
+				i = len(series)
+				idx[key] = i
+				series = append(series, MetricSeries{Check: e.Check, Target: e.Target})
+			}
+			series[i].Unit = e.Unit
+			series[i].Points = append(series[i].Points, MetricPoint{Unix: r.Unix, Value: *e.Value})
+		}
+	}
+	sort.SliceStable(series, func(i, j int) bool {
+		if series[i].Check != series[j].Check {
+			return series[i].Check < series[j].Check
+		}
+		return series[i].Target < series[j].Target
+	})
+	return series, nil
+}
+
 // Trend returns the last n persisted runs for a config (oldest first), so the
 // GUI can draw a worst-status sparkline that survives restarts — unlike the
 // in-session diff (CF-64).

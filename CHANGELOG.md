@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.101.0
+
+- Desktop (CF-94, M25): grafici di **metrica nel tempo** nella Dashboard. Nuovo binding `App.Metrics` che, dallo storico persistente, estrae una serie temporale per ogni check/target che porta un `Value` numerico (CF-91). Il frontend mostra una card **Metric over time** con selettore della serie e un **line chart** SVG (`charts.js` → `svgLine`, zero-dep, con gridline/assi e scala y a ridosso dei dati); in più il **drawer di un finding** con metrica ne disegna la serie storica inline. Binding coperto da `TestMetrics`, geometria da smoke `svgLine`. Nessun cambio all'engine (usa il campo già introdotto in CF-91). _(solo frontend statico + binding desktop)_
+
 ## 0.100.0
 
 - Engine (CF-91, M25): `engine.Finding` guadagna due campi opzionali **`Value *float64` + `Unit string`** (JSON `omitempty`, helper `engine.Num`) per allegare la grandezza misurata da un check — **backward-compatible**: i renderer `internal/output` restano invariati e i finding senza metrica non cambiano output. `internal/history` persiste `v`/`u`, così la GUI può graficare la metrica nel tempo (base per CF-94). Popolato nei moduli con uno scalare chiaro per finding: latenza in ms (`http`, `tcp`), offset dell'orologio in ms (`ntp`), giorni-a-scadenza (`certs`). Test: engine (omitempty), http (Value sull'OK, assente sull'ERROR), certs (unit `days`). I restanti moduli (dns/tls/grpc + lag di patroni/postgres/mysql/clickhouse) si aggiungono in modo incrementale.
