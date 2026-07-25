@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.62.1
+
+- CI/release (CF-67): **serializzate le release** per eliminare una race che lasciava tag senza release. `release.yml` (goreleaser) pubblica i tag **mutabili** `ghcr.io/allan-nava/checkfleet:latest-amd64`/`-arm64` a ogni tag `v*`; con più tag pushati a raffica i run concorrenti si sovrascrivevano a vicenda quei tag e la creazione del manifest `:latest` non riusciva a verificare il digest (`manifest verification failed for digest …`) → goreleaser ritentava per ~25 min e falliva, così la release non veniva creata e il job desktop (che aspetta la release per allegarci gli asset) andava in timeout con `release not found`. Aggiunto un `concurrency` group (`group: release`, `cancel-in-progress: false`) che accoda i run invece di lanciarli in parallelo; `desktop.yml` a sua volta serializzato e con attesa della release più generosa (fino a ~30 min) dato che ora le release possono essere in coda.
+
 ## 0.62.0
 
 - Modulo `s3`/object storage (CF-23): verifica che un bucket S3-compatibile (AWS S3, MinIO, Ceph) sia raggiungibile e, opzionalmente, che un **oggetto sentinella** esista e sia fresco (`max_age_warn_seconds` → WARN se stantìo, BAD se mancante). Firma **AWS Signature V4 scritta a mano** (zero dipendenze, nessun SDK AWS); credenziali da env (`access_key_env`/`secret_key_env`) o richieste anonime per bucket pubblici; `path_style` per MinIO/Ceph. Testato contro un finto S3 (`httptest`). CLI `checkfleet check s3`. (Quota/spazio non esposti da S3 standard: rimandati.)

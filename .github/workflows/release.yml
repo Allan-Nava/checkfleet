@@ -4,6 +4,15 @@ on:
   push:
     tags: ["v*"]
 
+# Serialize releases (CF-67). goreleaser pushes the MUTABLE tags
+# ghcr.io/allan-nava/checkfleet:latest-amd64 / -arm64 on every v* tag; if two
+# tag pushes run at once they clobber each other's latest-* tags and the
+# ":latest" manifest can't verify its digest — goreleaser then retries for
+# ~25 min and fails. Queue the runs (no cancel: every tag must fully release).
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 permissions:
   contents: write
   packages: write # push the Docker image to GHCR

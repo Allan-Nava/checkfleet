@@ -109,6 +109,7 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 - [x] **CF-55 — Immagine Docker**: immagine multi-arch (linux/amd64+arm64) su GHCR (`ghcr.io/allan-nava/checkfleet`) via goreleaser (`dockers`+`docker_manifests`, base distroless static nonroot, exporter come entrypoint). `release.yml`: QEMU/buildx + login GHCR + `packages: write`. Validato con `goreleaser check`. _(v0.55.0; migrazione a `dockers_v2` come follow-up)_
 - [x] **CF-56 — Firma & SBOM**: goreleaser `sboms` (syft, per archive), `signs` cosign **keyless** su `checksums.txt`, `docker_signs` sulle immagini. `release.yml`: `id-token: write` + cosign-installer + download-syft. Docs con i comandi `cosign verify`. Validato con `goreleaser check`. **Chiude M14.** _(v0.56.0)_
 - [x] **CF-57 — Lint & vuln in CI**: nuovo job `lint` in `ci.yml` — `govulncheck` come **gate** (Go `stable`, fallisce solo su vuln raggiungibili) e `golangci-lint` **advisory** (`continue-on-error`, da promuovere a gate quando il tree è pulito). _(v0.54.0)_
+- [x] **CF-67 — Release serializzate**: `concurrency` group in `release.yml` (`group: release`, `cancel-in-progress: false`) per eliminare la race sui tag mutabili `latest-amd64`/`-arm64` di GHCR che, con tag pushati a raffica, faceva fallire la creazione del manifest `:latest` (`manifest verification failed for digest …`, ~25 min di retry) e lasciava i tag senza release. `desktop.yml` serializzato e con attesa della release più generosa. _(v0.62.1)_
 
 ## M15 — Output in inglese (i18n) (fase 3)
 
@@ -126,3 +127,10 @@ Estende l'app desktop Wails (M5) riusando `internal/*`. Frontend statico + bindi
 - [x] **CF-62 — Dettaglio & insight**: drawer al click su un finding (messaggio completo + Copy), chip modulo cliccabili → **Explain**, bottone **Validate** (`engine.Validate`). Docs moduli spostate in `internal/moduledoc` (condivise CLI+GUI). Fix: `.drawer` ignorava `hidden` (era sempre aperto). Binding testate. _(v0.58.0)_
 - [x] **CF-63 — Notifiche & settings**: notifica desktop nativa (beeep) quando il worst è BAD/ERROR dopo un run, con toggle **Notify**; persistenza in localStorage di config path, stack, intervallo, auto e notify tra i riavvii. Binding `App.Notify`. _(v0.59.0)_
 - [x] **CF-64 — Vista storico/diff**: bottone **Changes (N)** → drawer col delta vs il run precedente in sessione (new/resolved/worsened/improved, color-coded) riusando `engine.DiffStatus`. `Report.Changes` in `app.go`, wiring testato. **Chiude M16.** _(v0.60.0)_
+
+## M17 — Config editor (fase 3)
+
+Configurare da GUI cosa monitorare e con che frequenza, poi usare il software "tipo crontab" (cron / `serve --interval`). Approccio **ibrido**: editor YAML raw + form rapido per i check comuni.
+
+- [x] **CF-65 — Editor YAML in GUI**: bottone ⚙ apre un editor a pannello (Reload/Validate/Save) sul `checkfleet.yml` selezionato. **Validate** sul testo non salvato via `engine.LoadBytes` (interpola `${...}` + default, no disco). Binding `ReadConfig`/`SaveConfig`/`ValidateText`, testati. _(v0.63.0)_
+- [ ] **CF-66 — Form "Add endpoint"**: form rapido per i check comuni (http/certs/tcp/dns) che scrive nello YAML, + helper snippet cron/`serve --interval` per lo scheduling. **Chiude M17.**

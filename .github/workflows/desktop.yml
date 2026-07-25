@@ -16,6 +16,13 @@ on:
         required: false
         default: ""
 
+# Serialize desktop runs and give the release-wait a generous budget (CF-67):
+# with release.yml now queuing goreleaser runs, a later tag's release can take
+# a while to appear, so uploads must not race and the wait must not expire early.
+concurrency:
+  group: desktop
+  cancel-in-progress: false
+
 permissions:
   contents: write # upload assets to the release
 
@@ -105,12 +112,18 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${{ github.ref_name }}"
-          # goreleaser (release.yml) runs in parallel — wait until it has created
-          # the release, then upload our asset(s) into it.
-          for i in $(seq 1 40); do
+          # goreleaser (release.yml) creates the release; it is now serialized,
+          # so on a burst of tags this one may be queued behind others. Wait
+          # generously (up to ~30 min) before giving up.
+          ready=""
+          for i in $(seq 1 120); do
             if gh release view "$TAG" >/dev/null 2>&1; then
-              echo "release $TAG is ready"; break
+              echo "release $TAG is ready"; ready=1; break
             fi
-            echo "waiting for release $TAG to be created ($i/40)…"; sleep 15
+            echo "waiting for release $TAG to be created ($i/120)…"; sleep 15
           done
+          if [ -z "$ready" ]; then
+            echo "release $TAG never appeared — goreleaser (release.yml) likely failed for this tag" >&2
+            exit 1
+          fi
           gh release upload "$TAG" checkfleet-desktop_${VERSION}_${{ matrix.label }}.* --clobber
