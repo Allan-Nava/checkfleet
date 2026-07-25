@@ -24,6 +24,7 @@
     RunChecks: async () => mockReport(),
     Validate: async () => [],
     Explain: async (m) => "Sample explanation for the " + m + " module (preview).",
+    Notify: async () => {},
   };
 
   /* ---------------- state ---------------- */
@@ -118,6 +119,32 @@
     }
     btn.disabled = false;
     render();
+    maybeNotify();
+  }
+
+  // maybeNotify fires a native notification when the run is bad and Notify is on.
+  function maybeNotify() {
+    if (IS_MOCK || !$("notify").checked || !report || report.err) return;
+    if (report.worst === "BAD" || report.worst === "ERROR") {
+      const n = report.bad + report.error;
+      try { Backend.Notify("checkfleet: " + report.worst, n + " problem(s) — " + (report.configPath || "")); } catch (_) {}
+    }
+  }
+
+  /* ---------------- settings persistence ---------------- */
+  function saveSettings() {
+    try {
+      localStorage.setItem("cf-settings", JSON.stringify({
+        config: $("configPath").value,
+        stack: $("stack").value,
+        interval: $("interval").value,
+        auto: $("auto").checked,
+        notify: $("notify").checked,
+      }));
+    } catch (_) {}
+  }
+  function loadSettings() {
+    try { return JSON.parse(localStorage.getItem("cf-settings") || "{}"); } catch (_) { return {}; }
   }
 
   async function refreshStacks() {
@@ -202,11 +229,13 @@
         if (p) { $("configPath").value = p; updateHint(); await refreshStacks(); }
       } catch (_) {}
     });
-    $("configPath").addEventListener("change", () => { updateHint(); refreshStacks(); });
+    $("configPath").addEventListener("change", () => { updateHint(); refreshStacks(); saveSettings(); });
     $("filter").addEventListener("input", render);
     $("minsev").addEventListener("change", render);
-    $("auto").addEventListener("change", (e) => setAutoRefresh(e.target.checked));
-    $("interval").addEventListener("change", () => { if ($("auto").checked) setAutoRefresh(true); });
+    $("stack").addEventListener("change", saveSettings);
+    $("notify").addEventListener("change", saveSettings);
+    $("auto").addEventListener("change", (e) => { setAutoRefresh(e.target.checked); saveSettings(); });
+    $("interval").addEventListener("change", () => { if ($("auto").checked) setAutoRefresh(true); saveSettings(); });
     $("export").addEventListener("click", () => save($("expfmt").value));
     $("theme").addEventListener("click", toggleTheme);
     $("validate").addEventListener("click", runValidate);
@@ -251,9 +280,18 @@
     // straight into a fleet.
     let startup = { path: "", autoRun: false };
     try { startup = (await Backend.StartupConfig()) || startup; } catch (_) {}
-    if (startup.path) $("configPath").value = startup.path;
+
+    // Persisted settings (config/stack/interval/auto/notify) win over the
+    // startup defaults, so the app reopens where you left it.
+    const s = loadSettings();
+    $("configPath").value = s.config || startup.path || "";
+    if (s.interval) $("interval").value = s.interval;
+    if (s.auto) $("auto").checked = true;
+    if (s.notify) $("notify").checked = true;
     updateHint();
     await refreshStacks();
+    if (s.stack) $("stack").value = s.stack;
+    if ($("auto").checked) setAutoRefresh(true);
 
     if (IS_MOCK) {
       // Preview: add fake window controls and auto-run with sample data.

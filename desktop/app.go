@@ -14,6 +14,7 @@ import (
 	"github.com/Allan-Nava/checkfleet/internal/moduledoc"
 	"github.com/Allan-Nava/checkfleet/internal/output"
 	"github.com/Allan-Nava/checkfleet/internal/registry"
+	"github.com/gen2brain/beeep"
 	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -180,6 +181,12 @@ func (a *App) Validate(configPath, stack string) []string {
 func (a *App) Explain(module string) string {
 	d, _ := moduledoc.Doc(module)
 	return d
+}
+
+// Notify fires a native OS desktop notification (best-effort). The frontend
+// calls it after a run whose worst status is BAD/ERROR when notifications are on.
+func (a *App) Notify(title, message string) {
+	_ = beeep.Notify(title, message, "")
 }
 
 // OpenConfigDialog shows a native file picker and returns the chosen path.

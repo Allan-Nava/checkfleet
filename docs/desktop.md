@@ -22,7 +22,12 @@ Everything is one screen, scanned top-to-bottom.
 - **Stack** — pick a `checkfleet.<stack>.yml` profile discovered next to the
   config (same overlay as the CLI's `--stack`); `(base)` runs the base file.
 - **Auto** + interval — re-run the checks on a timer (10s / 30s / 60s / 5m).
+- **Notify** — pop a native OS notification after a run whose worst status is
+  BAD/ERROR.
 - **Run** — execute every configured module now.
+
+The app remembers your config path, stack, interval, Auto and Notify between
+launches.
 
 **Summary**
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.59.0
+
+- Desktop (CF-63, M16): **notifiche native & settings persistiti**. Nuovo toggle **Notify**: dopo un run con worst BAD/ERROR l'app fa una notifica desktop nativa (via `beeep`, binding `App.Notify`). Config path, stack, intervallo, Auto e Notify sono ora **ricordati tra i riavvii** (localStorage). Nuova dip del modulo desktop: `github.com/gen2brain/beeep` (solo GUI, il modulo CLI resta invariato).
+
 ## 0.58.0
 
 - Desktop (CF-62, M16): **dettaglio & insight**. Click su un finding → drawer con messaggio completo e bottone **Copy**; click su una chip modulo → **Explain** (cosa controlla); bottone **Validate** che mostra i problemi di config (`engine.Validate`) senza eseguire i check. Le descrizioni dei moduli sono ora in `internal/moduledoc`, condivise tra CLI (`explain`) e GUI (con test anti-drift). Fix: `.drawer` con `display:flex` ignorava l'attributo `hidden` (drawer sempre aperto) → aggiunto `.drawer[hidden]{display:none}`. Binding `Explain`/`Validate` testate.

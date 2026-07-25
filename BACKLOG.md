@@ -124,5 +124,5 @@ Estende l'app desktop Wails (M5) riusando `internal/*`. Frontend statico + bindi
 
 - [x] **CF-61 — Export in tutti i formati**: nella GUI selettore formato (Markdown/JSON/HTML/JUnit/Prometheus/OTLP) + bottone Export via file-dialog nativo; helper `renderReport` testato (riusa `internal/output`). _(v0.57.0)_
 - [x] **CF-62 — Dettaglio & insight**: drawer al click su un finding (messaggio completo + Copy), chip modulo cliccabili → **Explain**, bottone **Validate** (`engine.Validate`). Docs moduli spostate in `internal/moduledoc` (condivise CLI+GUI). Fix: `.drawer` ignorava `hidden` (era sempre aperto). Binding testate. _(v0.58.0)_
-- [ ] **CF-63 — Notifiche & settings**: notifica desktop nativa quando il worst è BAD/ERROR dopo un run; persistenza di config path, stack, intervallo e auto-refresh tra i riavvii.
+- [x] **CF-63 — Notifiche & settings**: notifica desktop nativa (beeep) quando il worst è BAD/ERROR dopo un run, con toggle **Notify**; persistenza in localStorage di config path, stack, intervallo, auto e notify tra i riavvii. Binding `App.Notify`. _(v0.59.0)_
 - [ ] **CF-64 — Vista storico/diff**: mostra il delta vs il run precedente (new/resolved/worsened/improved) riusando `engine.DiffStatus`.
