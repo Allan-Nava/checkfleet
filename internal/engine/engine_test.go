@@ -154,3 +154,36 @@ func TestRunPreservesCheckOrderBeforeSort(t *testing.T) {
 		t.Errorf("ordine non deterministico: %+v", res.Findings)
 	}
 }
+
+func TestDedup(t *testing.T) {
+	in := []Finding{
+		{Check: "http", Target: "a", Status: OK, Message: "ok"},
+		{Check: "http", Target: "a", Status: OK, Message: "ok"}, // exact dup
+		{Check: "http", Target: "a", Status: OK, Message: "different"},
+		{Check: "certs", Target: "b", Status: BAD, Message: "x"},
+	}
+	out := Dedup(in)
+	if len(out) != 3 {
+		t.Fatalf("want 3 after dedup, got %d: %+v", len(out), out)
+	}
+	// Order preserved, first occurrence kept.
+	if out[0].Message != "ok" || out[1].Message != "different" || out[2].Check != "certs" {
+		t.Errorf("dedup changed order/content: %+v", out)
+	}
+}
+
+// A module that emits the same finding twice must appear once in a run.
+type dupCheck struct{}
+
+func (dupCheck) Name() string { return "dup" }
+func (dupCheck) Run(context.Context) []Finding {
+	f := Finding{Check: "dup", Target: "t", Status: WARN, Message: "m"}
+	return []Finding{f, f}
+}
+
+func TestRunDedupsFindings(t *testing.T) {
+	res := RunWith(context.Background(), []Check{dupCheck{}}, Options{Timeout: time.Second})
+	if len(res.Findings) != 1 {
+		t.Fatalf("run should dedup identical findings, got %d", len(res.Findings))
+	}
+}

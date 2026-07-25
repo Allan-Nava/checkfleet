@@ -18,8 +18,11 @@ summary line.
 2 checks: 1 OK, 0 WARN, 1 BAD, 0 ERROR (in 227ms)
 ```
 
-The finding order is a de-facto API: worst-first, stable per check/target. Tools
-that parse the text output can rely on it.
+The finding order is a de-facto API and applies to **every** output format:
+findings are sorted **worst-first**, then by check, then by target, with a
+**stable** sort (equal keys keep their original order). Exact-duplicate findings
+(same check, target, status and message) are **de-duplicated**. Tools that parse
+the output can rely on this ordering.
 
 ## `markdown`
 

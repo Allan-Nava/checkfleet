@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.96.0
+
+- Dedup & ordinamento documentato (CF-86, M23): il runner ora **deduplica** i finding esattamente identici (stesso check/target/status/message) mantenendo il primo e preservando l'ordine — utile quando lo stesso target è listato due volte o un modulo emette lo stesso finding due volte (`engine.Dedup`). L'**ordinamento** dei finding è formalizzato come API di fatto valida per **tutti** gli output: worst-first, poi check, poi target, con sort **stabile**; documentato in `docs/output.md`. Testato (`Dedup` + un run che deduplica). Apre M23 (Engine & robustezza).
+
 ## 0.95.0
 
 - Logging strutturato opzionale su `serve` (CF-89, M24): nuovo flag `--log-format text|json` (default `text`) via `log/slog` — logga `serve start` (moduli, listen, interval) e ogni `run complete` (durata_ms, worst, conteggi ok/warn/bad/error) in testo leggibile o **JSON** per le pipeline di log. **Chiude M24 (Osservabilità del tool).**

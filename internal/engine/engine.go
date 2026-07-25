@@ -79,6 +79,7 @@ func RunWith(ctx context.Context, checks []Check, opts Options) Result {
 	for _, fs := range perCheck {
 		findings = append(findings, fs...)
 	}
+	findings = Dedup(findings)
 	sort.SliceStable(findings, func(i, j int) bool {
 		if severity[findings[i].Status] != severity[findings[j].Status] {
 			return severity[findings[i].Status] > severity[findings[j].Status]
@@ -120,6 +121,23 @@ func hasError(findings []Finding) bool {
 		}
 	}
 	return false
+}
+
+// Dedup removes exact-duplicate findings (same check, target, status and
+// message), keeping the first occurrence and preserving order. Duplicates arise
+// when the same target is listed twice or a module emits a finding twice; the
+// output should carry each distinct observation once.
+func Dedup(findings []Finding) []Finding {
+	seen := make(map[Finding]bool, len(findings))
+	out := findings[:0:0]
+	for _, f := range findings {
+		if seen[f] {
+			continue
+		}
+		seen[f] = true
+		out = append(out, f)
+	}
+	return out
 }
 
 // Summarize counts findings per status.
