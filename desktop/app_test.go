@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/Allan-Nava/checkfleet/internal/engine"
+	"github.com/Allan-Nava/checkfleet/internal/history"
 )
 
 // startTCP starts a throwaway TCP listener that accepts and immediately closes
@@ -468,5 +469,49 @@ func TestEnsureStarterConfig(t *testing.T) {
 	// Idempotent: a second call finds the file and does not recreate it.
 	if _, created2, _ := ensureStarterConfig(); created2 {
 		t.Error("second call should not recreate an existing config")
+	}
+}
+
+func TestHistoryBrowser(t *testing.T) {
+	dir := t.TempDir()
+	cfg := dir + "/checkfleet.yml"
+	if err := os.WriteFile(cfg, []byte("checks: {}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	st := history.Open(historyPath(cfg))
+	_ = st.Append(history.Record{Unix: 1000, Entries: []history.Entry{
+		{Check: "tcp", Target: "db:5432", Status: "OK"},
+	}})
+	_ = st.Append(history.Record{Unix: 2000, Entries: []history.Entry{
+		{Check: "tcp", Target: "db:5432", Status: "BAD"},
+		{Check: "http", Target: "x", Status: "OK"},
+	}})
+	app := NewApp("test")
+
+	runs, err := app.HistoryRuns(cfg, 0)
+	if err != nil || len(runs) != 2 {
+		t.Fatalf("HistoryRuns = %+v, %v", runs, err)
+	}
+	if runs[0].Unix != 2000 { // newest first
+		t.Errorf("want newest first (2000), got %d", runs[0].Unix)
+	}
+	if runs[0].Worst != "BAD" || runs[0].Total != 2 || runs[0].BAD != 1 || runs[0].OK != 1 {
+		t.Errorf("run2 rollup wrong: %+v", runs[0])
+	}
+
+	fs, err := app.RunAt(cfg, 1000)
+	if err != nil || len(fs) != 1 || fs[0].Check != "tcp" || fs[0].Status != engine.OK {
+		t.Fatalf("RunAt(1000) = %+v, %v", fs, err)
+	}
+
+	// tcp OK→BAD is a "new" problem; http appears at OK (missing counts as OK) → no change.
+	ch, err := app.DiffRuns(cfg, 1000, 2000)
+	if err != nil || len(ch) != 1 || ch[0].Check != "tcp" || ch[0].Kind != "new" {
+		t.Fatalf("DiffRuns = %+v, %v", ch, err)
+	}
+
+	// Empty config path is a no-op, not an error.
+	if r, err := app.HistoryRuns("", 0); err != nil || r != nil {
+		t.Errorf("empty path HistoryRuns: want nil,nil got %v,%v", r, err)
 	}
 }

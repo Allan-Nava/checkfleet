@@ -90,6 +90,24 @@
         { check: "tcp", target: "db.internal:5432", unit: "ms", points: mk(12, 7) },
       ];
     },
+    HistoryRuns: async () => {
+      const kinds = ["ERROR", "WARN", "BAD", "OK", "WARN", "OK", "OK"];
+      const now = Math.floor(Date.now() / 1000);
+      return kinds.map((w, i) => ({
+        unix: now - i * 3600, worst: w, total: 15,
+        ok: w === "OK" ? 15 : 11, warn: w === "WARN" ? 3 : 0,
+        bad: w === "BAD" ? 2 : 0, error: w === "ERROR" ? 1 : 0,
+      }));
+    },
+    RunAt: async () => ([
+      { check: "postgres", target: "pg-01:5432", status: "ERROR", value: null, unit: "" },
+      { check: "certs", target: "api.example.com:443", status: "WARN", value: 12, unit: "days" },
+      { check: "http", target: "https://example.com/health", status: "OK", value: 142, unit: "ms" },
+    ]),
+    DiffRuns: async () => ([
+      { check: "postgres", target: "pg-01:5432", from: "OK", to: "ERROR", kind: "new" },
+      { check: "redis", target: "redis-cache-01:6379", from: "WARN", to: "OK", kind: "resolved" },
+    ]),
     ScheduleSnippet: async (path, interval) =>
       "# cron — run every 5 min:\n*/5 * * * * checkfleet check all --config " +
       (path || "checkfleet.yml") + " --exit-on-bad\n\n" +
@@ -107,6 +125,7 @@
   let moduleTrend = { modules: [], runs: [] };
   let metricSeries = [];
   let running = false;
+  let historyRuns = [];
 
   /* ---------------- rendering ---------------- */
   function severityAllowed(status, min) {
@@ -802,6 +821,65 @@
       <div class="kv"><span>Latest</span><span class="badge ${last.worst}">${last.worst}</span></div>`);
   }
 
+  /* ---------------- history browser (CF-104) ---------------- */
+  const histWhen = (u) => new Date(u * 1000).toLocaleString();
+
+  async function showHistory() {
+    let runs = [];
+    try { runs = (await Backend.HistoryRuns($("configPath").value, 60)) || []; } catch (_) {}
+    if (!runs.length) {
+      openDrawer("History", `<p class="drawer-msg">No history yet. Each Run is appended next to the config and shown here across restarts.</p>`);
+      return;
+    }
+    historyRuns = runs; // cached (newest-first) so "compare with previous" can find the older run
+    const rows = runs.map((r) => `
+      <button class="hist-run" data-run="${r.unix}">
+        <span class="badge ${r.worst}">${r.worst}</span>
+        <span class="hist-when">${escapeHtml(histWhen(r.unix))}</span>
+        <span class="hist-counts">${r.ok}·${r.warn}·${r.bad}·${r.error}<span class="hist-total">/${r.total}</span></span>
+      </button>`).join("");
+    openDrawer("History — " + runs.length + " runs", `
+      <p class="drawer-msg">Persisted runs, newest first. Open one to see its findings, or compare it with the previous run.</p>
+      <div class="hist-list">${rows}</div>`);
+  }
+
+  async function showRunDetail(unix) {
+    let fs = [];
+    try { fs = (await Backend.RunAt($("configPath").value, unix)) || []; } catch (_) {}
+    const idx = historyRuns.findIndex((r) => r.unix === unix);
+    const prev = idx >= 0 && idx + 1 < historyRuns.length ? historyRuns[idx + 1] : null; // older run
+    const rows = fs.map((f) => `
+      <div class="hist-finding">
+        <span class="badge ${f.status}">${f.status}</span>
+        <span class="cell-check mono">${escapeHtml(f.check)}</span>
+        <span class="mono hist-target">${escapeHtml(f.target)}</span>
+        ${f.value != null ? `<span class="hist-val">${escapeHtml(String(f.value))} ${escapeHtml(f.unit || "")}</span>` : ""}
+      </div>`).join("");
+    openDrawer("Run · " + histWhen(unix), `
+      <div class="hist-actions">
+        <button class="btn" data-hist-back>← Runs</button>
+        ${prev ? `<button class="btn" data-hist-diff="${prev.unix}" data-hist-to="${unix}">Compare with previous</button>` : ""}
+      </div>
+      <p class="drawer-msg">${fs.length} findings · messages aren't stored in history (status/value only).</p>
+      <div class="hist-findings">${rows}</div>`);
+  }
+
+  async function showRunDiff(from, to) {
+    let ch = [];
+    try { ch = (await Backend.DiffRuns($("configPath").value, from, to)) || []; } catch (_) {}
+    const body = ch.length
+      ? ch.map((c) => `
+        <div class="change change-${c.kind}">
+          <span class="change-sym">${CHANGE_SYMBOL[c.kind] || "•"}</span>
+          <span class="change-kind">${c.kind}</span>
+          <span class="mono">${escapeHtml(c.check)} ${escapeHtml(c.target)}</span>
+          <span class="change-transition">${c.from}→${c.to}</span>
+        </div>`).join("")
+      : `<p class="drawer-msg">No changes between these two runs.</p>`;
+    openDrawer("Changes " + new Date(from * 1000).toLocaleTimeString() + " → " + new Date(to * 1000).toLocaleTimeString(), `
+      <div class="hist-actions"><button class="btn" data-hist-back>← Runs</button></div>${body}`);
+  }
+
   /* ---------------- wiring ---------------- */
   function bind() {
     $("run").addEventListener("click", run);
@@ -823,6 +901,7 @@
     $("validate").addEventListener("click", runValidate);
     $("changes").addEventListener("click", showChanges);
     $("trend").addEventListener("click", showTrend);
+    $("history").addEventListener("click", showHistory);
     $("groupBy").addEventListener("change", () => { render(); saveSettings(); });
     document.querySelectorAll(".viewtab").forEach((t) =>
       t.addEventListener("click", () => setView(t.dataset.view)));
@@ -879,7 +958,15 @@
       const btn = e.target.closest(".copy-btn");
       if (btn) {
         try { navigator.clipboard.writeText(btn.dataset.copy); btn.textContent = "Copied"; toast("Copied to clipboard", { kind: "success", timeout: 2000 }); } catch (_) {}
+        return;
       }
+      // history browser navigation (CF-104)
+      const back = e.target.closest("[data-hist-back]");
+      if (back) { showHistory(); return; }
+      const diff = e.target.closest("[data-hist-diff]");
+      if (diff) { showRunDiff(+diff.dataset.histDiff, +diff.dataset.histTo); return; }
+      const runEl = e.target.closest("[data-run]");
+      if (runEl) { showRunDetail(+runEl.dataset.run); }
     });
     $("drawerClose").addEventListener("click", closeDrawer);
     $("drawerScrim").addEventListener("click", closeDrawer);

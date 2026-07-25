@@ -372,6 +372,124 @@ func (a *App) Metrics(configPath string, n int) ([]MetricSeries, error) {
 	return series, nil
 }
 
+// HistoryRun is one persisted run's rollup for the history browser (CF-104).
+type HistoryRun struct {
+	Unix  int64  `json:"unix"`
+	Worst string `json:"worst"`
+	OK    int    `json:"ok"`
+	WARN  int    `json:"warn"`
+	BAD   int    `json:"bad"`
+	ERROR int    `json:"error"`
+	Total int    `json:"total"`
+}
+
+// loadHistory reads persisted runs for a config (all when n<=0), or nil when the
+// config has no path / no history file yet.
+func loadHistory(configPath string, n int) ([]history.Record, error) {
+	p := historyPath(configPath)
+	if p == "" {
+		return nil, nil
+	}
+	return history.Open(p).Recent(n)
+}
+
+// HistoryRuns returns the last n persisted runs, newest first, for the browser.
+func (a *App) HistoryRuns(configPath string, n int) ([]HistoryRun, error) {
+	records, err := loadHistory(configPath, n)
+	if err != nil || len(records) == 0 {
+		return nil, err
+	}
+	out := make([]HistoryRun, 0, len(records))
+	for _, r := range records {
+		hr := HistoryRun{Unix: r.Unix, Total: len(r.Entries)}
+		for _, e := range r.Entries {
+			switch e.Status {
+			case "OK":
+				hr.OK++
+			case "WARN":
+				hr.WARN++
+			case "BAD":
+				hr.BAD++
+			case "ERROR":
+				hr.ERROR++
+			}
+		}
+		switch {
+		case hr.ERROR > 0:
+			hr.Worst = "ERROR"
+		case hr.BAD > 0:
+			hr.Worst = "BAD"
+		case hr.WARN > 0:
+			hr.Worst = "WARN"
+		default:
+			hr.Worst = "OK"
+		}
+		out = append(out, hr)
+	}
+	// newest first
+	for i, j := 0, len(out)-1; i < j; i, j = i+1, j-1 {
+		out[i], out[j] = out[j], out[i]
+	}
+	return out, nil
+}
+
+// RunAt returns the findings recorded for the run at the given unix timestamp.
+// History stores no messages, so Finding.Message is empty (status/value only).
+func (a *App) RunAt(configPath string, unix int64) ([]engine.Finding, error) {
+	records, err := loadHistory(configPath, 0)
+	if err != nil {
+		return nil, err
+	}
+	for _, r := range records {
+		if r.Unix != unix {
+			continue
+		}
+		out := make([]engine.Finding, 0, len(r.Entries))
+		for _, e := range r.Entries {
+			out = append(out, engine.Finding{
+				Check: e.Check, Target: e.Target, Status: engine.Status(e.Status), Value: e.Value, Unit: e.Unit,
+			})
+		}
+		return out, nil // already worst-first as persisted
+	}
+	return nil, nil
+}
+
+// DiffRuns compares two persisted runs (from = older, to = newer) and returns
+// the status changes, reusing engine.DiffStatus.
+func (a *App) DiffRuns(configPath string, fromUnix, toUnix int64) ([]Change, error) {
+	records, err := loadHistory(configPath, 0)
+	if err != nil {
+		return nil, err
+	}
+	var from, to map[string]engine.Status
+	for _, r := range records {
+		if r.Unix == fromUnix {
+			from = statusMap(r)
+		}
+		if r.Unix == toUnix {
+			to = statusMap(r)
+		}
+	}
+	if from == nil || to == nil {
+		return nil, nil
+	}
+	var out []Change
+	for _, c := range engine.DiffStatus(from, to) {
+		check, target, _ := strings.Cut(c.Key, diffSep)
+		out = append(out, Change{Check: check, Target: target, From: string(c.From), To: string(c.To), Kind: string(c.Kind)})
+	}
+	return out, nil
+}
+
+func statusMap(r history.Record) map[string]engine.Status {
+	m := make(map[string]engine.Status, len(r.Entries))
+	for _, e := range r.Entries {
+		m[e.Check+diffSep+e.Target] = engine.Status(e.Status)
+	}
+	return m
+}
+
 // Trend returns the last n persisted runs for a config (oldest first), so the
 // GUI can draw a worst-status sparkline that survives restarts — unlike the
 // in-session diff (CF-64).

@@ -572,3 +572,20 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 6px; border-radius
 .spark-wrap { display: inline-flex; align-items: center; height: 22px; opacity: .9; }
 .sparkline { display: block; }
 .sparkline .spark-line { stroke: var(--brand-2); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+
+/* ================= history browser (CF-104) ================= */
+.hist-list { display: flex; flex-direction: column; gap: 6px; }
+.hist-run { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  padding: 8px 10px; border-radius: var(--r-md); font-size: var(--fs-sm); color: var(--text);
+  background: var(--surface); border: 1px solid var(--border); cursor: pointer;
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease); }
+.hist-run:hover { border-color: var(--brand); background: color-mix(in srgb, var(--surface) 60%, transparent); }
+.hist-when { flex: 1; color: var(--heading); }
+.hist-counts { font-family: var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.hist-total { opacity: .7; }
+.hist-actions { display: flex; gap: 8px; margin-bottom: 12px; }
+.hist-findings { display: flex; flex-direction: column; gap: 4px; }
+.hist-finding { display: flex; align-items: center; gap: 8px; padding: 5px 0;
+  border-bottom: 1px solid var(--border); font-size: var(--fs-sm); }
+.hist-target { color: var(--heading); overflow: hidden; text-overflow: ellipsis; }
+.hist-val { margin-left: auto; font-family: var(--mono); color: var(--brand-2); }

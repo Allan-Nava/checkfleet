@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.110.0
+
+- Desktop (CF-104, M27 — history browser & confronto run): nuovo bottone **History** che apre un drawer con i run persistiti (`internal/history`), newest-first, ciascuno con badge del worst status, timestamp e conteggi OK/WARN/BAD/ERROR. Aprendo un run se ne vedono i finding (status + valore numerico; i messaggi non sono salvati nello storico) con un'azione **Compare with previous** che mostra il delta rispetto al run precedente (new/resolved/worsened/improved), riusando `engine.DiffStatus`. Tre binding nuovi — `App.HistoryRuns`, `App.RunAt`, `App.DiffRuns` — coperti da `TestHistoryBrowser`. Va oltre il diff in-sessione (CF-64) e la sparkline di trend (CF-70). Apre M27 (Desktop power & workflow).
+
 ## 0.109.1
 
 - CI (fix workflow "Backlog sync"): `backlog-sync` moriva con `gh api -X POST … milestones -f title=M26 — Desktop UX/UI polish: exit status 1: gh: Validation Failed (HTTP 422)`. Causa: `ensureMilestones` leggeva le milestone **senza paginazione** e l'API GitHub ne restituisce **30 per pagina** — con 31 milestone sul repo, M26 (l'ultima) cadeva fuori dalla prima pagina, il tool la credeva mancante e provava a ricrearla ottenendo `already_exists`. Aggiunti `--paginate` + `per_page=100`. La rottura era latente e avrebbe colpito ogni milestone dalla 31ª in poi: non è un problema di M26 in sé.
