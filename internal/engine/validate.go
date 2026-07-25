@@ -179,6 +179,21 @@ func Validate(cfg *Config) []string {
 		}
 	}
 
+	if x := c.ClickHouse; x != nil {
+		configured++
+		if len(x.Targets) == 0 {
+			add("clickhouse: no target")
+		}
+		for i, t := range x.Targets {
+			if strings.TrimSpace(t.URL) == "" {
+				add("clickhouse: target #%d has no url", i+1)
+			}
+		}
+		if x.DelayWarnSeconds > x.DelayCritSeconds {
+			add("clickhouse: delay_warn_seconds (%d) > delay_crit_seconds (%d)", x.DelayWarnSeconds, x.DelayCritSeconds)
+		}
+	}
+
 	if configured == 0 && !anyModuleConfigured(c) {
 		add("no module configured under `checks`")
 	}

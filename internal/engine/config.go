@@ -57,6 +57,25 @@ type ChecksConfig struct {
 	MongoDB       *MongoDBConfig       `yaml:"mongodb"`
 	MySQL         *MySQLConfig         `yaml:"mysql"`
 	Etcd          *EtcdConfig          `yaml:"etcd"`
+	ClickHouse    *ClickHouseConfig    `yaml:"clickhouse"`
+}
+
+// ClickHouseConfig configures the ClickHouse check (HTTP interface).
+type ClickHouseConfig struct {
+	Targets          []ClickHouseTarget `yaml:"targets"`
+	DelayWarnSeconds int                `yaml:"delay_warn_seconds"` // default 30
+	DelayCritSeconds int                `yaml:"delay_crit_seconds"` // default 300
+}
+
+// ClickHouseTarget is one ClickHouse HTTP endpoint.
+type ClickHouseTarget struct {
+	Name string `yaml:"name"`
+	// HTTP endpoint including scheme, e.g. http://ch-01:8123.
+	URL string `yaml:"url"`
+	// Optional auth; password from env, never inline.
+	Username    string `yaml:"username"`
+	PasswordEnv string `yaml:"password_env"`
+	Insecure    bool   `yaml:"insecure_skip_verify"`
 }
 
 // EtcdConfig configures the etcd v3 cluster check (HTTP JSON gateway).
@@ -770,6 +789,14 @@ func applyDefaults(cfg *Config) {
 		}
 		if my.LagCritSeconds <= 0 {
 			my.LagCritSeconds = 60
+		}
+	}
+	if ch := cfg.Checks.ClickHouse; ch != nil {
+		if ch.DelayWarnSeconds <= 0 {
+			ch.DelayWarnSeconds = 30
+		}
+		if ch.DelayCritSeconds <= 0 {
+			ch.DelayCritSeconds = 300
 		}
 	}
 }

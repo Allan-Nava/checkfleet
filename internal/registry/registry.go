@@ -6,6 +6,7 @@ package registry
 
 import (
 	"github.com/Allan-Nava/checkfleet/internal/checks/certs"
+	"github.com/Allan-Nava/checkfleet/internal/checks/clickhouse"
 	"github.com/Allan-Nava/checkfleet/internal/checks/consul"
 	"github.com/Allan-Nava/checkfleet/internal/checks/dns"
 	"github.com/Allan-Nava/checkfleet/internal/checks/elasticsearch"
@@ -69,6 +70,7 @@ func Modules(cfg *engine.Config) []Spec {
 		{"mongodb", c.MongoDB != nil, func() engine.Check { return mongodb.New(*c.MongoDB) }},
 		{"mysql", c.MySQL != nil, func() engine.Check { return mysql.New(*c.MySQL) }},
 		{"etcd", c.Etcd != nil, func() engine.Check { return etcd.New(*c.Etcd) }},
+		{"clickhouse", c.ClickHouse != nil, func() engine.Check { return clickhouse.New(*c.ClickHouse) }},
 	}
 }
 

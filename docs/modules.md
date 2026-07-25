@@ -474,6 +474,30 @@ against an in-test fake gateway.
       - {name: etcd-01, url: https://etcd-01:2379, insecure_skip_verify: true}
 ```
 
+## `clickhouse` — ClickHouse
+
+Checks a ClickHouse server over its HTTP interface (zero-dep):
+
+- **Reachability** — `/ping` must return `Ok.` (`ERROR` if unreachable, `BAD`
+  otherwise) and `SELECT version()` must answer (`ERROR` on failure); the healthy
+  message carries the server version.
+- **Replicated tables** (`system.replicas`) — per table, `BAD` if the replica is
+  read-only (usually a lost ZooKeeper/Keeper session), else replication delay
+  `WARN`/`BAD` over `delay_warn_seconds`/`delay_crit_seconds`. Healthy tables
+  produce no finding; a server with no replicated tables adds nothing.
+
+Credentials come from env (`username` + `password_env`, sent as HTTP basic auth),
+never inline; `insecure_skip_verify` for self-signed HTTPS. Tested against an
+in-test fake HTTP server.
+
+```yaml
+  clickhouse:
+    delay_warn_seconds: 30
+    delay_crit_seconds: 300
+    targets:
+      - {name: ch-01, url: http://ch-01:8123, username: monitor, password_env: CLICKHOUSE_PASSWORD}
+```
+
 ## Ansible inventory as a target source
 
 The `certs`, `nats`, `haproxy`, `patroni`, `consul`, `redis` and `tls` modules can read

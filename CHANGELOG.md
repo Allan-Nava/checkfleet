@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.76.0
+
+- Modulo `clickhouse` (CF-76, M21): health check di ClickHouse via l'interfaccia **HTTP** (zero-dep). `/ping` (ERROR se irraggiungibile, BAD se non risponde `Ok.`) + `SELECT version()` per la reachability e la versione; per ogni **tabella replicata** (`system.replicas`) segnala **BAD** se la replica è read-only (tipicamente sessione ZooKeeper/Keeper persa) e il **ritardo di replica** (`absolute_delay`) con WARN/BAD oltre `delay_warn_seconds`/`delay_crit_seconds` (default 30/300). Le tabelle sane non producono finding. Credenziali **da env** (basic auth `username`+`password_env`), `insecure_skip_verify` per HTTPS self-signed. Testato contro un finto server HTTP (`httptest`). CLI `checkfleet check clickhouse`. Apre M21 (Più datastore/infra).
+
 ## 0.75.0
 
 - Modulo `etcd` (CF-75, M20): health check di un cluster etcd v3 via il suo **HTTP JSON gateway** (nessuna dipendenza `clientv3`). `/health` (ERROR se irraggiungibile, BAD se unhealthy), `POST /v3/maintenance/status` → **BAD se non c'è un leader** (quorum perso) + versione etcd, `POST /v3/cluster/member/list` → **BAD** se i membri sono meno di `expect_members` (rischio quorum). Token auth opzionale (`username`+`password_env` → `/v3/auth/authenticate`) e `insecure_skip_verify` per cluster self-signed. **Zero dipendenze** (HTTP/JSON); i 64-bit (leader/member id) arrivano come stringhe dal gateway proto3. Testato contro un gateway finto (`httptest`). CLI `checkfleet check etcd`. **Chiude M20 (Più datastore).**

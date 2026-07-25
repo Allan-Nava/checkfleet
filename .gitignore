@@ -11,3 +11,6 @@ docs/_site/
 docs/.jekyll-cache/
 docs/Gemfile.lock
 cover.out
+
+# desktop app run-history files written next to a config
+.*.history.jsonl

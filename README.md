@@ -76,6 +76,7 @@ See [Installation](https://allan-nava.github.io/checkfleet/installation/) for al
 | `mongodb` | MongoDB via the official driver: replica-set status (primary present, member health, secondary lag) and connection saturation |
 | `mysql` | MySQL/MariaDB via go-sql-driver: reachable, read-only role, connection saturation, replica IO/SQL threads + lag |
 | `etcd` | etcd v3 via the HTTP JSON gateway: /health, leader present (quorum), member count vs expected |
+| `clickhouse` | ClickHouse over HTTP: /ping, SELECT version(), replicated-table read-only state & replication delay |
 
 The only module still on the roadmap (see [BACKLOG.md](BACKLOG.md)) is `mediamtx`.
 

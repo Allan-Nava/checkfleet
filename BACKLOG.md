@@ -157,3 +157,29 @@ Nuovi moduli di dominio per datastore diffusi.
 
 - [x] **CF-74 — Modulo `mysql`/`mariadb`**: reachability + ruolo read-only, saturazione connessioni (`Threads_connected` vs `max_connections`, `conn_warn_pct`), replica health (IO/SQL thread) e lag (`Seconds_Behind`, `lag_warn/crit_seconds`) via `SHOW REPLICA STATUS`/`SHOW SLAVE STATUS`. Driver `go-sql-driver/mysql` (eccezione motivata come pgx); password da env via `${...}` nel DSN. Logica dietro `collector`, testata con fake. _(v0.74.0)_
 - [x] **CF-75 — Modulo `etcd`**: `/health`, leader presente (BAD se no leader → quorum perso), versione etcd e conteggio membri vs `expect_members`. Via **HTTP/JSON gateway** di etcd v3 (`/health`, `POST /v3/maintenance/status`, `POST /v3/cluster/member/list`) — **zero-dep**, niente clientv3. Token auth opzionale (`username`+`password_env`) e `insecure_skip_verify`. Testato con gateway fake (`httptest`). **Chiude M20.** _(v0.75.0)_
+
+## M21 — Più datastore/infra (fase 3)
+
+- [x] **CF-76 — Modulo `clickhouse`**: reachability via HTTP (`/ping` + `SELECT version()`), e per tabella replicata stato read-only + `absolute_delay` da `system.replicas` (`delay_warn_seconds`/`delay_crit_seconds`, default 30/300). Zero-dep HTTP, basic auth da env. Testato con server fake (`httptest`). _(v0.76.0)_
+- [ ] **CF-77 — Modulo `vault`**: `/v1/sys/health` (sealed/standby/active), `/v1/sys/seal-status` (soglia unseal), versione. Zero-dep HTTP, token opzionale da env.
+- [ ] **CF-78 — Modulo `memcached`**: `stats` sul protocollo testuale TCP (zero-dep) — reachability, uso memoria vs `limit_maxbytes`, evictions, connessioni.
+- [ ] **CF-79 — Modulo `cassandra`/`scylla`**: reachability + stato nodi. Valutare protocollo CQL nativo (handshake OPTIONS/STARTUP) vs driver `gocql`. **Chiude M21.**
+
+## M22 — Alerting & sink (fase 3)
+
+- [ ] **CF-80 — Output Telegram**: `--output telegram` via Bot API `sendMessage`; token e chat id da env, mai in CLI/config.
+- [ ] **CF-81 — Output CSV**: `--output csv` — righe `status,check,target,message` per fogli/ingest, header incluso.
+- [ ] **CF-82 — Webhook con template**: `--output webhook` con template Go opzionale (`--template file`) per plasmare il payload JSON/testo.
+- [ ] **CF-83 — Alert AWS SNS**: pubblica i finding BAD/ERROR su un topic SNS riusando la firma **SigV4 scritta a mano** (come `s3`), creds da env. **Chiude M22.**
+
+## M23 — Engine & robustezza (fase 3)
+
+- [ ] **CF-84 — Timeout/retry per-modulo**: override di `timeout_seconds`/`retries` a livello di modulo, oltre al globale.
+- [ ] **CF-85 — Maintenance window ricorrenti**: finestre di silenzio ricorrenti (es. cron-like giornaliere/settimanali), oltre a quelle una-tantum (CF-52).
+- [ ] **CF-86 — Dedup & ordinamento documentato**: dedup dei finding identici (stesso check/target/status) e documentazione formale del sort worst-first come API. **Chiude M23.**
+
+## M24 — Osservabilità del tool (fase 3)
+
+- [ ] **CF-87 — Self-metrics exporter**: `serve` espone metriche sul tool stesso — durata dell'ultimo run, errori per modulo, timestamp ultimo run.
+- [ ] **CF-88 — `/healthz` & `/readyz`**: endpoint di liveness/readiness su `serve` per orchestratori (k8s/nomad).
+- [ ] **CF-89 — Logging strutturato opzionale**: `--log-format json` per log strutturati (run start/end, errori), default testo. **Chiude M24.**

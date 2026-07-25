@@ -247,3 +247,10 @@ checks:
     targets:
       - {name: etcd-01, url: https://etcd-01:2379, insecure_skip_verify: true}
       - {name: etcd-02, url: https://etcd-02:2379, insecure_skip_verify: true}
+
+  # ClickHouse over its HTTP interface. Password from env, never inline.
+  clickhouse:
+    delay_warn_seconds: 30
+    delay_crit_seconds: 300
+    targets:
+      - {name: ch-01, url: http://ch-01:8123, username: monitor, password_env: CLICKHOUSE_PASSWORD}
