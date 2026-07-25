@@ -48,7 +48,7 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 
 - [x] **CF-19 — Modulo `redis`/`valkey`**: reachability (`PING`)+`INFO` con **client RESP minimale in-tree** (zero dip), uso memoria vs `maxmemory`, replica (link up/down, offset lag), persistenza RDB/AOF, loading. TLS + ACL (password da env). _(v0.20.0)_
 - [x] **CF-20 — Modulo `keycloak`**: health endpoint UP, discovery OIDC per realm (token_endpoint presente, issuer coerente con `/realms/<realm>`). HTTP/JSON zero-dip, nessuna credenziale. _(v0.21.0; versione via admin rimandata — richiede auth)_
-- [ ] **CF-21 — Modulo `mediamtx`**: API di mediamtx — path attivi, reader/publisher per path, path attesi presenti, ingest fermi. Codifica l'uso interno (KV_mediamtx nel runbook NATS).
+- [ ] **CF-21 — Modulo `mediamtx`**: API di mediamtx — path attivi, reader/publisher per path, path attesi presenti, ingest fermi. Codifica l'uso interno (KV_mediamtx nel runbook NATS). **Deprioritizzato: da fare per ultimo (dopo M16).**
 - [ ] **CF-22 — Modulo `ingest` (RTMP/SRT)**: l'endpoint di ingest accetta connessioni (handshake TCP/RTMP, o SRT), latenza. Segnale "lo streamer riesce a pubblicare?".
 - [ ] **CF-23 — Modulo `s3`/object storage**: bucket raggiungibile, oggetto sentinella presente e fresco (last-modified sotto soglia), spazio/quota se esposta. Credenziali da env.
 - [ ] **CF-24 — Modulo `smtp`**: il relay accetta connessioni, STARTTLS ok, cert del relay non scaduto, banner atteso. Nessun invio reale.
@@ -117,3 +117,12 @@ Direzione stabilita: **tutto l'output user-facing del software è in inglese**. 
 - [x] **CF-58 — Engine & CLI in inglese**: messaggi top-level e `usage`, errori sistemici (config illeggibile, modulo sconosciuto/non configurato), `validate`, help dei flag, e i renderer di `internal/output` (summary `N checks: …`, sezione "Needs attention"/"All results" del Markdown, note Slack). Test aggiornati. _(v0.38.0)_
 - [x] **CF-59 — Finding dei moduli in inglese**: convertiti i messaggi di **tutti** i 18 moduli check — `certs, http, nats, haproxy, stream, patroni, consul, postgres, dns, redis, keycloak, tcp, tls, ntp, grpc, ldap, kafka, rabbitmq` — con i relativi test (asserzioni sul messaggio incluse). Realm/host aziendali nei test neutralizzati. _(v0.39.0)_
 - [x] **CF-60 — Sweep & guardrail**: script `scripts/check-english.sh` (vocali accentate + wordlist italiana nei `.go` di `cmd/`+`internal/`) come step della CI (`ci.yml`). Ha scovato e fatto tradurre anche i test residui (`engine`, `history`, `issuesync`, `backlog`, `prometheus`) e il tool `backlog-sync`. Esempi di output nel sito docs e README portati in inglese; convenzione già in `CLAUDE.md`. **Chiude M15.** _(v0.40.0)_
+
+## M16 — Desktop GUI v2 (fase 3)
+
+Estende l'app desktop Wails (M5) riusando `internal/*`. Frontend statico + binding Go; test: binding (`go test` nel modulo `desktop/`) + smoke frontend headless.
+
+- [x] **CF-61 — Export in tutti i formati**: nella GUI selettore formato (Markdown/JSON/HTML/JUnit/Prometheus/OTLP) + bottone Export via file-dialog nativo; helper `renderReport` testato (riusa `internal/output`). _(v0.57.0)_
+- [ ] **CF-62 — Dettaglio & insight**: drawer di dettaglio al click su un finding (messaggio completo + copia), bottone **Validate** (`engine.Validate`) e pannello **Explain** dei moduli (docs condivise con la CLI).
+- [ ] **CF-63 — Notifiche & settings**: notifica desktop nativa quando il worst è BAD/ERROR dopo un run; persistenza di config path, stack, intervallo e auto-refresh tra i riavvii.
+- [ ] **CF-64 — Vista storico/diff**: mostra il delta vs il run precedente (new/resolved/worsened/improved) riusando `engine.DiffStatus`.

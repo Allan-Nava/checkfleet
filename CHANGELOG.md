@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.57.0
+
+- Desktop (CF-61, M16): l'export supporta **tutti i formati** — Markdown, JSON, HTML, JUnit, Prometheus, OTLP — via un selettore + bottone Export con file-dialog nativo (riusa i renderer `internal/output`). Helper `renderReport` testato.
+
 ## 0.56.0
 
 - Firma & SBOM (CF-56): le release ora includono **SBOM** per archivio (syft) e firme **cosign keyless** (Fulcio/Rekor via OIDC di GitHub) su `checksums.txt` e sulle immagini Docker. goreleaser `sboms`/`signs`/`docker_signs`; `release.yml` con `id-token: write`, `cosign-installer` e `download-syft`. Provenienza verificabile con `cosign verify`/`verify-blob` (comandi in `installation.md`). **Chiude M14 (distribuzione & supply-chain).**

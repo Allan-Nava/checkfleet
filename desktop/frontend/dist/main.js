@@ -91,8 +91,7 @@
     if (!visible.length) $("emptyText").textContent = "No findings match these filters.";
 
     const can = findings.length > 0;
-    $("expmd").disabled = !can;
-    $("expjson").disabled = !can;
+    $("export").disabled = !can;
     setStatus(`${findings.length} findings · ${report.ok} OK / ${report.warn} WARN / ${report.bad} BAD / ${report.error} ERROR`);
   }
 
@@ -164,8 +163,7 @@
     $("minsev").addEventListener("change", render);
     $("auto").addEventListener("change", (e) => setAutoRefresh(e.target.checked));
     $("interval").addEventListener("change", () => { if ($("auto").checked) setAutoRefresh(true); });
-    $("expmd").addEventListener("click", () => save("markdown"));
-    $("expjson").addEventListener("click", () => save("json"));
+    $("export").addEventListener("click", () => save($("expfmt").value));
     $("theme").addEventListener("click", toggleTheme);
   }
 

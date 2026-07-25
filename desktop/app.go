@@ -193,22 +193,17 @@ func (a *App) ExportJSON() (string, error) {
 // SaveReport writes the last run to a file the user picks. format is
 // "markdown" or "json". Returns the written path ("" if the user cancelled).
 func (a *App) SaveReport(format string) (string, error) {
-	var content, def string
-	var err error
-	switch format {
-	case "json":
-		content, err = a.ExportJSON()
-		def = "checkfleet-report.json"
-	default:
-		content = a.ExportMarkdown()
-		def = "checkfleet-report.md"
-	}
+	a.mu.Lock()
+	res, title := a.last, a.title
+	a.mu.Unlock()
+
+	content, ext, err := renderReport(res, title, format)
 	if err != nil {
 		return "", err
 	}
 	path, err := wruntime.SaveFileDialog(a.ctx, wruntime.SaveDialogOptions{
 		Title:           "Save report",
-		DefaultFilename: def,
+		DefaultFilename: "checkfleet-report." + ext,
 	})
 	if err != nil || path == "" {
 		return "", err
@@ -217,6 +212,28 @@ func (a *App) SaveReport(format string) (string, error) {
 		return "", err
 	}
 	return path, nil
+}
+
+// renderReport renders a run in the given format, returning the content and the
+// file extension. Reuses the CLI's internal/output renderers.
+func renderReport(res engine.Result, title, format string) (content, ext string, err error) {
+	switch format {
+	case "json":
+		s, e := output.JSON(res)
+		return s, "json", e
+	case "html":
+		return output.HTML(res, title), "html", nil
+	case "junit":
+		s, e := output.JUnit(res, title)
+		return s, "xml", e
+	case "prometheus":
+		return output.Prometheus(res), "prom", nil
+	case "otlp":
+		s, e := output.OTLP(res)
+		return s, "json", e
+	default: // markdown
+		return output.Markdown(res, title), "md", nil
+	}
 }
 
 // context returns the Wails context, or Background when running headless.

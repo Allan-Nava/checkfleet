@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/Allan-Nava/checkfleet/internal/engine"
 )
 
 // startTCP starts a throwaway TCP listener that accepts and immediately closes
@@ -155,4 +157,26 @@ func contains(ss []string, want string) bool {
 		}
 	}
 	return false
+}
+
+func TestRenderReportFormats(t *testing.T) {
+	res := engine.Result{Findings: []engine.Finding{
+		{Check: "http", Target: "x", Status: engine.BAD, Message: "500"},
+	}}
+	cases := map[string]string{
+		"markdown": "md", "json": "json", "html": "html",
+		"junit": "xml", "prometheus": "prom", "otlp": "json",
+	}
+	for format, wantExt := range cases {
+		content, ext, err := renderReport(res, "all", format)
+		if err != nil {
+			t.Errorf("%s: %v", format, err)
+		}
+		if ext != wantExt {
+			t.Errorf("%s: ext = %q, want %q", format, ext, wantExt)
+		}
+		if content == "" {
+			t.Errorf("%s: empty content", format)
+		}
+	}
 }

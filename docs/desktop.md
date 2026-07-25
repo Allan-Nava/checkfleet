@@ -40,9 +40,9 @@ Everything is one screen, scanned top-to-bottom.
 
 **Export**
 
-- **Export MD** / **Export JSON** — save the current run as an ops-style
-  Markdown report or JSON (the same renderers as `--output markdown|json`), via
-  a native save dialog.
+- **Export** — pick a format (Markdown, JSON, HTML, JUnit, Prometheus, OTLP) and
+  save the current run via a native save dialog. Same renderers as the CLI's
+  `--output`.
 
 ## Light theme
 
