@@ -105,6 +105,7 @@ func (c *Check) probe(ctx context.Context, target string) []engine.Finding {
 func (c *Check) expiryFinding(target string, leaf *x509.Certificate) engine.Finding {
 	f := engine.Finding{Check: c.Name(), Target: target + " [expiry]"}
 	days := int(leaf.NotAfter.Sub(c.now()).Hours() / 24)
+	f.Value, f.Unit = engine.Num(float64(days)), "days"
 	switch {
 	case days < 0:
 		f.Status, f.Message = engine.BAD, fmt.Sprintf("EXPIRED %d days ago (%s)", -days, leaf.NotAfter.Format("2006-01-02"))

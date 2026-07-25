@@ -172,6 +172,10 @@ func (c *Check) memberFinding(m member, leaderTimeline int) engine.Finding {
 		return f
 	}
 
+	// Replica: attach lag (bytes) as a metric when Patroni reports a number.
+	if lag, ok := parseLag(m.Lag); ok {
+		f.Value, f.Unit = engine.Num(float64(lag)), "bytes"
+	}
 	// Replica: state, then lag, then timeline — keep the worst.
 	if s := replicaState(m.State); s != engine.OK {
 		f.Status, f.Message = s, fmt.Sprintf("state %q", m.State)

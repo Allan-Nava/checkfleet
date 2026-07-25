@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.103.0
+
+- Engine/moduli (CF-97, M25): esteso il campo numerico opzionale `Finding.Value`+`Unit` (CF-91) ad altri **7 moduli**, così le loro grandezze finiscono nello storico e sono graficabili nella card "Metric over time" della GUI: **latenza ms** (`grpc`, aggiunto il timing della richiesta), **giorni-a-scadenza** (`tls`), **replica lag** (`mysql` in s, `clickhouse` in s, `postgres` in bytes, `patroni` in bytes) e **min-TTL** (`dns`, in s). Backward-compatible: i renderer `internal/output` e i messaggi restano invariati. Asserzioni `Value` aggiunte a `tls`/`grpc`; gli altri test esistenti restano verdi (nessuna regressione). Completa il follow-up lasciato aperto da CF-91.
+
 ## 0.102.4
 
 - Desktop (fix icona — via il bianco intorno): `appicon.png` aveva gli **angoli bianchi** invece che trasparenti, quindi nel Dock/Finder l'icona mostrava un brutto quadrato bianco attorno al plate arrotondato. Causa: `qlmanage` cuoce uno sfondo bianco quando rende l'SVG. `gen-icon.sh` ora rende con **Chrome headless** (`--default-background-color=00000000`), che preserva il canale alpha → angoli trasparenti; `appicon.png` rigenerato di conseguenza. L'SVG era già corretto (angoli trasparenti), il baco era solo nel rasterizzatore. Verificato: pixel d'angolo `(0,0,0,0)`.

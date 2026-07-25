@@ -48,8 +48,12 @@ func run(t *testing.T, addr, service string) engine.Finding {
 }
 
 func TestServingIsOK(t *testing.T) {
-	if got := run(t, startGRPC(t, statusServing, "0"), ""); got.Status != engine.OK {
+	got := run(t, startGRPC(t, statusServing, "0"), "")
+	if got.Status != engine.OK {
 		t.Errorf("SERVING: want OK, got %s (%s)", got.Status, got.Message)
+	}
+	if got.Unit != "ms" || got.Value == nil || *got.Value < 0 {
+		t.Errorf("latency metric (CF-97): want a ms value, got value=%v unit=%q", got.Value, got.Unit)
 	}
 }
 

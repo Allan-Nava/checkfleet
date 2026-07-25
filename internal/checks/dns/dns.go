@@ -163,6 +163,7 @@ func (c *Check) ttlFinding(label string, minTTL uint32, haveTTL bool) (engine.Fi
 		return engine.Finding{}, false
 	}
 	f := engine.Finding{Check: c.Name(), Target: label + " [ttl]"}
+	f.Value, f.Unit = engine.Num(float64(minTTL)), "s"
 	if minTTL < c.cfg.MinTTLSeconds {
 		f.Status = engine.WARN
 		f.Message = fmt.Sprintf("min TTL %ds below the threshold (%ds)", minTTL, c.cfg.MinTTLSeconds)

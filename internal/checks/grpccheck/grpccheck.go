@@ -13,6 +13,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/Allan-Nava/checkfleet/internal/engine"
 )
@@ -74,12 +75,15 @@ func (c *Check) probe(ctx context.Context, t engine.GRPCTarget) engine.Finding {
 	req.Header.Set("Content-Type", "application/grpc+proto")
 	req.Header.Set("TE", "trailers")
 
+	start := time.Now()
 	resp, err := c.client(t.InsecureSkipVerify, hostOf(t.Address)).Do(req)
 	if err != nil {
 		f.Status, f.Message = engine.ERROR, fmt.Sprintf("gRPC connection failed: %v", err)
 		return f
 	}
 	defer resp.Body.Close()
+	// Health-check round-trip latency (ms), attached to every post-connect finding.
+	f.Value, f.Unit = engine.Num(float64(time.Since(start).Microseconds())/1000), "ms"
 	payload, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 
 	// grpc-status can arrive in trailers or (trailers-only responses) headers.

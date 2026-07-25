@@ -165,6 +165,7 @@ func (c *Check) replicaFindings(label string, replicas []replica) []engine.Findi
 	var findings []engine.Finding
 	for _, r := range replicas {
 		f := engine.Finding{Check: c.Name(), Target: label + " [repl:" + r.Client + "]"}
+		f.Value, f.Unit = engine.Num(float64(r.LagBytes)), "bytes" // replication lag
 		switch {
 		case c.cfg.LagCritBytes > 0 && r.LagBytes >= c.cfg.LagCritBytes:
 			f.Status, f.Message = engine.BAD, fmt.Sprintf("lag %s over critical threshold (%s), state %s", humanBytes(r.LagBytes), humanBytes(c.cfg.LagCritBytes), r.State)

@@ -84,6 +84,7 @@ func (c *Check) replicaFindings(ctx context.Context, client *http.Client, t engi
 		readonly := cols[2] == "1"
 		delay, _ := strconv.ParseFloat(cols[3], 64)
 		f := engine.Finding{Check: c.Name(), Target: label + "/" + name}
+		f.Value, f.Unit = engine.Num(delay), "s" // replication delay
 		switch {
 		case readonly:
 			f.Status, f.Message = engine.BAD, "replica is read-only (lost ZooKeeper/Keeper session?)"

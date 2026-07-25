@@ -100,6 +100,9 @@ func TestHealthyChainExpiryProtocol(t *testing.T) {
 	if f[addr+" [expiry]"].Status != engine.OK {
 		t.Errorf("expiry 100d: want OK, got %s", f[addr+" [expiry]"].Status)
 	}
+	if e := f[addr+" [expiry]"]; e.Unit != "days" || e.Value == nil || *e.Value < 95 || *e.Value > 100 {
+		t.Errorf("expiry metric (CF-97): want ~100 days, got value=%v unit=%q", e.Value, e.Unit)
+	}
 	if f[addr+" [protocol]"].Status != engine.OK {
 		t.Errorf("modern protocol: want OK, got %s (%s)", f[addr+" [protocol]"].Status, f[addr+" [protocol]"].Message)
 	}

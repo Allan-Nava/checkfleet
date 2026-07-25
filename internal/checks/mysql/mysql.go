@@ -124,6 +124,9 @@ func (c *Check) connectionFinding(label string, m metrics) engine.Finding {
 func (c *Check) replicaFinding(label string, m metrics) engine.Finding {
 	f := engine.Finding{Check: c.Name(), Target: label + "/replication"}
 	r := m.Replica
+	if r.Replicating {
+		f.Value, f.Unit = engine.Num(float64(r.SecondsBehind)), "s" // replica lag
+	}
 	switch {
 	case !r.IORunning || !r.SQLRunning:
 		f.Status = engine.BAD
