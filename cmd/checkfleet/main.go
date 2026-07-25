@@ -142,8 +142,9 @@ func runCheck(args []string) error {
 		return err
 	}
 
+	base := runOptions(cfg)
 	specs := registry.Modules(cfg)
-	var selected []engine.Check
+	var selected []engine.Job
 	known := module == "all"
 	for _, s := range specs {
 		if module != "all" && module != s.Name {
@@ -156,7 +157,7 @@ func runCheck(args []string) error {
 			}
 			continue
 		}
-		selected = append(selected, s.Build())
+		selected = append(selected, engine.Job{Check: s.Build(), Opts: registry.OptionsFor(cfg, s.Name, base)})
 	}
 	if !known {
 		return fmt.Errorf("unknown module %q", module)
@@ -170,7 +171,7 @@ func runCheck(args []string) error {
 		return runWatch(selected, cfg, filter, *watch, watchColor)
 	}
 
-	res := engine.RunWith(context.Background(), selected, runOptions(cfg))
+	res := engine.RunJobs(context.Background(), selected)
 	if *historyPath != "" {
 		flaps, err := recordHistory(*historyPath, res, *flapChanges, *flapWindow)
 		if err != nil {
@@ -291,9 +292,9 @@ func runCheck(args []string) error {
 
 // runWatch re-runs the selected checks on an interval, redrawing a live text
 // view until interrupted (Ctrl-C). Maintenance and filters apply each tick.
-func runWatch(checks []engine.Check, cfg *engine.Config, filter engine.FilterOptions, interval time.Duration, color bool) error {
+func runWatch(jobs []engine.Job, cfg *engine.Config, filter engine.FilterOptions, interval time.Duration, color bool) error {
 	for {
-		res := engine.RunWith(context.Background(), checks, runOptions(cfg))
+		res := engine.RunJobs(context.Background(), jobs)
 		res.Findings = engine.ApplyMaintenance(res.Findings, cfg.Maintenance, time.Now())
 		res.Findings = engine.Filter(res.Findings, filter)
 		fmt.Print(watchFrame(res, time.Now(), interval, color))
@@ -493,17 +494,16 @@ func runServe(args []string) error {
 	if err != nil {
 		return err
 	}
-	checks := registry.Configured(cfg)
-	if len(checks) == 0 {
+	jobs := registry.Jobs(cfg, runOptions(cfg))
+	if len(jobs) == 0 {
 		return fmt.Errorf("no module configured in %s", *configPath)
 	}
-	opts := runOptions(cfg)
 
 	var mu sync.Mutex
 	var latest engine.Result
 	var ready atomic.Bool
 	runOnce := func() {
-		res := engine.RunWith(context.Background(), checks, opts)
+		res := engine.RunJobs(context.Background(), jobs)
 		res.Findings = engine.ApplyMaintenance(res.Findings, cfg.Maintenance, time.Now())
 		mu.Lock()
 		latest = res
@@ -516,7 +516,7 @@ func runServe(args []string) error {
 			"ok", sum[engine.OK], "warn", sum[engine.WARN],
 			"bad", sum[engine.BAD], "error", sum[engine.ERROR])
 	}
-	logger.Info("serve start", "modules", len(checks), "listen", *listen, "interval", interval.String())
+	logger.Info("serve start", "modules", len(jobs), "listen", *listen, "interval", interval.String())
 	runOnce()
 	go func() {
 		t := time.NewTicker(*interval)
@@ -547,7 +547,7 @@ func runServe(args []string) error {
 		fmt.Fprintln(w, "ready")
 	})
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "checkfleet %s\n\nmetrics: /metrics\nhealth: /healthz /readyz\n%d modules, re-run every %s\n", version, len(checks), *interval)
+		fmt.Fprintf(w, "checkfleet %s\n\nmetrics: /metrics\nhealth: /healthz /readyz\n%d modules, re-run every %s\n", version, len(jobs), *interval)
 	})
 	return http.ListenAndServe(*listen, nil)
 }
