@@ -106,30 +106,66 @@
   let view = "fleet";
   let moduleTrend = { modules: [], runs: [] };
   let metricSeries = [];
+  let running = false;
 
   /* ---------------- rendering ---------------- */
   function severityAllowed(status, min) {
     return RANK[status] >= RANK[min.toUpperCase()];
   }
 
+  // setBusy toggles the top progress bar + the Run button spinner during work.
+  function setBusy(on) {
+    $("progress").hidden = !on;
+    const btn = $("run");
+    btn.disabled = on;
+    btn.classList.toggle("loading", on);
+    const label = btn.querySelector(".run-label");
+    if (label) label.textContent = on ? "Running…" : "Run";
+  }
+
+  // emptyState paints the table's empty area for each situation (loading / first
+  // run / no config error / no filter match). Buttons are wired via delegation.
+  function emptyState(kind, msg) {
+    const el = $("empty");
+    el.style.display = "flex";
+    if (kind === "loading") {
+      el.innerHTML = `<div class="spinner spinner-lg"></div><p>Running checks…</p>`;
+    } else if (kind === "press-run") {
+      el.innerHTML = `<img src="assets/logo.svg" alt="" width="64" height="64">
+        <p>Press <b>Run</b> to check the fleet.</p>
+        <p class="empty-hint"><kbd>⌘↵</kbd> run · <kbd>⌘K</kbd> commands · <kbd>/</kbd> filter</p>`;
+    } else if (kind === "no-match") {
+      el.innerHTML = `<p class="empty-quiet">No findings match these filters.</p>
+        <button class="btn" data-empty-act="clear">Clear filters</button>`;
+    } else if (kind === "error") {
+      el.innerHTML = `<div class="err-card">
+        <div class="err-ico">!</div>
+        <div class="err-body">
+          <b>Couldn't run the checks</b>
+          <p class="err-msg">${escapeHtml(msg)}</p>
+          <div class="err-actions">
+            <button class="btn btn-primary" data-empty-act="retry">Retry</button>
+            <button class="btn" data-empty-act="edit">Open config editor</button>
+          </div>
+        </div></div>`;
+    }
+  }
+
   function render() {
     const summary = $("summary");
-    const empty = $("empty");
     const rows = $("rows");
 
+    // Running with no usable data yet → loading state. (On an auto-refresh with a
+    // valid previous report we keep showing it, with the top progress bar instead.)
+    if (running && (!report || report.err)) {
+      summary.hidden = true; rows.innerHTML = ""; emptyState("loading"); return;
+    }
     if (!report) {
-      summary.hidden = true;
-      empty.style.display = "flex";
-      rows.innerHTML = "";
-      return;
+      summary.hidden = true; rows.innerHTML = ""; emptyState("press-run"); return;
     }
     if (report.err) {
-      summary.hidden = true;
-      empty.style.display = "flex";
-      $("emptyText").innerHTML = "⚠️ " + escapeHtml(report.err);
-      rows.innerHTML = "";
-      setStatus("configuration error");
-      return;
+      summary.hidden = true; rows.innerHTML = ""; emptyState("error", report.err);
+      setStatus("configuration error"); return;
     }
 
     // summary (kept hidden while the editor/dashboard views own the screen)
@@ -192,8 +228,8 @@
       rows.innerHTML = visible.map(findingRow).join("");
     }
 
-    empty.style.display = visible.length ? "none" : "flex";
-    if (!visible.length) $("emptyText").textContent = "No findings match these filters.";
+    if (visible.length) $("empty").style.display = "none";
+    else emptyState("no-match");
 
     const can = findings.length > 0;
     $("export").disabled = !can;
@@ -223,15 +259,17 @@
 
   /* ---------------- actions ---------------- */
   async function run() {
-    const btn = $("run");
-    btn.disabled = true;
+    running = true;
+    setBusy(true);
     setStatus("running checks…");
+    render(); // show the loading state right away (unless a prior run is on screen)
     try {
       report = await Backend.RunChecks($("configPath").value, $("stack").value);
     } catch (e) {
       report = { err: String(e) };
     }
-    btn.disabled = false;
+    running = false;
+    setBusy(false);
     render();
     maybeNotify();
     if (dashboardOn) renderDashboard();
@@ -322,9 +360,20 @@
   }
 
   // renderDashboard pulls the persisted history (survives restarts) and draws the
+  // dashSkeleton drops shimmer placeholders into the chart hosts while the
+  // history reads are in flight, so the dashboard never flashes empty.
+  function dashSkeleton() {
+    const bar = `<div class="skeleton skeleton-chart"></div>`;
+    ["chartArea", "chartBand", "chartHeatmap", "chartLine", "sloBox"].forEach((id) => {
+      const el = $(id); if (el) el.innerHTML = bar;
+    });
+    const d = $("chartDonut"); if (d) d.innerHTML = `<div class="skeleton skeleton-donut"></div>`;
+  }
+
   // stacked-area, donut and worst-status band. The donut shows the live run when
   // there is one, otherwise the newest history point.
   async function renderDashboard() {
+    dashSkeleton(); // placeholders while the history reads resolve
     let points = [];
     try { points = (await Backend.Trend($("configPath").value, 60)) || []; }
     catch (_) { points = []; }
@@ -688,6 +737,14 @@
     $("palette").addEventListener("click", () => openPalette());
     $("dashRefresh").addEventListener("click", renderDashboard);
     $("metricSel").addEventListener("change", drawMetric);
+    // empty-state actions (retry / open editor / clear filters)
+    $("empty").addEventListener("click", (e) => {
+      const act = e.target.closest("[data-empty-act]");
+      if (!act) return;
+      if (act.dataset.emptyAct === "retry") run();
+      else if (act.dataset.emptyAct === "edit") setView("config");
+      else if (act.dataset.emptyAct === "clear") { $("filter").value = ""; $("minsev").value = "ok"; render(); }
+    });
     $("chartHeatmap").addEventListener("click", (e) => {
       const el = e.target.closest("[data-module]");
       if (el) showModuleDrill(el.getAttribute("data-module"));

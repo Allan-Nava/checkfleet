@@ -50,8 +50,11 @@
         </select>
         <label class="switch"><input type="checkbox" id="notify"><span>Notify</span></label>
       </div>
-      <button class="btn btn-primary" id="run"><span class="run-ico">▶</span> Run</button>
+      <button class="btn btn-primary" id="run"><span class="run-ico">▶</span><span class="run-label">Run</span></button>
     </div>
+
+    <!-- indeterminate progress bar (shown during a run / fetch) -->
+    <div class="progress" id="progress" hidden><i></i></div>
 
     <!-- summary -->
     <section class="summary" id="summary" hidden>
