@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.65.0
+
+- Modulo `smtp` (CF-24): reachability di un relay SMTP — **non invia mai posta**. Verifica connessione + greeting `220` (opz. `expect_banner`), `EHLO`, e — se richiesto — **STARTTLS** (`starttls: true`, BAD se non offerto/fallisce) o **TLS implicito** (`tls: true`, es. porta 465); quando c'è TLS legge il certificato del relay e riporta la scadenza (`warn_days`/`crit_days`, come `certs`). WARN su `max_latency_ms`. Porta di default 25 (465 con `tls`). **Zero dipendenze** (stdlib `net`/`crypto/tls`/`bufio`, parsing risposte multi-linea a mano); testato contro relay fake in-test (plain, STARTTLS, TLS implicito, cert in scadenza/scaduto). CLI `checkfleet check smtp`.
+
 ## 0.64.0
 
 - Desktop (CF-66, M17): **form "Add endpoint" + scheduling** nell'editor. **+ Add endpoint** apre un form rapido per i check più comuni — **http** (URL + status atteso), **certs** (`host:443`), **tcp** (`host:port`), **dns** (nome + tipo record): l'endpoint viene **inserito nello YAML** riusando `engine.AddEndpoint`, che edita il node tree yaml (commenti, ordine chiavi e formattazione **preservati**) e non tocca il resto. Bottone **Schedule…** che stampa comandi copia-incolla — riga `cron` + `checkfleet serve` per il file/intervallo correnti — così GUI e automazione condividono un'unica fonte. Nuovi binding `App.AddEndpoint`/`ScheduleSnippet` (helper `intervalMinutes`); testati (engine + desktop). Fix CSS: regola globale `[hidden]{display:none}` (il form/i campi condizionali usano `display:flex` che ignorava l'attributo `hidden`). **Chiude M17 (Config editor).**

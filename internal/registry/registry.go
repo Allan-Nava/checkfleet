@@ -22,6 +22,7 @@ import (
 	"github.com/Allan-Nava/checkfleet/internal/checks/rabbitmq"
 	"github.com/Allan-Nava/checkfleet/internal/checks/redis"
 	"github.com/Allan-Nava/checkfleet/internal/checks/s3"
+	"github.com/Allan-Nava/checkfleet/internal/checks/smtp"
 	"github.com/Allan-Nava/checkfleet/internal/checks/stream"
 	"github.com/Allan-Nava/checkfleet/internal/checks/tcp"
 	"github.com/Allan-Nava/checkfleet/internal/checks/tlscheck"
@@ -59,6 +60,7 @@ func Modules(cfg *engine.Config) []Spec {
 		{"kafka", c.Kafka != nil, func() engine.Check { return kafka.New(*c.Kafka) }},
 		{"ingest", c.Ingest != nil, func() engine.Check { return ingest.New(*c.Ingest) }},
 		{"s3", c.S3 != nil, func() engine.Check { return s3.New(*c.S3) }},
+		{"smtp", c.SMTP != nil, func() engine.Check { return smtp.New(*c.SMTP) }},
 	}
 }
 

@@ -345,6 +345,31 @@ SDK); credentials come from `access_key_env`/`secret_key_env` (env only), or it
 falls back to anonymous for public buckets. `path_style: true` for MinIO/Ceph.
 Tested against an in-test fake S3 (`httptest`).
 
+## `smtp` — mail relay reachability
+
+Verifies an SMTP relay is healthy **without ever sending mail**:
+
+- **Connection & greeting** — `ERROR` if it can't connect, `BAD` on a non-`220`
+  greeting or a greeting missing the optional `expect_banner` substring.
+- **EHLO** — `BAD` if `EHLO` is rejected.
+- **STARTTLS** (`starttls: true`) — `BAD` if not advertised or the upgrade fails.
+- **Implicit TLS** (`tls: true`, e.g. port 465) — wraps the connection at once.
+- **Relay certificate** — when TLS is negotiated, reads the leaf and reports
+  `WARN` under `warn_days`, `BAD` under `crit_days` (or expired).
+- **Latency** — `WARN` over `max_latency_ms`.
+
+Default port is `25`, or `465` when `tls: true`. Zero-dep (stdlib `net`/`crypto/tls`);
+tested against in-test fake relays (plain, STARTTLS, implicit TLS).
+
+```yaml
+  smtp:
+    warn_days: 30
+    crit_days: 7
+    targets:
+      - {name: relay, address: mail.example.com:25, starttls: true}
+      - {name: smtps, address: mail.example.com:465, tls: true}
+```
+
 ## Ansible inventory as a target source
 
 The `certs`, `nats`, `haproxy`, `patroni`, `consul`, `redis` and `tls` modules can read

@@ -52,6 +52,30 @@ type ChecksConfig struct {
 	Kafka    *KafkaConfig    `yaml:"kafka"`
 	Ingest   *IngestConfig   `yaml:"ingest"`
 	S3       *S3Config       `yaml:"s3"`
+	SMTP     *SMTPConfig     `yaml:"smtp"`
+}
+
+// SMTPConfig configures the SMTP relay reachability check. It never sends mail;
+// warn_days/crit_days apply to the relay certificate (implicit TLS or STARTTLS).
+type SMTPConfig struct {
+	Targets  []SMTPTarget `yaml:"targets"`
+	WarnDays int          `yaml:"warn_days"`
+	CritDays int          `yaml:"crit_days"`
+}
+
+// SMTPTarget is one SMTP relay to probe.
+type SMTPTarget struct {
+	Name string `yaml:"name"`
+	// host[:port]; default port 25, or 465 when tls is set.
+	Address string `yaml:"address"`
+	// Implicit TLS (smtps) — wrap the connection immediately.
+	TLS bool `yaml:"tls"`
+	// Require STARTTLS on a plain connection: BAD if not offered or it fails.
+	StartTLS bool `yaml:"starttls"`
+	// Optional substring the 220 greeting must contain.
+	ExpectBanner string `yaml:"expect_banner"`
+	// Optional WARN when the connect takes longer than this.
+	MaxLatencyMS int `yaml:"max_latency_ms"`
 }
 
 // IngestConfig configures the ingest (RTMP/SRT) reachability check.
@@ -627,6 +651,14 @@ func applyDefaults(cfg *Config) {
 					s.Targets[i].MaxAgeCritSeconds = 60
 				}
 			}
+		}
+	}
+	if sm := cfg.Checks.SMTP; sm != nil {
+		if sm.WarnDays <= 0 {
+			sm.WarnDays = 30
+		}
+		if sm.CritDays <= 0 {
+			sm.CritDays = 7
 		}
 	}
 }

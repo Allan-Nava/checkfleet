@@ -51,7 +51,7 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 - [ ] **CF-21 — Modulo `mediamtx`**: API di mediamtx — path attivi, reader/publisher per path, path attesi presenti, ingest fermi. Codifica l'uso interno (KV_mediamtx nel runbook NATS). **Deprioritizzato: da fare per ultimo (dopo M16).**
 - [x] **CF-22 — Modulo `ingest` (RTMP/SRT)**: handshake RTMP (C0/C1→S0/S1/S2 su TCP) o induction SRT (UDP, best-effort) + latenza; OK/WARN(latenza)/ERROR(handshake)/BAD(protocollo ignoto). Zero-dep, testato con server fake RTMP/SRT in-test. _(v0.61.0)_
 - [x] **CF-23 — Modulo `s3`/object storage**: bucket raggiungibile (HEAD) + oggetto sentinella presente/fresco (`max_age_warn_seconds`). **AWS SigV4 scritto a mano** (zero-dep, no SDK), creds da env o anonimo; path/virtual-hosted style. Testato con finto S3 (httptest). _(v0.62.0; quota non esposta da S3 standard, rimandata)_
-- [ ] **CF-24 — Modulo `smtp`**: il relay accetta connessioni, STARTTLS ok, cert del relay non scaduto, banner atteso. Nessun invio reale.
+- [x] **CF-24 — Modulo `smtp`**: reachability relay SMTP — connessione + greeting `220` (opz. `expect_banner`), `EHLO`, STARTTLS/TLS implicito e scadenza cert del relay (`warn_days`/`crit_days`). **Mai invio reale**. Zero-dep (stdlib `net`/`crypto/tls`), testato con relay fake in-test (plain/STARTTLS/implicit TLS). _(v0.65.0)_
 - [ ] **CF-25 — Modulo `elasticsearch`/`opensearch`**: `_cluster/health` (green/yellow/red), shard unassigned, nodi attesi presenti, disk watermark.
 
 ## M7 — Alerting & output (fase 2)

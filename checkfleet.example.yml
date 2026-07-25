@@ -196,3 +196,13 @@ checks:
         max_age_warn_seconds: 86400      # WARN if older than 24h
         access_key_env: S3_ACCESS_KEY
         secret_key_env: S3_SECRET_KEY
+
+  # SMTP relay reachability (never sends mail). warn_days/crit_days apply to the
+  # relay certificate when tls/starttls is set.
+  smtp:
+    warn_days: 30
+    crit_days: 7
+    targets:
+      - {name: relay, address: mail.example.com:25, starttls: true, expect_banner: mail.example.com}
+      - {name: submission, address: mail.example.com:587, starttls: true}
+      - {name: smtps, address: mail.example.com:465, tls: true}

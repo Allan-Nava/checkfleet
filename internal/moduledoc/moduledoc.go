@@ -25,6 +25,7 @@ var Docs = map[string]string{
 	"kafka":    "Kafka cluster: controller present, brokers vs `expect_brokers`, under-replicated partitions, consumer-group lag (`lag_warn`/`lag_crit`).",
 	"ingest":   "Streaming ingest reachability: RTMP handshake (TCP) or SRT induction handshake (UDP), with connect latency. Answers 'can the streamer publish?'.",
 	"s3":       "S3/object storage: bucket reachable, optional sentinel object present and fresh (`max_age_warn_seconds`). AWS SigV4 signed (creds from env), path- or virtual-hosted style.",
+	"smtp":     "SMTP relay: accepts connections, 220 greeting (optional `expect_banner`), EHLO ok, optional STARTTLS/implicit TLS and relay cert expiry (`warn_days`/`crit_days`). Never sends mail.",
 }
 
 // Doc returns the description for a module and whether it exists.

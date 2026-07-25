@@ -103,6 +103,21 @@ func Validate(cfg *Config) []string {
 		}
 	}
 
+	if x := c.SMTP; x != nil {
+		configured++
+		if len(x.Targets) == 0 {
+			add("smtp: no target")
+		}
+		for i, t := range x.Targets {
+			if strings.TrimSpace(t.Address) == "" {
+				add("smtp: target #%d has no address", i+1)
+			}
+		}
+		if x.WarnDays < x.CritDays {
+			add("smtp: warn_days (%d) should be >= crit_days (%d)", x.WarnDays, x.CritDays)
+		}
+	}
+
 	if configured == 0 {
 		add("no module configured under `checks`")
 	}
