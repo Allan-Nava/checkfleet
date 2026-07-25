@@ -230,3 +230,13 @@ checks:
         username: monitor
         password_env: MONGO_PASSWORD
         auth_source: admin
+
+  # MySQL/MariaDB: connections, read-only role, replica health & lag. The
+  # password comes from the environment via ${...} interpolation, never inline.
+  mysql:
+    conn_warn_pct: 80
+    lag_warn_seconds: 10
+    lag_crit_seconds: 60
+    targets:
+      - {name: primary, dsn: "monitor:${MYSQL_PASSWORD}@tcp(db-01:3306)/"}
+      - {name: replica, dsn: "monitor:${MYSQL_PASSWORD}@tcp(db-02:3306)/"}

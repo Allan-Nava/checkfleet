@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.74.0
+
+- Modulo `mysql`/`mariadb` (CF-74, M20): health check read-only. Server raggiungibile (con versione e ruolo **read-only**), **saturazione connessioni** (`Threads_connected` vs `max_connections`, WARN oltre `conn_warn_pct` default 80), e su una **replica** lo stato dei thread IO/SQL (BAD se fermi) e il **lag** (`Seconds_Behind`, WARN/BAD oltre `lag_warn_seconds`/`lag_crit_seconds` default 10/60; BAD se non sta replicando). Gestisce sia `SHOW REPLICA STATUS` (MySQL 8.0.22+) sia il legacy `SHOW SLAVE STATUS` (MariaDB/vecchie versioni). Usa il driver standard `go-sql-driver/mysql` (eccezione motivata come `pgx`); la **password sta nell'ambiente** via interpolazione `${...}` nel DSN, mai inline. Logica dietro l'interfaccia `collector`, **testata con un fake** (nessun DB reale). CLI `checkfleet check mysql`. Apre M20 (Più datastore).
+
 ## 0.73.0
 
 - CI/test (CF-73, M19): la CI ora esegue i test **con coverage** (`go test -coverprofile`) e stampa il totale nel job summary — visibilità, nessuna soglia hard che rompe la build. Colmati i buchi principali del core `engine`: `Validate` da 44% a 88% di copertura (rami di validazione per-modulo — stream/haproxy/patroni/consul/dns/smtp/elasticsearch/mongodb — più ordine soglie e range postgres), `ParseStatus` completo, e verificato che un modulo senza regole (es. `tcp`) conti come configurato; copertura di `internal/engine` da 74.9% a 83.9%. `cover.out` aggiunto a `.gitignore`. **Chiude M19 (Qualità).**

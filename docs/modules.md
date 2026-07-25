@@ -424,6 +424,33 @@ logic is unit-tested with a fake collector — no real database in tests.
       - {name: rs0, uri: "mongodb://m1:27017,m2:27017/?replicaSet=rs0", username: monitor, password_env: MONGO_PASSWORD}
 ```
 
+## `mysql` — MySQL / MariaDB
+
+Read-only health check via the standard `go-sql-driver/mysql` (a motivated
+exception to the zero-dep rule, like `pgx` for Postgres):
+
+- **Reachable & role** — `OK` with the server version; reports whether the server
+  is read-only.
+- **Connections** — `WARN` when `Threads_connected` exceeds `conn_warn_pct` of
+  `max_connections`.
+- **Replication** (only on a replica) — `BAD` if the IO or SQL thread is not
+  running or the replica is not replicating (`Seconds_Behind` is NULL); otherwise
+  lag `WARN`/`BAD` over `lag_warn_seconds`/`lag_crit_seconds`. Works with both the
+  modern `SHOW REPLICA STATUS` and the legacy `SHOW SLAVE STATUS` column names.
+- `ERROR` if the server is unreachable or a query fails.
+
+Put the password in the DSN via `${ENV}` interpolation — it is resolved from the
+environment at config load, never stored inline. The finding logic is unit-tested
+with a fake collector; no real database in tests.
+
+```yaml
+  mysql:
+    lag_warn_seconds: 10
+    lag_crit_seconds: 60
+    targets:
+      - {name: primary, dsn: "monitor:${MYSQL_PASSWORD}@tcp(db-01:3306)/"}
+```
+
 ## Ansible inventory as a target source
 
 The `certs`, `nats`, `haproxy`, `patroni`, `consul`, `redis` and `tls` modules can read

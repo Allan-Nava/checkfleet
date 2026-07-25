@@ -155,5 +155,5 @@ Alza la barra di qualità del codice e dei test senza aggiungere feature utente.
 
 Nuovi moduli di dominio per datastore diffusi.
 
-- [ ] **CF-74 — Modulo `mysql`/`mariadb`**: reachability, replica lag (`SHOW REPLICA/SLAVE STATUS`: Seconds_Behind_Source), saturazione connessioni (`Threads_connected` vs `max_connections`), read-only. Driver `go-sql-driver/mysql` (eccezione motivata come pgx); logica dietro interfaccia `collector`, testata con fake.
+- [x] **CF-74 — Modulo `mysql`/`mariadb`**: reachability + ruolo read-only, saturazione connessioni (`Threads_connected` vs `max_connections`, `conn_warn_pct`), replica health (IO/SQL thread) e lag (`Seconds_Behind`, `lag_warn/crit_seconds`) via `SHOW REPLICA STATUS`/`SHOW SLAVE STATUS`. Driver `go-sql-driver/mysql` (eccezione motivata come pgx); password da env via `${...}` nel DSN. Logica dietro `collector`, testata con fake. _(v0.74.0)_
 - [ ] **CF-75 — Modulo `etcd`**: quorum & leader presente, membri in salute, `/health`. Via **HTTP/JSON gateway** di etcd v3 (`/health`, `POST /v3/maintenance/status`, `POST /v3/cluster/member/list`) — **zero-dep**, niente clientv3. Creds/TLS opzionali.

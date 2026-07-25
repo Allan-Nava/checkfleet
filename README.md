@@ -74,6 +74,7 @@ See [Installation](https://allan-nava.github.io/checkfleet/installation/) for al
 | `smtp` | SMTP relay: accepts connections, 220 greeting, EHLO, optional STARTTLS/implicit TLS and relay cert expiry — never sends mail |
 | `elasticsearch` | Elasticsearch/OpenSearch via HTTP: cluster health green/yellow/red, unassigned shards, expected nodes, per-node disk watermark |
 | `mongodb` | MongoDB via the official driver: replica-set status (primary present, member health, secondary lag) and connection saturation |
+| `mysql` | MySQL/MariaDB via go-sql-driver: reachable, read-only role, connection saturation, replica IO/SQL threads + lag |
 
 The only module still on the roadmap (see [BACKLOG.md](BACKLOG.md)) is `mediamtx`.
 

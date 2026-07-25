@@ -55,6 +55,23 @@ type ChecksConfig struct {
 	SMTP          *SMTPConfig          `yaml:"smtp"`
 	Elasticsearch *ElasticsearchConfig `yaml:"elasticsearch"`
 	MongoDB       *MongoDBConfig       `yaml:"mongodb"`
+	MySQL         *MySQLConfig         `yaml:"mysql"`
+}
+
+// MySQLConfig configures the MySQL/MariaDB check. Read-only; put the password in
+// the DSN via ${ENV} interpolation, never inline.
+type MySQLConfig struct {
+	Targets        []MySQLTarget `yaml:"targets"`
+	ConnWarnPct    int           `yaml:"conn_warn_pct"`    // default 80
+	LagWarnSeconds int           `yaml:"lag_warn_seconds"` // default 10
+	LagCritSeconds int           `yaml:"lag_crit_seconds"` // default 60
+}
+
+// MySQLTarget is one MySQL/MariaDB server.
+type MySQLTarget struct {
+	Name string `yaml:"name"`
+	// go-sql-driver DSN, e.g. monitor:${MYSQL_PW}@tcp(db:3306)/.
+	DSN string `yaml:"dsn"`
 }
 
 // MongoDBConfig configures the MongoDB check. Credentials come from env; the
@@ -723,6 +740,17 @@ func applyDefaults(cfg *Config) {
 		}
 		if mg.LagCritSeconds <= 0 {
 			mg.LagCritSeconds = 60
+		}
+	}
+	if my := cfg.Checks.MySQL; my != nil {
+		if my.ConnWarnPct <= 0 {
+			my.ConnWarnPct = 80
+		}
+		if my.LagWarnSeconds <= 0 {
+			my.LagWarnSeconds = 10
+		}
+		if my.LagCritSeconds <= 0 {
+			my.LagCritSeconds = 60
 		}
 	}
 }
