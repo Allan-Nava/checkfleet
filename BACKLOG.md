@@ -107,7 +107,7 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 ## M14 — Distribuzione & supply-chain (fase 3)
 
 - [x] **CF-55 — Immagine Docker**: immagine multi-arch (linux/amd64+arm64) su GHCR (`ghcr.io/allan-nava/checkfleet`) via goreleaser (`dockers`+`docker_manifests`, base distroless static nonroot, exporter come entrypoint). `release.yml`: QEMU/buildx + login GHCR + `packages: write`. Validato con `goreleaser check`. _(v0.55.0; migrazione a `dockers_v2` come follow-up)_
-- [ ] **CF-56 — Firma & SBOM**: firma delle release con cosign (keyless) + SBOM (goreleaser). Provenienza verificabile.
+- [x] **CF-56 — Firma & SBOM**: goreleaser `sboms` (syft, per archive), `signs` cosign **keyless** su `checksums.txt`, `docker_signs` sulle immagini. `release.yml`: `id-token: write` + cosign-installer + download-syft. Docs con i comandi `cosign verify`. Validato con `goreleaser check`. **Chiude M14.** _(v0.56.0)_
 - [x] **CF-57 — Lint & vuln in CI**: nuovo job `lint` in `ci.yml` — `govulncheck` come **gate** (Go `stable`, fallisce solo su vuln raggiungibili) e `golangci-lint` **advisory** (`continue-on-error`, da promuovere a gate quando il tree è pulito). _(v0.54.0)_
 
 ## M15 — Output in inglese (i18n) (fase 3)

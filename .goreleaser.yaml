@@ -75,6 +75,32 @@ docker_manifests:
       - "ghcr.io/allan-nava/checkfleet:latest-amd64"
       - "ghcr.io/allan-nava/checkfleet:latest-arm64"
 
+# Supply-chain (CF-56): SBOMs per archive (syft) + keyless cosign signatures.
+sboms:
+  - id: archives
+    artifacts: archive
+
+signs:
+  - cmd: cosign
+    certificate: "${artifact}.pem"
+    signature: "${artifact}.sig"
+    args:
+      - sign-blob
+      - "--yes"
+      - "--output-certificate=${certificate}"
+      - "--output-signature=${signature}"
+      - "${artifact}"
+    artifacts: checksum
+    output: true
+
+docker_signs:
+  - cmd: cosign
+    args:
+      - sign
+      - "--yes"
+      - "${artifact}"
+    artifacts: all
+
 changelog:
   use: github
   sort: asc

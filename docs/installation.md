@@ -79,3 +79,25 @@ docker run -p 9876:9876 -v "$PWD/checkfleet.yml:/checkfleet.yml" \
 docker run -v "$PWD/checkfleet.yml:/checkfleet.yml" \
   ghcr.io/allan-nava/checkfleet:latest check all --config /checkfleet.yml
 ```
+
+## Verify a release (cosign + SBOM)
+
+Release archives ship an SBOM (`*.sbom.json`, syft) and the `checksums.txt` is
+signed with **keyless cosign**. Verify it (identity = the release workflow):
+
+```bash
+cosign verify-blob \
+  --certificate checksums.txt.pem \
+  --signature checksums.txt.sig \
+  --certificate-identity-regexp 'https://github.com/Allan-Nava/checkfleet/.*' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  checksums.txt
+```
+
+Docker images are signed too:
+
+```bash
+cosign verify ghcr.io/allan-nava/checkfleet:latest \
+  --certificate-identity-regexp 'https://github.com/Allan-Nava/checkfleet/.*' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```

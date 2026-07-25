@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.56.0
+
+- Firma & SBOM (CF-56): le release ora includono **SBOM** per archivio (syft) e firme **cosign keyless** (Fulcio/Rekor via OIDC di GitHub) su `checksums.txt` e sulle immagini Docker. goreleaser `sboms`/`signs`/`docker_signs`; `release.yml` con `id-token: write`, `cosign-installer` e `download-syft`. Provenienza verificabile con `cosign verify`/`verify-blob` (comandi in `installation.md`). **Chiude M14 (distribuzione & supply-chain).**
+
 ## 0.55.0
 
 - Immagine Docker (CF-55): immagine **multi-arch** (linux/amd64+arm64) pubblicata su GHCR (`ghcr.io/allan-nava/checkfleet`) a ogni release, via goreleaser (`dockers` + `docker_manifests`). Base **distroless static nonroot** (CA incluse), `Dockerfile` minimale con l'**exporter** come entrypoint di default (`serve` su :9876). `release.yml`: QEMU + buildx, login a GHCR con `GITHUB_TOKEN`, permesso `packages: write`. Config validata con `goreleaser check`.
