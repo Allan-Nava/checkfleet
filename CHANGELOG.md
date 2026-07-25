@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.112.0
+
+- Modulo `cassandra`/`scylla` (CF-79, M21 — completamento): il modulo di v0.79.0 copriva la reachability ma **non lo "stato nodi"** chiesto dalla spec. Aggiunto un finding `cluster` che aggrega le probe: quanti nodi accettano CQL su quelli configurati, come **metrica** (unit `nodes`). **BAD** sotto `expect_nodes` (0 = li si vuole tutti), **WARN** quando la soglia è raggiunta ma un nodo configurato è comunque giù, **OK** se sono tutti su. Un nodo lento (WARN per `max_latency_ms`) conta come **up**: l'handshake l'ha completato. Il rollup è omesso con un solo target senza `expect_nodes`, dove ripeterebbe soltanto il finding del nodo.
+- Limite dichiarato apertamente (docs + backlog): lo stato è derivato dalle **probe di checkfleet**, non da `system.peers` — leggere la vista che il cluster ha di sé richiede una `QUERY` su sessione autenticata, mentre questo modulo parla solo l'handshake. Il compromesso è voluto: non vede i nodi assenti dalla config, ma continua a funzionare sui cluster con auth attiva, senza driver né credenziali. Stessa forma di `expect_members` nel modulo `etcd`.
+- Modulo `cassandra`: la latenza di handshake diventa una **metrica** (`Value`+`Unit` `ms`), come già fa `grpc` — allinea il modulo alla convenzione CF-91/CF-97.
+- Config: nuovo `checks.cassandra.expect_nodes`, validato (non negativo e non superiore al numero di target configurati — un'aspettativa insoddisfacibile è un errore di config, non un BAD a runtime). Aggiornati `checkfleet.example.yml`, scaffold, `internal/moduledoc`, `docs/modules.md` e README. Test: 9 nuovi casi (rollup table-driven su 5 scenari, omissione per singolo nodo, metrica di latenza, end-to-end `Run` con un nodo su e uno giù).
+- **Chiude M21 (Più datastore/infra)**: CF-76 clickhouse, CF-77 vault, CF-78 memcached, CF-79 cassandra.
+
 ## 0.111.0
 
 - Modulo `memcached` (CF-78, M21 — completamento): il modulo consegnato in v0.78.0 copriva reachability, memoria e connessioni ma **non le evictions**, che la spec del backlog chiedeva. Aggiunto un finding `<target> [evictions]` con il contatore. Scelta di design: memcached espone solo il **totale dall'avvio**, non un rate, quindi non esiste una soglia di default sensata — il contatore è pubblicato come **metrica numerica** (`Finding.Value`, unit `evictions`) così lo storico lo grafica nella card "Metric over time" e la pendenza della linea diventa il segnale vero; il WARN scatta solo con `evictions_warn` esplicito (0 = solo report). Il finding è omesso se il server non riporta la stat.

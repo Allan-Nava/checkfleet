@@ -79,7 +79,7 @@ See [Installation](https://allan-nava.github.io/checkfleet/installation/) for al
 | `clickhouse` | ClickHouse over HTTP: /ping, SELECT version(), replicated-table read-only state & replication delay |
 | `vault` | HashiCorp Vault over HTTP: seal status (sealed/uninitialized), active/standby role, version |
 | `memcached` | memcached over the text protocol: reachability, memory vs limit_maxbytes, evictions, connections, version |
-| `cassandra` | Cassandra/ScyllaDB via the CQL native protocol handshake: node accepts CQL, handshake latency |
+| `cassandra` | Cassandra/ScyllaDB via the CQL native protocol handshake: node accepts CQL, handshake latency, cluster state vs expect_nodes |
 
 The only module still on the roadmap (see [BACKLOG.md](BACKLOG.md)) is `mediamtx`.
 

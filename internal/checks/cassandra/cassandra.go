@@ -52,8 +52,56 @@ func (c *Check) Run(ctx context.Context) []engine.Finding {
 	for range c.cfg.Targets {
 		<-done
 	}
+	if f, ok := c.clusterFinding(findings); ok {
+		findings = append(findings, f)
+	}
 	return findings
 }
+
+// clusterFinding rolls the per-node results up into cluster state: how many
+// nodes accept CQL out of those configured.
+//
+// This is deliberately derived from our own probes rather than from
+// system.peers: querying the cluster's view of its members needs a QUERY frame
+// on an authenticated session, and this module speaks the handshake only
+// (zero-dep, no credentials). What it gives up is the state of nodes that are
+// not in the config; what it gains is that it works on secured clusters.
+// Same shape as the etcd module's expect_members.
+func (c *Check) clusterFinding(nodes []engine.Finding) (engine.Finding, bool) {
+	// With a single node and no expectation the rollup only repeats it.
+	if len(nodes) == 0 || (len(nodes) == 1 && c.cfg.ExpectNodes == 0) {
+		return engine.Finding{}, false
+	}
+	up := 0
+	for _, f := range nodes {
+		if acceptsCQL(f.Status) {
+			up++
+		}
+	}
+	want := c.cfg.ExpectNodes
+	if want == 0 {
+		want = len(nodes)
+	}
+	f := engine.Finding{Check: c.Name(), Target: "cluster",
+		Value: engine.Num(float64(up)), Unit: "nodes"}
+	switch {
+	case up < want:
+		f.Status = engine.BAD
+		f.Message = fmt.Sprintf("%d/%d nodes accept CQL, expected %d", up, len(nodes), want)
+	case up < len(nodes):
+		// Expectation met, but a configured node is still down.
+		f.Status = engine.WARN
+		f.Message = fmt.Sprintf("%d/%d nodes accept CQL (expected %d, met)", up, len(nodes), want)
+	default:
+		f.Status = engine.OK
+		f.Message = fmt.Sprintf("%d/%d nodes accept CQL", up, len(nodes))
+	}
+	return f, true
+}
+
+// acceptsCQL reports whether a node finding means the node took the handshake:
+// WARN is a slow but working node, BAD/ERROR are not usable.
+func acceptsCQL(s engine.Status) bool { return s == engine.OK || s == engine.WARN }
 
 func (c *Check) probe(ctx context.Context, t engine.CassandraTarget) engine.Finding {
 	addr := withDefaultPort(t.Address)
@@ -110,6 +158,8 @@ func (c *Check) probe(ctx context.Context, t engine.CassandraTarget) engine.Find
 		if op == opAuthenticate {
 			note = " (auth required)"
 		}
+		// Handshake latency is the module's numeric metric (CF-91/CF-97).
+		f.Value, f.Unit = engine.Num(float64(latency.Microseconds())/1000), "ms"
 		if t.MaxLatencyMS > 0 && latency > time.Duration(t.MaxLatencyMS)*time.Millisecond {
 			f.Status = engine.WARN
 			f.Message = fmt.Sprintf("CQL up%s in %s (over %dms)", note, latency.Round(time.Millisecond), t.MaxLatencyMS)

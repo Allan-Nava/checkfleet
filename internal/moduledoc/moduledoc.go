@@ -33,7 +33,7 @@ var Docs = map[string]string{
 	"clickhouse":    "ClickHouse over HTTP: /ping, SELECT version(), and per replicated table read-only state + replication delay (`delay_warn_seconds`/`delay_crit_seconds`) from system.replicas. Zero-dep.",
 	"vault":         "HashiCorp Vault via HTTP: seal status (BAD if sealed or uninitialized, with unseal progress) and node role (active/standby) with the Vault version. Zero-dep.",
 	"memcached":     "memcached via the text protocol (STATS): reachability, memory used vs limit_maxbytes (`mem_warn_pct`), evictions since startup (`evictions_warn`), connections and version. Zero-dep.",
-	"cassandra":     "Cassandra/ScyllaDB via the CQL native protocol handshake (OPTIONS/STARTUP): the node accepts CQL connections (READY or AUTHENTICATE) with handshake latency (`max_latency_ms`). Zero-dep, no driver, no auth.",
+	"cassandra":     "Cassandra/ScyllaDB via the CQL native protocol handshake (OPTIONS/STARTUP): the node accepts CQL connections (READY or AUTHENTICATE) with handshake latency (`max_latency_ms`), plus cluster state — nodes accepting CQL vs `expect_nodes`. Zero-dep, no driver, no auth.",
 }
 
 // Doc returns the description for a module and whether it exists.

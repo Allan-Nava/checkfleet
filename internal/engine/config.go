@@ -82,6 +82,10 @@ type ChecksConfig struct {
 // CassandraConfig configures the Cassandra/ScyllaDB reachability check.
 type CassandraConfig struct {
 	Targets []CassandraTarget `yaml:"targets"`
+	// ExpectNodes is how many nodes must accept CQL for the cluster to be
+	// healthy (0 = expect them all). Fewer than this is BAD, like etcd's
+	// expect_members.
+	ExpectNodes int `yaml:"expect_nodes"`
 }
 
 // CassandraTarget is one node to probe over the CQL native protocol.

@@ -111,6 +111,7 @@ var snippets = map[string]string{
     evictions_warn: 0
     targets: [cache-01, cache-02:11212]`,
 	"cassandra": `  cassandra:
+    expect_nodes: 0
     targets:
       - {name: cass-01, address: cass-01:9042, max_latency_ms: 500}`,
 }

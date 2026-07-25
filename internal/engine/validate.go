@@ -229,6 +229,13 @@ func Validate(cfg *Config) []string {
 				add("cassandra: target #%d has no address", i+1)
 			}
 		}
+		if x.ExpectNodes < 0 {
+			add("cassandra: expect_nodes (%d) must not be negative", x.ExpectNodes)
+		}
+		// An expectation no set of targets can ever satisfy is a config mistake.
+		if x.ExpectNodes > len(x.Targets) {
+			add("cassandra: expect_nodes (%d) exceeds the %d configured target(s)", x.ExpectNodes, len(x.Targets))
+		}
 	}
 
 	if configured == 0 && !anyModuleConfigured(c) {

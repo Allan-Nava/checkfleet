@@ -549,14 +549,29 @@ no driver, no authentication:
 - Connects and performs `OPTIONS` → `SUPPORTED` (negotiating the CQL version),
   then `STARTUP`. A `READY` or `AUTHENTICATE` reply means the node accepts CQL
   connections → `OK` (with `(auth required)` noted when authentication is on).
-- `WARN` when the handshake is slower than `max_latency_ms`.
+- `WARN` when the handshake is slower than `max_latency_ms`. Handshake latency
+  is also the node's numeric metric (`ms`).
 - `BAD` on a protocol `ERROR` reply, `ERROR` if the node is unreachable.
+- **Cluster state** — a `cluster` finding rolls the nodes up: how many accept
+  CQL out of those configured, as a metric (`nodes`). `BAD` below
+  `expect_nodes` (0 = expect them all), `WARN` when the expectation is met but
+  a configured node is still down. A slow node (`WARN`) still counts as up —
+  it completed the handshake. Skipped for a single target with no
+  `expect_nodes`, where it would only repeat the node's own finding.
+
+  This is derived from checkfleet's own probes, not from `system.peers`:
+  reading the cluster's view of its membership needs a `QUERY` on an
+  authenticated session, and this module speaks the handshake only. The
+  trade-off is deliberate — it says nothing about nodes absent from your
+  config, but it keeps working on clusters with authentication enabled, with
+  no driver and no credentials. Same shape as `etcd`'s `expect_members`.
 
 Targets are `host[:port]` (default CQL port `9042`). Zero-dep; tested against an
 in-test fake CQL server.
 
 ```yaml
   cassandra:
+    expect_nodes: 3   # 0 = all configured nodes must accept CQL
     targets:
       - {name: cass-01, address: cass-01:9042, max_latency_ms: 500}
 ```

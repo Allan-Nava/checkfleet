@@ -277,6 +277,9 @@ checks:
 
   # Cassandra/ScyllaDB reachability via the CQL native protocol handshake.
   cassandra:
+    # How many nodes must accept CQL (0 = all the configured ones). Below this
+    # the "cluster" finding is BAD; met but with a node down, it's WARN.
+    expect_nodes: 0
     targets:
       - {name: cass-01, address: cass-01:9042, max_latency_ms: 500}
       - {name: cass-02, address: cass-02:9042}

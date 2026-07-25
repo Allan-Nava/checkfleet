@@ -140,6 +140,113 @@ func TestConnectionRefusedIsError(t *testing.T) {
 	}
 }
 
+func TestLatencyIsAMetric(t *testing.T) {
+	addr := fakeCQL(t, opReady)
+	f := run(t, engine.CassandraTarget{Name: "cql", Address: addr})
+	if f.Value == nil || f.Unit != "ms" {
+		t.Fatalf("handshake latency should be a ms metric, got value=%v unit=%q", f.Value, f.Unit)
+	}
+	if *f.Value < 0 {
+		t.Errorf("latency must not be negative, got %v", *f.Value)
+	}
+}
+
+// The cluster rollup is pure: feed it node findings and check the verdict.
+func TestClusterRollup(t *testing.T) {
+	node := func(s engine.Status) engine.Finding { return engine.Finding{Status: s} }
+	cases := []struct {
+		name    string
+		expect  int
+		nodes   []engine.Finding
+		want    engine.Status
+		wantUp  float64
+		wantMsg string
+	}{
+		{
+			name:  "all nodes up",
+			nodes: []engine.Finding{node(engine.OK), node(engine.OK)},
+			want:  engine.OK, wantUp: 2, wantMsg: "2/2 nodes accept CQL",
+		},
+		{
+			// A slow node still took the handshake, so it counts as up.
+			name:  "slow node still counts",
+			nodes: []engine.Finding{node(engine.OK), node(engine.WARN)},
+			want:  engine.OK, wantUp: 2,
+		},
+		{
+			name:  "one node down without an expectation",
+			nodes: []engine.Finding{node(engine.OK), node(engine.ERROR)},
+			want:  engine.BAD, wantUp: 1, wantMsg: "expected 2",
+		},
+		{
+			// expect_nodes met: degraded, not broken.
+			name: "one node down but expectation met", expect: 2,
+			nodes: []engine.Finding{node(engine.OK), node(engine.OK), node(engine.ERROR)},
+			want:  engine.WARN, wantUp: 2, wantMsg: "met",
+		},
+		{
+			name: "below expectation is bad", expect: 3,
+			nodes: []engine.Finding{node(engine.OK), node(engine.BAD), node(engine.ERROR)},
+			want:  engine.BAD, wantUp: 1, wantMsg: "expected 3",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			c := New(engine.CassandraConfig{ExpectNodes: tc.expect})
+			f, ok := c.clusterFinding(tc.nodes)
+			if !ok {
+				t.Fatal("want a cluster finding, got none")
+			}
+			if f.Status != tc.want {
+				t.Errorf("status: want %s, got %s (%s)", tc.want, f.Status, f.Message)
+			}
+			if f.Value == nil || *f.Value != tc.wantUp || f.Unit != "nodes" {
+				t.Errorf("want %v nodes up as a metric, got value=%v unit=%q", tc.wantUp, f.Value, f.Unit)
+			}
+			if tc.wantMsg != "" && !strings.Contains(f.Message, tc.wantMsg) {
+				t.Errorf("message %q should contain %q", f.Message, tc.wantMsg)
+			}
+		})
+	}
+}
+
+// One node and no expectation: the rollup would just repeat the node finding.
+func TestClusterRollupOmittedForSingleNode(t *testing.T) {
+	c := New(engine.CassandraConfig{})
+	if _, ok := c.clusterFinding([]engine.Finding{{Status: engine.OK}}); ok {
+		t.Error("single node without expect_nodes should produce no cluster finding")
+	}
+	// ...unless an expectation was set explicitly.
+	c = New(engine.CassandraConfig{ExpectNodes: 2})
+	if _, ok := c.clusterFinding([]engine.Finding{{Status: engine.OK}}); !ok {
+		t.Error("expect_nodes set: want a cluster finding")
+	}
+}
+
+func TestRunReportsClusterState(t *testing.T) {
+	up := fakeCQL(t, opReady)
+	ln, _ := net.Listen("tcp", "127.0.0.1:0")
+	down := ln.Addr().String()
+	ln.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	findings := New(engine.CassandraConfig{Targets: []engine.CassandraTarget{
+		{Name: "up", Address: up}, {Name: "down", Address: down},
+	}, ExpectNodes: 1}).Run(ctx)
+
+	if len(findings) != 3 {
+		t.Fatalf("want 2 node findings + 1 cluster, got %d: %v", len(findings), findings)
+	}
+	cluster := findings[len(findings)-1]
+	if cluster.Target != "cluster" || cluster.Status != engine.WARN {
+		t.Fatalf("want a WARN cluster finding, got %s %s: %s", cluster.Target, cluster.Status, cluster.Message)
+	}
+	if !strings.Contains(cluster.Message, "1/2") {
+		t.Errorf("message should report 1/2 nodes, got %q", cluster.Message)
+	}
+}
+
 func TestDefaultPort(t *testing.T) {
 	if got := withDefaultPort("node1"); got != "node1:9042" {
 		t.Errorf("default port = %q, want node1:9042", got)
