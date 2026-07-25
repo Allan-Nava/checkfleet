@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.96.1
+
+- CI/frontend (CF-97): nuovo job **`frontend-lint`** in `desktop-test.yml` che valida gli asset statici del desktop — finora coperti solo dallo smoke-render, che non intercetta uno stylesheet rotto o un SVG malformato. `stylelint` (config recommended, `no-descending-specificity` disattivata perché rumorosa) sul CSS, `html-validate` (recommended; disattivate `doctype-style` e `no-implicit-button-type` opinabili, e `no-inline-style` perché Wails **richiede** l'attributo `--wails-draggable` inline sulle drag-region della titlebar) sull'HTML, `node --check` sulla sintassi di `main.js` e `xmllint` sugli SVG. Le config vivono in `desktop/frontend/{.stylelintrc.json,.htmlvalidate.json}`; i linter si installano freschi in CI (`npm install --no-save`, `node_modules/` ora in `.gitignore`). Il linter ha già scovato e fatto correggere 2 selettori CSS duplicati (`.findings tbody tr:hover` scritto due volte, `.chip` definito in due punti).
+
 ## 0.96.0
 
 - Dedup & ordinamento documentato (CF-86, M23): il runner ora **deduplica** i finding esattamente identici (stesso check/target/status/message) mantenendo il primo e preservando l'ordine — utile quando lo stesso target è listato due volte o un modulo emette lo stesso finding due volte (`engine.Dedup`). L'**ordinamento** dei finding è formalizzato come API di fatto valida per **tutti** gli output: worst-first, poi check, poi target, con sort **stabile**; documentato in `docs/output.md`. Testato (`Dedup` + un run che deduplica). Apre M23 (Engine & robustezza).

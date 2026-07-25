@@ -32,6 +32,37 @@ jobs:
           go mod tidy
           go test -tags webkit2_41 -v ./...
 
+  # Lint the static frontend assets (CF-97). The smoke test only proves the DOM
+  # renders — a broken stylesheet or a malformed SVG would slip through it. This
+  # gate validates the sources directly:
+  #   - stylelint (recommended)   → real CSS errors (dup selectors, bad values…);
+  #                                 no-descending-specificity is off (pure noise).
+  #   - html-validate (recommended) → malformed markup, dup ids, bad nesting/refs.
+  #     doctype-style / no-implicit-button-type are opinionated (off); no-inline-style
+  #     is off because Wails REQUIRES inline `--wails-draggable` on the drag regions.
+  #   - node --check → main.js syntax; xmllint → SVG well-formedness.
+  # Configs live in desktop/frontend/{.stylelintrc.json,.htmlvalidate.json}.
+  frontend-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install linters (pinned)
+        run: npm install --no-save --no-audit --no-fund stylelint@16.26.1 stylelint-config-recommended@14.0.1 html-validate@9.7.1
+      - name: stylelint (CSS)
+        run: npx stylelint --config desktop/frontend/.stylelintrc.json "desktop/frontend/dist/**/*.css"
+      - name: html-validate (HTML)
+        run: npx html-validate --config desktop/frontend/.htmlvalidate.json desktop/frontend/dist/index.html
+      - name: JS syntax (node --check)
+        run: node --check desktop/frontend/dist/main.js
+      - name: SVG well-formed (xmllint)
+        run: |
+          for f in desktop/frontend/dist/assets/*.svg; do
+            echo "checking $f"; xmllint --noout "$f"
+          done
+
   # Smoke test the frontend: load it headless (mock backend) and assert the UI
   # actually renders the fleet view — summary + findings table.
   frontend-smoke:

@@ -14,3 +14,7 @@ cover.out
 
 # desktop app run-history files written next to a config
 .*.history.jsonl
+
+# node_modules from running the frontend linters locally (CI installs them
+# fresh with --no-save; they must never be committed). See desktop-test.yml.
+node_modules/

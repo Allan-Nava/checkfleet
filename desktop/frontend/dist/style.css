@@ -147,7 +147,7 @@ select { cursor: pointer; }
 .meta-row { display: flex; justify-content: space-between; }
 .meta-row span { color: var(--muted); }
 .chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
-.chip { padding: 1px 7px; border-radius: 6px; font-size: 10.5px; color: var(--brand-2); background: color-mix(in srgb, var(--brand-2) 12%, transparent); border: 1px solid color-mix(in srgb, var(--brand-2) 26%, transparent); }
+.chip { padding: 1px 7px; border-radius: 6px; font-size: 10.5px; cursor: pointer; color: var(--brand-2); background: color-mix(in srgb, var(--brand-2) 12%, transparent); border: 1px solid color-mix(in srgb, var(--brand-2) 26%, transparent); }
 
 /* findings bar */
 .findings-bar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; flex: 0 0 auto; }
@@ -162,7 +162,7 @@ select { cursor: pointer; }
   background: var(--bg); border-bottom: 1px solid var(--border-str);
 }
 .findings td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
-.findings tbody tr:hover, .findings tbody tr:hover { background: color-mix(in srgb, var(--surface) 60%, transparent); }
+.findings tbody tr:hover { background: color-mix(in srgb, var(--surface) 60%, transparent); }
 .c-status { width: 96px; } .c-check { width: 108px; } .c-target { width: 260px; }
 .badge {
   display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px;
@@ -198,9 +198,8 @@ select { cursor: pointer; }
 .table-wrap::-webkit-scrollbar { width: 12px; height: 12px; }
 .table-wrap::-webkit-scrollbar-thumb { background: var(--border-str); border-radius: 8px; border: 3px solid var(--bg); }
 
-/* clickable rows & chips */
+/* clickable rows (chips carry their own cursor in the base rule) */
 .findings tbody tr { cursor: pointer; }
-.chip { cursor: pointer; }
 
 /* detail / explain / validate drawer */
 .drawer[hidden], .drawer-scrim[hidden] { display: none; } /* [hidden] must win over display:flex */
