@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.80.0
+
+- Output `telegram` (CF-80, M22): `--output telegram` invia il report come messaggio di testo via **Telegram Bot API** (`sendMessage`) — riga di summary + finding non-OK (worst-first, capped entro i 4096 caratteri). Token del bot e chat id **da env** (`--telegram-token-env` default `TELEGRAM_TOKEN`, `--telegram-chat-env` default `TELEGRAM_CHAT_ID`), mai da CLI. Testo semplice (niente escaping MarkdownV2). Renderer `output.Telegram` testato. Apre M22 (Alerting & sink).
+
 ## 0.79.0
 
 - Modulo `cassandra`/`scylla` (CF-79, M21): reachability parlando direttamente il **protocollo CQL nativo** (handshake `OPTIONS`→`SUPPORTED`, `STARTUP`) — **zero-dep, nessun driver, nessuna auth**. Una risposta `READY` o `AUTHENTICATE` significa che il nodo accetta connessioni CQL → OK (con nota `(auth required)` quando l'auth è attiva); **WARN** se l'handshake supera `max_latency_ms`, **BAD** su risposta `ERROR` di protocollo, **ERROR** se il nodo è irraggiungibile. Frame CQL v4 scritti a mano (header + string map/multimap). Target `host[:port]` (default 9042). Testato contro un finto server CQL in-test. CLI `checkfleet check cassandra`. **Chiude M21 (Più datastore/infra).**

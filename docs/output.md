@@ -118,6 +118,20 @@ export TEAMS_WEBHOOK="https://outlook.office.com/webhook/…"
 checkfleet check all --config checkfleet.yml --output teams --webhook-env TEAMS_WEBHOOK
 ```
 
+## `telegram`
+
+Sends a plain-text message via the **Telegram Bot API** (`sendMessage`): the
+summary line then the non-OK findings (worst first, capped, within the 4096-char
+limit). The bot token and chat id come from the environment — never the command
+line — via `--telegram-token-env` (default `TELEGRAM_TOKEN`) and
+`--telegram-chat-env` (default `TELEGRAM_CHAT_ID`).
+
+```bash
+export TELEGRAM_TOKEN="123456:ABC-DEF…"
+export TELEGRAM_CHAT_ID="-1001234567890"
+checkfleet check all --config checkfleet.yml --output telegram
+```
+
 ## `webhook`
 
 POSTs the JSON output to a generic webhook (URL from `--webhook-env`), for any

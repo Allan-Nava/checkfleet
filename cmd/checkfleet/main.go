@@ -13,6 +13,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"net/http"
@@ -87,7 +88,7 @@ func main() {
 func usage() {
 	fmt.Fprintln(os.Stderr, `usage:
   checkfleet init [--modules certs,http] [--config checkfleet.yml] [--force]     # scaffold a starter config
-  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka|ingest|s3|smtp|elasticsearch|mongodb|mysql|etcd|clickhouse|vault|memcached|cassandra> --config checkfleet.yml [--output text|markdown|json|junit|html|prometheus|otlp|slack|discord|teams|webhook] [--out-file PATH] [--no-color] [--only ...] [--min-severity warn] [--target glob] [--watch 5s] [--history F --diff] [--exit-on-bad]
+  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka|ingest|s3|smtp|elasticsearch|mongodb|mysql|etcd|clickhouse|vault|memcached|cassandra> --config checkfleet.yml [--output text|markdown|json|junit|html|prometheus|otlp|slack|discord|teams|telegram|webhook] [--out-file PATH] [--no-color] [--only ...] [--min-severity warn] [--target glob] [--watch 5s] [--history F --diff] [--exit-on-bad]
   checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s]   # export Prometheus metrics
   checkfleet report-issues --config checkfleet.yml [--forge github|gitlab]     # open/close tracker issues from BAD findings
   checkfleet alert --config checkfleet.yml --provider pagerduty --key-env K    # create/resolve on-call alerts from BAD/ERROR
@@ -107,10 +108,12 @@ func runCheck(args []string) error {
 	fs := flag.NewFlagSet("check", flag.ExitOnError)
 	configPath := fs.String("config", "checkfleet.yml", "YAML config file")
 	stack := fs.String("stack", "", "stack profile: overlays checkfleet.<stack>.yml onto the base")
-	format := fs.String("output", "text", "format: text, markdown, json, junit, html, prometheus, otlp, slack, discord, teams, webhook")
+	format := fs.String("output", "text", "format: text, markdown, json, junit, html, prometheus, otlp, slack, discord, teams, telegram, webhook")
 	outFile := fs.String("out-file", "", "write the output to this file (atomically) instead of stdout")
 	noColor := fs.Bool("no-color", false, "disable ANSI colour in the text output (also honours NO_COLOR)")
 	webhookEnv := fs.String("webhook-env", "SLACK_WEBHOOK", "env var holding the Slack webhook URL (slack output)")
+	tgTokenEnv := fs.String("telegram-token-env", "TELEGRAM_TOKEN", "env var holding the Telegram bot token (telegram output)")
+	tgChatEnv := fs.String("telegram-chat-env", "TELEGRAM_CHAT_ID", "env var holding the Telegram chat id (telegram output)")
 	only := fs.String("only", "", "show only these checks (comma-separated list)")
 	minSeverity := fs.String("min-severity", "", "show only findings at or above: ok|warn|bad|error")
 	targetGlob := fs.String("target", "", "show only targets matching this glob")
@@ -214,6 +217,19 @@ func runCheck(args []string) error {
 		if err := postRendered(*webhookEnv, "Teams", func() (string, error) { return output.Teams(res, module) }); err != nil {
 			return err
 		}
+	case "telegram":
+		text, err := output.Telegram(res, module)
+		if err != nil {
+			return err
+		}
+		token, chat := os.Getenv(*tgTokenEnv), os.Getenv(*tgChatEnv)
+		if token == "" || chat == "" {
+			return fmt.Errorf("Telegram not set: env %s and/or %s are empty", *tgTokenEnv, *tgChatEnv)
+		}
+		if err := postTelegram(context.Background(), token, chat, text); err != nil {
+			return err
+		}
+		fmt.Println("checkfleet: report sent to Telegram")
 	case "webhook":
 		payload, err := output.JSON(res)
 		if err != nil {
@@ -517,6 +533,29 @@ func postRendered(webhookEnv, name string, render func() (string, error)) error 
 }
 
 // postJSON POSTs a JSON payload to a webhook URL, accepting any 2xx response.
+// postTelegram sends a plain-text message via the Telegram Bot API sendMessage.
+func postTelegram(ctx context.Context, token, chatID, text string) error {
+	payload, err := json.Marshal(map[string]string{"chat_id": chatID, "text": text})
+	if err != nil {
+		return err
+	}
+	url := "https://api.telegram.org/bot" + token + "/sendMessage"
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(payload))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("sending to Telegram: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("Telegram responded HTTP %d", resp.StatusCode)
+	}
+	return nil
+}
+
 func postJSON(ctx context.Context, url, payload string) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBufferString(payload))
 	if err != nil {
