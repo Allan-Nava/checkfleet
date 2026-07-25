@@ -48,20 +48,20 @@ func serve(conn net.Conn, info, wantPass string) {
 		case "AUTH":
 			if args[len(args)-1] == wantPass {
 				authed = true
-				io.WriteString(conn, "+OK\r\n")
+				_, _ = io.WriteString(conn, "+OK\r\n")
 			} else {
-				io.WriteString(conn, "-WRONGPASS\r\n")
+				_, _ = io.WriteString(conn, "-WRONGPASS\r\n")
 			}
 		case "PING":
 			if !authed {
-				io.WriteString(conn, "-NOAUTH Authentication required\r\n")
+				_, _ = io.WriteString(conn, "-NOAUTH Authentication required\r\n")
 				continue
 			}
-			io.WriteString(conn, "+PONG\r\n")
+			_, _ = io.WriteString(conn, "+PONG\r\n")
 		case "INFO":
 			fmt.Fprintf(conn, "$%d\r\n%s\r\n", len(info), info)
 		default:
-			io.WriteString(conn, "-ERR unknown\r\n")
+			_, _ = io.WriteString(conn, "-ERR unknown\r\n")
 		}
 	}
 }

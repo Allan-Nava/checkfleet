@@ -141,5 +141,7 @@ Beyond `go vet` + `go test`, CI runs a `lint` job:
   actually reaches (run with the latest stable Go, so patched stdlib issues
   clear automatically). Run it locally with
   `go run golang.org/x/vuln/cmd/govulncheck@latest ./...`.
-- **`golangci-lint` (advisory)** — reports lint findings without blocking; it
-  will be promoted to a gate once the tree is clean (drop `continue-on-error`).
+- **`golangci-lint` (gate)** — fails the build on any lint finding. The enabled
+  linters are pinned in `.golangci.yml` (errcheck, govet, ineffassign,
+  staticcheck, unused). Run it locally with
+  `go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8 run ./...`.

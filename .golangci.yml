@@ -1,0 +1,14 @@
+# golangci-lint config (CF-72). The default linter set is a hard gate in CI.
+# Kept intentionally close to the defaults so it stays low-noise and stable.
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+
+issues:
+  # Don't cap the report — we keep the tree clean rather than hiding findings.
+  max-issues-per-linter: 0
+  max-same-issues: 0

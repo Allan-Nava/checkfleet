@@ -143,3 +143,17 @@ Migliora l'esperienza d'uso di CLI e desktop, riusando `internal/*`. Ogni item �
 - [x] **CF-69 — `checkfleet init`**: scaffold di un `checkfleet.yml` commentato — `--modules certs,http,...` (default certs+http), `--list`, non sovrascrive senza `--force`. Snippet per-modulo in `internal/scaffold` (uno per ogni modulo, con target placeholder); test garantisce che ogni snippet carichi **e** validi. Fix: `engine.Validate` ora conta come "configurato" anche i moduli senza regole esplicite (tcp/tls/…) via reflection. _(v0.69.0)_
 - [x] **CF-70 — Storico persistente + trend (GUI)**: ogni run è appeso a `.<name>.history.jsonl` accanto al config (riusa `internal/history`); bottone **Trend** → drawer con sparkline del worst-status per run (verde/giallo/rosso/viola), persistente tra i riavvii. Binding `App.Trend`, testato (persistenza + nuova istanza). _(v0.70.0)_
 - [x] **CF-71 — Raggruppa per modulo (GUI)**: toggle **Group** → fleet view con sezioni collassabili per modulo, ciascuna con badge di rollup (worst status) e conteggio; click sull'header collassa. Scelta persistita. **Chiude M18.** _(v0.71.0)_
+
+## M19 — Qualità (fase 3)
+
+Alza la barra di qualità del codice e dei test senza aggiungere feature utente.
+
+- [x] **CF-72 — `golangci-lint` a gate**: sistemati gli 11 finding (9 errcheck, 1 unused, 1 staticcheck SA4004), aggiunto `.golangci.yml` (linter fissati), tolto `continue-on-error` in `ci.yml` e pinnata la versione. Tree pulito (root + desktop). Completa CF-57. _(v0.72.0)_
+- [ ] **CF-73 — Coverage in CI + buchi**: `go test -coverprofile` in CI con report riepilogativo; colmare i buchi principali (moduli/engine sotto una soglia ragionevole). Nessuna soglia hard che rompa la CI, ma visibilità.
+
+## M20 — Più datastore (fase 3)
+
+Nuovi moduli di dominio per datastore diffusi.
+
+- [ ] **CF-74 — Modulo `mysql`/`mariadb`**: reachability, replica lag (`SHOW REPLICA/SLAVE STATUS`: Seconds_Behind_Source), saturazione connessioni (`Threads_connected` vs `max_connections`), read-only. Driver `go-sql-driver/mysql` (eccezione motivata come pgx); logica dietro interfaccia `collector`, testata con fake.
+- [ ] **CF-75 — Modulo `etcd`**: quorum & leader presente, membri in salute, `/health`. Via **HTTP/JSON gateway** di etcd v3 (`/health`, `POST /v3/maintenance/status`, `POST /v3/cluster/member/list`) — **zero-dep**, niente clientv3. Creds/TLS opzionali.

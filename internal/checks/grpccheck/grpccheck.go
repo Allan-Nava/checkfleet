@@ -145,11 +145,9 @@ func decodeHealthResponse(frame []byte) (int, bool) {
 		return 0, false
 	}
 	msg = msg[:msgLen]
-	for i := 0; i < len(msg); {
-		tag := msg[i]
-		i++
-		if tag == 0x08 { // field 1, varint
-			v, n := readVarint(msg[i:])
+	if len(msg) > 0 {
+		if msg[0] == 0x08 { // field 1, varint
+			v, n := readVarint(msg[1:])
 			if n == 0 {
 				return 0, false
 			}

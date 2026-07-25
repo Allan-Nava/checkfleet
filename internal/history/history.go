@@ -87,10 +87,9 @@ type Flap struct {
 // returns keys with at least minChanges transitions. Key is "check/target".
 func Flaps(records []Record, minChanges int) []Flap {
 	type seq struct {
-		last     string
-		changes  int
-		seen     bool
-		firstIdx int
+		last    string
+		changes int
+		seen    bool
 	}
 	state := map[string]*seq{}
 	order := []string{}

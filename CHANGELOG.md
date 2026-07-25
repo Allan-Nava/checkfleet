@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.72.0
+
+- CI/qualità (CF-72, M19): **`golangci-lint` promosso da advisory a gate**. Sistemati gli 11 finding sul tree (9 `errcheck` — return di `SetDeadline`/`Write`/`WriteString`/`ReadFull` nei moduli/test ora gestiti; 1 `unused` — campo morto in `internal/history`; 1 `staticcheck` SA4004 — loop che terminava sempre in `grpccheck`, riscritto senza loop). Aggiunto `.golangci.yml` con i linter fissati (errcheck, govet, ineffassign, staticcheck, unused) e rimosso `continue-on-error` in `ci.yml` con versione del linter pinnata. Tree pulito su modulo root **e** desktop. Completa CF-57 (apre M19 — Qualità).
+
 ## 0.71.0
 
 - Desktop (CF-71, M18): **raggruppa per modulo**. Il nuovo toggle **Group** ripiega la tabella dei finding in sezioni collassabili, una per modulo, ognuna con un badge di rollup (lo status peggiore del modulo) e il conteggio dei finding; click sull'header per collassare/espandere. La scelta è ricordata tra i riavvii (localStorage). Utile per scorrere flotte con molti target modulo per modulo. **Chiude M18 (Prodotto & UX).**

@@ -90,9 +90,9 @@ func rtmpHandshake(ctx context.Context, address string) error {
 	}
 	defer conn.Close()
 	if dl, ok := ctx.Deadline(); ok {
-		conn.SetDeadline(dl)
+		_ = conn.SetDeadline(dl)
 	} else {
-		conn.SetDeadline(time.Now().Add(10 * time.Second))
+		_ = conn.SetDeadline(time.Now().Add(10 * time.Second))
 	}
 
 	c0c1 := make([]byte, 1+1536) // C0 version + C1 (time/zero/random left zero)
@@ -123,7 +123,7 @@ func srtInduction(ctx context.Context, address string) error {
 	if dl, ok := ctx.Deadline(); ok {
 		deadline = dl
 	}
-	conn.SetDeadline(deadline)
+	_ = conn.SetDeadline(deadline)
 
 	if _, err := conn.Write(srtInductionPacket(0x00000001)); err != nil {
 		return err

@@ -25,10 +25,10 @@ func startRTMP(t *testing.T) string {
 			}
 			go func() {
 				defer conn.Close()
-				io.ReadFull(conn, make([]byte, 1+1536)) // C0+C1
-				resp := make([]byte, 1+1536+1536)       // S0+S1+S2
+				_, _ = io.ReadFull(conn, make([]byte, 1+1536)) // C0+C1
+				resp := make([]byte, 1+1536+1536)              // S0+S1+S2
 				resp[0] = 0x03
-				conn.Write(resp)
+				_, _ = conn.Write(resp)
 			}()
 		}
 	}()
@@ -51,7 +51,7 @@ func startSRT(t *testing.T) string {
 				return
 			}
 			_ = n
-			pc.WriteTo(srtInductionPacket(0x42), addr) // control handshake reply
+			_, _ = pc.WriteTo(srtInductionPacket(0x42), addr) // control handshake reply
 		}
 	}()
 	return pc.LocalAddr().String()
