@@ -16,6 +16,7 @@ import (
 	"github.com/Allan-Nava/checkfleet/internal/checks/kafka"
 	"github.com/Allan-Nava/checkfleet/internal/checks/keycloak"
 	"github.com/Allan-Nava/checkfleet/internal/checks/ldapcheck"
+	"github.com/Allan-Nava/checkfleet/internal/checks/mongodb"
 	"github.com/Allan-Nava/checkfleet/internal/checks/nats"
 	"github.com/Allan-Nava/checkfleet/internal/checks/ntp"
 	"github.com/Allan-Nava/checkfleet/internal/checks/patroni"
@@ -63,6 +64,7 @@ func Modules(cfg *engine.Config) []Spec {
 		{"s3", c.S3 != nil, func() engine.Check { return s3.New(*c.S3) }},
 		{"smtp", c.SMTP != nil, func() engine.Check { return smtp.New(*c.SMTP) }},
 		{"elasticsearch", c.Elasticsearch != nil, func() engine.Check { return elasticsearch.New(*c.Elasticsearch) }},
+		{"mongodb", c.MongoDB != nil, func() engine.Check { return mongodb.New(*c.MongoDB) }},
 	}
 }
 

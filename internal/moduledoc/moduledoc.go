@@ -27,6 +27,7 @@ var Docs = map[string]string{
 	"s3":       "S3/object storage: bucket reachable, optional sentinel object present and fresh (`max_age_warn_seconds`). AWS SigV4 signed (creds from env), path- or virtual-hosted style.",
 	"smtp":     "SMTP relay: accepts connections, 220 greeting (optional `expect_banner`), EHLO ok, optional STARTTLS/implicit TLS and relay cert expiry (`warn_days`/`crit_days`). Never sends mail.",
 	"elasticsearch": "Elasticsearch/OpenSearch via HTTP: cluster health green/yellow(WARN)/red(BAD), unassigned shards, `expect_nodes`, per-node disk watermark (`disk_warn_pct`/`disk_crit_pct`).",
+	"mongodb":       "MongoDB (official driver): replica-set status (PRIMARY present, member health, SECONDARY lag `lag_warn_seconds`/`lag_crit_seconds`) and connection saturation (`conn_warn_pct`). Read-only.",
 }
 
 // Doc returns the description for a module and whether it exists.

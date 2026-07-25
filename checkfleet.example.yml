@@ -218,3 +218,15 @@ checks:
         password_env: ES_PASSWORD
         insecure_skip_verify: true    # self-signed cluster
         expect_nodes: 3
+
+  # MongoDB replica set + connection saturation. Password from env, read-only.
+  mongodb:
+    conn_warn_pct: 80
+    lag_warn_seconds: 10
+    lag_crit_seconds: 60
+    targets:
+      - name: primary-rs
+        uri: mongodb://mongo-01:27017,mongo-02:27017,mongo-03:27017/?replicaSet=rs0
+        username: monitor
+        password_env: MONGO_PASSWORD
+        auth_source: admin

@@ -54,6 +54,27 @@ type ChecksConfig struct {
 	S3            *S3Config            `yaml:"s3"`
 	SMTP          *SMTPConfig          `yaml:"smtp"`
 	Elasticsearch *ElasticsearchConfig `yaml:"elasticsearch"`
+	MongoDB       *MongoDBConfig       `yaml:"mongodb"`
+}
+
+// MongoDBConfig configures the MongoDB check. Credentials come from env; the
+// check is read-only (serverStatus + replSetGetStatus).
+type MongoDBConfig struct {
+	Targets        []MongoDBTarget `yaml:"targets"`
+	ConnWarnPct    int             `yaml:"conn_warn_pct"`    // default 80
+	LagWarnSeconds int             `yaml:"lag_warn_seconds"` // default 10
+	LagCritSeconds int             `yaml:"lag_crit_seconds"` // default 60
+}
+
+// MongoDBTarget is one MongoDB deployment (any member answers replSetGetStatus).
+type MongoDBTarget struct {
+	Name string `yaml:"name"`
+	// Connection URI without credentials, e.g. mongodb://host:27017.
+	URI string `yaml:"uri"`
+	// Optional auth; password from env, never inline.
+	Username    string `yaml:"username"`
+	PasswordEnv string `yaml:"password_env"`
+	AuthSource  string `yaml:"auth_source"` // default admin
 }
 
 // ElasticsearchConfig configures the Elasticsearch/OpenSearch cluster check.
@@ -691,6 +712,17 @@ func applyDefaults(cfg *Config) {
 		}
 		if es.DiskCritPct <= 0 {
 			es.DiskCritPct = 90
+		}
+	}
+	if mg := cfg.Checks.MongoDB; mg != nil {
+		if mg.ConnWarnPct <= 0 {
+			mg.ConnWarnPct = 80
+		}
+		if mg.LagWarnSeconds <= 0 {
+			mg.LagWarnSeconds = 10
+		}
+		if mg.LagCritSeconds <= 0 {
+			mg.LagCritSeconds = 60
 		}
 	}
 }

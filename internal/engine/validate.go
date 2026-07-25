@@ -133,6 +133,21 @@ func Validate(cfg *Config) []string {
 		}
 	}
 
+	if x := c.MongoDB; x != nil {
+		configured++
+		if len(x.Targets) == 0 {
+			add("mongodb: no target")
+		}
+		for i, t := range x.Targets {
+			if strings.TrimSpace(t.URI) == "" {
+				add("mongodb: target #%d has no uri", i+1)
+			}
+		}
+		if x.LagWarnSeconds > x.LagCritSeconds {
+			add("mongodb: lag_warn_seconds (%d) > lag_crit_seconds (%d)", x.LagWarnSeconds, x.LagCritSeconds)
+		}
+	}
+
 	if configured == 0 {
 		add("no module configured under `checks`")
 	}

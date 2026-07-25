@@ -86,7 +86,7 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 ## M11 — Datastore & broker (fase 3)
 
 - [x] **CF-43 — Modulo `kafka`**: broker raggiungibili, controller presente, under-replicated partitions, lag dei consumer group attesi. Valutare dip (`franz-go`/`sarama`) — protocollo Kafka non banale a mano.
-- [ ] **CF-44 — Modulo `mongodb`**: `replSetGetStatus` (primary presente, membri health, lag), `serverStatus` connessioni. Valutare dip (driver mongo) vs wire protocol.
+- [x] **CF-44 — Modulo `mongodb`**: `replSetGetStatus` (PRIMARY presente, membri health, lag SECONDARY `lag_warn_seconds`/`lag_crit_seconds`) + `serverStatus` connessioni (`conn_warn_pct`). Standalone gestito. Scelto il **driver ufficiale** `go.mongodb.org/mongo-driver/v2` (eccezione motivata come pgx). Logica dietro interfaccia `collector`, testata con fake (no DB reale). _(v0.67.0)_
 - [x] **CF-45 — Modulo `rabbitmq`**: management HTTP API — profondità code oltre soglia, backlog senza consumer, nodi non-running/alarm. HTTP/JSON, zero dip. _(v0.27.0)_
 
 ## M12 — Output & sink (fase 3)

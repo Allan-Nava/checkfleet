@@ -397,6 +397,33 @@ clusters. Zero-dep (HTTP/JSON); tested against an in-test fake cluster.
       - {name: logs, url: https://es.example.com:9200, username: elastic, password_env: ES_PASSWORD, expect_nodes: 3}
 ```
 
+## `mongodb` — replica set & connections
+
+Read-only health check for MongoDB via the **official driver** (any member
+answers cluster-wide):
+
+- **Replica-set status** (`replSetGetStatus`) — `BAD` if there is no healthy
+  `PRIMARY`, `BAD` for any member with health 0 (unreachable), and per-secondary
+  replication lag: `WARN` over `lag_warn_seconds`, `BAD` over `lag_crit_seconds`.
+  A standalone node (not a replica set) is reported as reachable and the
+  replica-set checks are skipped.
+- **Connections** (`serverStatus`) — `WARN` when in-use connections exceed
+  `conn_warn_pct` of the total available.
+- `ERROR` if the deployment is unreachable or the status query fails.
+
+Credentials come from env (`username` + `password_env`, never in the URI/config);
+`auth_source` defaults to `admin`. Uses `go.mongodb.org/mongo-driver/v2` (a
+motivated exception to the zero-dep rule, like `pgx` for Postgres). The finding
+logic is unit-tested with a fake collector — no real database in tests.
+
+```yaml
+  mongodb:
+    lag_warn_seconds: 10
+    lag_crit_seconds: 60
+    targets:
+      - {name: rs0, uri: "mongodb://m1:27017,m2:27017/?replicaSet=rs0", username: monitor, password_env: MONGO_PASSWORD}
+```
+
 ## Ansible inventory as a target source
 
 The `certs`, `nats`, `haproxy`, `patroni`, `consul`, `redis` and `tls` modules can read
