@@ -133,4 +133,4 @@ Estende l'app desktop Wails (M5) riusando `internal/*`. Frontend statico + bindi
 Configurare da GUI cosa monitorare e con che frequenza, poi usare il software "tipo crontab" (cron / `serve --interval`). Approccio **ibrido**: editor YAML raw + form rapido per i check comuni.
 
 - [x] **CF-65 — Editor YAML in GUI**: bottone ⚙ apre un editor a pannello (Reload/Validate/Save) sul `checkfleet.yml` selezionato. **Validate** sul testo non salvato via `engine.LoadBytes` (interpola `${...}` + default, no disco). Binding `ReadConfig`/`SaveConfig`/`ValidateText`, testati. _(v0.63.0)_
-- [ ] **CF-66 — Form "Add endpoint"**: form rapido per i check comuni (http/certs/tcp/dns) che scrive nello YAML, + helper snippet cron/`serve --interval` per lo scheduling. **Chiude M17.**
+- [x] **CF-66 — Form "Add endpoint"**: form rapido per i check comuni (http/certs/tcp/dns) che scrive nello YAML via `engine.AddEndpoint` (edita il node tree, preserva commenti/formattazione); bottone **Schedule…** con snippet cron + `serve` (`App.ScheduleSnippet`). Binding e logica testati. **Chiude M17.** _(v0.64.0)_

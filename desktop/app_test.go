@@ -249,3 +249,42 @@ func TestConfigEditorBindings(t *testing.T) {
 		t.Error("ValidateText(no modules) should report a problem")
 	}
 }
+
+func TestAddEndpointBinding(t *testing.T) {
+	app := NewApp("test")
+	out, err := app.AddEndpoint("", "http", "https://example.com/health", "", 200)
+	if err != nil {
+		t.Fatalf("AddEndpoint: %v", err)
+	}
+	if !strings.Contains(out, "https://example.com/health") || !strings.Contains(out, "expect_status: 200") {
+		t.Errorf("endpoint not written into YAML:\n%s", out)
+	}
+	// ValidateText should accept the freshly built config.
+	if p := app.ValidateText(out); len(p) != 0 {
+		t.Errorf("built config should validate, got %v", p)
+	}
+	if _, err := app.AddEndpoint("", "bogus", "x", "", 0); err == nil {
+		t.Error("unsupported kind should error")
+	}
+}
+
+func TestScheduleSnippet(t *testing.T) {
+	s := scheduleSnippet("/etc/checkfleet/checkfleet.yml", "5m")
+	if !strings.Contains(s, "*/5 * * * *") {
+		t.Errorf("cron minutes wrong: %s", s)
+	}
+	if !strings.Contains(s, "serve --config /etc/checkfleet/checkfleet.yml --interval 5m") {
+		t.Errorf("serve line missing: %s", s)
+	}
+	// Sub-minute intervals clamp to 1 minute for cron.
+	if got := intervalMinutes("30s"); got != 1 {
+		t.Errorf("intervalMinutes(30s) = %d, want 1", got)
+	}
+	if got := intervalMinutes("2h"); got != 120 {
+		t.Errorf("intervalMinutes(2h) = %d, want 120", got)
+	}
+	// Empty path falls back to a relative default.
+	if !strings.Contains(scheduleSnippet("", ""), "checkfleet.yml") {
+		t.Error("empty path should fall back to checkfleet.yml")
+	}
+}

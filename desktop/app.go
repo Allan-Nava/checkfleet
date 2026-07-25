@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -245,6 +246,65 @@ func (a *App) ValidateText(content string) []string {
 		return []string{err.Error()}
 	}
 	return engine.Validate(cfg)
+}
+
+// AddEndpoint inserts a new endpoint into the editor's config text (see
+// engine.AddEndpoint) and returns the updated YAML. The result is not saved —
+// the frontend puts it back in the textarea for review before Save.
+func (a *App) AddEndpoint(yamlText, kind, value, recordType string, expectStatus int) (string, error) {
+	return engine.AddEndpoint(yamlText, engine.EndpointSpec{
+		Kind: kind, Value: value, RecordType: recordType, ExpectStatus: expectStatus,
+	})
+}
+
+// ScheduleSnippet returns copy-paste cron and serve commands that run the given
+// config on an interval — the "use it like crontab" hint shown in the editor.
+func (a *App) ScheduleSnippet(configPath, interval string) string {
+	return scheduleSnippet(configPath, interval)
+}
+
+// scheduleSnippet builds the cron line and the serve command for a config path.
+func scheduleSnippet(configPath, interval string) string {
+	if strings.TrimSpace(configPath) == "" {
+		configPath = "checkfleet.yml"
+	}
+	if strings.TrimSpace(interval) == "" {
+		interval = "60s"
+	}
+	mins := intervalMinutes(interval)
+	cron := fmt.Sprintf("*/%d * * * * checkfleet check all --config %s --exit-on-bad", mins, configPath)
+	serve := fmt.Sprintf("checkfleet serve --config %s --interval %s --listen :9876", configPath, interval)
+	return fmt.Sprintf("# cron — run every %d min:\n%s\n\n# or run continuously as a Prometheus exporter:\n%s",
+		mins, cron, serve)
+}
+
+// intervalMinutes converts a Go-ish duration string (e.g. "30s", "5m", "1h")
+// into whole minutes, at least 1. Anything unparseable falls back to 1.
+func intervalMinutes(interval string) int {
+	interval = strings.TrimSpace(interval)
+	if interval == "" {
+		return 1
+	}
+	unit := interval[len(interval)-1]
+	numStr := interval
+	mult := 1.0 / 60.0 // bare number → seconds
+	switch unit {
+	case 's':
+		numStr, mult = interval[:len(interval)-1], 1.0/60.0
+	case 'm':
+		numStr, mult = interval[:len(interval)-1], 1
+	case 'h':
+		numStr, mult = interval[:len(interval)-1], 60
+	}
+	n, err := strconv.ParseFloat(numStr, 64)
+	if err != nil {
+		return 1
+	}
+	mins := int(n * mult)
+	if mins < 1 {
+		return 1
+	}
+	return mins
 }
 
 // Notify fires a native OS desktop notification (best-effort). The frontend

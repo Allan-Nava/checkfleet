@@ -82,6 +82,31 @@ just one way to edit and run it.
 
 ![checkfleet desktop — config editor](assets/desktop-config.png)
 
+### Add an endpoint
+
+You don't have to hand-write YAML. **+ Add endpoint** opens a quick form for the
+most common checks — **http** (URL + expected status), **certs** (`host:443`),
+**tcp** (`host:port`) and **dns** (name + record type). Pick a type, fill the
+field and **Add**: the endpoint is merged into the YAML (existing comments and
+formatting are preserved), ready to review and **Save**.
+
+![checkfleet desktop — add endpoint form](assets/desktop-addendpoint.png)
+
+### Run it on a schedule
+
+**Schedule…** prints copy-paste commands to run the same config unattended — a
+`cron` line and a `checkfleet serve` command for the current file and interval —
+so the app and your automation share one source of truth:
+
+```cron
+# run every 5 min:
+*/5 * * * * checkfleet check all --config /etc/checkfleet/checkfleet.yml --exit-on-bad
+```
+```bash
+# or run continuously as a Prometheus exporter:
+checkfleet serve --config /etc/checkfleet/checkfleet.yml --interval 5m --listen :9876
+```
+
 ## Light theme
 
 The theme toggle (top-right) switches light/dark and remembers your choice.

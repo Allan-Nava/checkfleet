@@ -28,6 +28,24 @@
     ReadConfig: async () => "timeout_seconds: 30\nchecks:\n  http:\n    targets:\n      - url: https://example.com/health\n        expect_status: 200\n        max_latency_ms: 2000\n  certs:\n    warn_days: 30\n    crit_days: 7\n    targets: [example.com:443]\n",
     SaveConfig: async () => {},
     ValidateText: async () => [],
+    AddEndpoint: async (yaml, kind, value, recordType, expectStatus) => {
+      // Preview-only textual merge (the real backend edits the YAML node tree).
+      const nl = "\n";
+      let block;
+      if (kind === "certs") block = "  certs:" + nl + "    targets: [" + value + "]" + nl;
+      else if (kind === "tcp") block = "  tcp:" + nl + "    targets:" + nl + "      - address: " + value + nl;
+      else if (kind === "dns") block = "  dns:" + nl + "    targets:" + nl + "      - name: " + value +
+        (recordType && recordType !== "A" ? nl + "        type: " + recordType : "") + nl;
+      else block = "  http:" + nl + "    targets:" + nl + "      - url: " + value +
+        (expectStatus ? nl + "        expect_status: " + expectStatus : "") + nl;
+      const base = yaml && yaml.trim() ? yaml.replace(/\s*$/, "\n") : "checks:\n";
+      return (base.includes("checks:") ? base : base + "checks:\n") + block;
+    },
+    ScheduleSnippet: async (path, interval) =>
+      "# cron — run every 5 min:\n*/5 * * * * checkfleet check all --config " +
+      (path || "checkfleet.yml") + " --exit-on-bad\n\n" +
+      "# or run continuously as a Prometheus exporter:\ncheckfleet serve --config " +
+      (path || "checkfleet.yml") + " --interval " + (interval || "60s") + " --listen :9876",
   };
 
   /* ---------------- state ---------------- */
@@ -202,6 +220,8 @@
   async function loadConfigText() {
     $("cfgPath").textContent = $("configPath").value || "(no file)";
     $("cfgMsg").hidden = true;
+    $("addForm").hidden = true;
+    $("schedBox").hidden = true;
     try { $("cfgText").value = await Backend.ReadConfig($("configPath").value); }
     catch (e) { cfgMessage(String(e), true); }
   }
@@ -219,6 +239,53 @@
     catch (e) { problems = [String(e)]; }
     if (problems.length === 0) cfgMessage("Config is valid ✅", false);
     else cfgMessage("Problems:\n- " + problems.join("\n- "), true);
+  }
+
+  // Placeholders + which extra field shows, per endpoint kind.
+  const EP_HINTS = {
+    http:  { label: "URL",       ph: "https://example.com/health" },
+    certs: { label: "Host:port", ph: "example.com:443" },
+    tcp:   { label: "Host:port", ph: "db.internal:5432" },
+    dns:   { label: "Name",      ph: "example.com" },
+  };
+
+  function syncAddForm() {
+    const kind = $("epKind").value;
+    const h = EP_HINTS[kind] || EP_HINTS.http;
+    $("epValueLabel").textContent = h.label;
+    $("epValue").placeholder = h.ph;
+    $("epExtraStatus").hidden = kind !== "http";
+    $("epExtraType").hidden = kind !== "dns";
+  }
+
+  function toggleAddForm(on) {
+    const show = on === undefined ? $("addForm").hidden : on;
+    $("addForm").hidden = !show;
+    if (show) { $("schedBox").hidden = true; syncAddForm(); $("epValue").focus(); }
+  }
+
+  async function addEndpoint(e) {
+    e.preventDefault();
+    const kind = $("epKind").value;
+    const value = $("epValue").value.trim();
+    if (!value) { $("epValue").focus(); return; }
+    try {
+      const updated = await Backend.AddEndpoint(
+        $("cfgText").value, kind, value, $("epType").value, Number($("epStatus").value) || 0);
+      $("cfgText").value = updated;
+      $("epValue").value = "";
+      toggleAddForm(false);
+      cfgMessage("Added " + kind + " endpoint — review and Save.", false);
+    } catch (err) { cfgMessage("Add failed: " + err, true); }
+  }
+
+  async function toggleSchedule() {
+    if (!$("schedBox").hidden) { $("schedBox").hidden = true; return; }
+    $("addForm").hidden = true;
+    try {
+      $("schedBox").textContent = await Backend.ScheduleSnippet($("configPath").value, $("interval").value);
+      $("schedBox").hidden = false;
+    } catch (err) { cfgMessage("Schedule failed: " + err, true); }
   }
 
   async function cfgSave() {
@@ -307,6 +374,11 @@
     $("cfgReload").addEventListener("click", loadConfigText);
     $("cfgValidate").addEventListener("click", cfgValidate);
     $("cfgSave").addEventListener("click", cfgSave);
+    $("addEndpoint").addEventListener("click", () => toggleAddForm());
+    $("epCancel").addEventListener("click", () => toggleAddForm(false));
+    $("epKind").addEventListener("change", syncAddForm);
+    $("addForm").addEventListener("submit", addEndpoint);
+    $("schedule").addEventListener("click", toggleSchedule);
 
     // Row click -> finding detail.
     $("rows").addEventListener("click", (e) => {

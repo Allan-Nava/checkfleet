@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.64.0
+
+- Desktop (CF-66, M17): **form "Add endpoint" + scheduling** nell'editor. **+ Add endpoint** apre un form rapido per i check più comuni — **http** (URL + status atteso), **certs** (`host:443`), **tcp** (`host:port`), **dns** (nome + tipo record): l'endpoint viene **inserito nello YAML** riusando `engine.AddEndpoint`, che edita il node tree yaml (commenti, ordine chiavi e formattazione **preservati**) e non tocca il resto. Bottone **Schedule…** che stampa comandi copia-incolla — riga `cron` + `checkfleet serve` per il file/intervallo correnti — così GUI e automazione condividono un'unica fonte. Nuovi binding `App.AddEndpoint`/`ScheduleSnippet` (helper `intervalMinutes`); testati (engine + desktop). Fix CSS: regola globale `[hidden]{display:none}` (il form/i campi condizionali usano `display:flex` che ignorava l'attributo `hidden`). **Chiude M17 (Config editor).**
+
 ## 0.63.0
 
 - Desktop (CF-65, M17): **editor di configurazione** nella GUI. Il nuovo bottone ⚙ nella titlebar apre un editor YAML a tutto pannello con **Reload**, **Validate** e **Save**: si legge/scrive il file `checkfleet.yml` selezionato senza uscire dall'app. **Validate** controlla il testo *non salvato* (parse + regole di dominio) e mostra i problemi inline, riusando la validazione del CLI via il nuovo `engine.LoadBytes` (interpola `${...}`, applica i default, senza toccare il disco). Nuovi binding `ReadConfig`/`SaveConfig`/`ValidateText`; testati (engine + desktop). Apre **M17 (Config editor)**.
