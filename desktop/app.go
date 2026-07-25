@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Allan-Nava/checkfleet/internal/engine"
+	"github.com/Allan-Nava/checkfleet/internal/history"
 	"github.com/Allan-Nava/checkfleet/internal/moduledoc"
 	"github.com/Allan-Nava/checkfleet/internal/output"
 	"github.com/Allan-Nava/checkfleet/internal/registry"
@@ -127,7 +128,84 @@ func (a *App) RunChecks(configPath, stack string) Report {
 		}
 	}
 	a.prev = curr
+
+	// Persist a compact snapshot so the trend survives restarts (best-effort).
+	if p := historyPath(configPath); p != "" {
+		entries := make([]history.Entry, len(res.Findings))
+		for i, f := range res.Findings {
+			entries[i] = history.Entry{Check: f.Check, Target: f.Target, Status: string(f.Status)}
+		}
+		_ = history.Open(p).Append(history.Record{Unix: res.Started.Unix(), Entries: entries})
+	}
 	return rep
+}
+
+// TrendPoint is one past run's rollup, for the persistent trend view.
+type TrendPoint struct {
+	Unix  int64  `json:"unix"`
+	Worst string `json:"worst"`
+	OK    int    `json:"ok"`
+	WARN  int    `json:"warn"`
+	BAD   int    `json:"bad"`
+	ERROR int    `json:"error"`
+}
+
+// Trend returns the last n persisted runs for a config (oldest first), so the
+// GUI can draw a worst-status sparkline that survives restarts — unlike the
+// in-session diff (CF-64).
+func (a *App) Trend(configPath string, n int) ([]TrendPoint, error) {
+	p := historyPath(configPath)
+	if p == "" {
+		return nil, nil
+	}
+	records, err := history.Open(p).Recent(n)
+	if err != nil {
+		return nil, err
+	}
+	points := make([]TrendPoint, 0, len(records))
+	for _, r := range records {
+		tp := TrendPoint{Unix: r.Unix}
+		for _, e := range r.Entries {
+			switch e.Status {
+			case "OK":
+				tp.OK++
+			case "WARN":
+				tp.WARN++
+			case "BAD":
+				tp.BAD++
+			case "ERROR":
+				tp.ERROR++
+			}
+		}
+		tp.Worst = worstStatus(tp)
+		points = append(points, tp)
+	}
+	return points, nil
+}
+
+// worstStatus returns the most severe status present (ERROR>BAD>WARN>OK).
+func worstStatus(tp TrendPoint) string {
+	switch {
+	case tp.ERROR > 0:
+		return "ERROR"
+	case tp.BAD > 0:
+		return "BAD"
+	case tp.WARN > 0:
+		return "WARN"
+	default:
+		return "OK"
+	}
+}
+
+// historyPath returns the per-config history file (a hidden JSONL beside the
+// config), or "" when there is no config path.
+func historyPath(configPath string) string {
+	if strings.TrimSpace(configPath) == "" {
+		return ""
+	}
+	dir := filepath.Dir(configPath)
+	base := strings.TrimSuffix(filepath.Base(configPath), filepath.Ext(configPath))
+	return filepath.Join(dir, "."+base+".history.jsonl")
 }
 
 // ListStacks returns the stack names discovered next to the config file, i.e.

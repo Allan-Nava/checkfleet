@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.70.0
+
+- Desktop (CF-70, M18): **storico persistente & trend**. Ogni run viene appeso a un file JSONL nascosto accanto al config (`.<nome>.history.jsonl`, riusa `internal/history`); il nuovo bottone **Trend** apre un drawer con una **sparkline del worst-status per run** (barre verde/giallo/rosso/viola, dalla più vecchia alla più recente, con timestamp e conteggi OK/WARN/BAD/ERROR in tooltip). A differenza di **Changes** (solo in-sessione, CF-64), il trend **sopravvive ai riavvii**. Nuovo binding `App.Trend`; persistenza in `RunChecks`; testato (persistenza su file + lettura da una nuova istanza dell'app).
+
 ## 0.69.0
 
 - Comando `checkfleet init` (CF-69, M18): scaffolding di un `checkfleet.yml` commentato e pronto da editare. `--modules certs,http,...` sceglie i moduli (default `certs,http`), `--list` elenca quelli disponibili, `--config` la destinazione; **non sovrascrive** un file esistente senza `--force`. Gli snippet per-modulo vivono in `internal/scaffold` (uno per ciascun modulo, con target/soglie placeholder e i segreti da env) e un test garantisce che ogni snippet generato **carichi e validi** senza problemi. Fix collegato: `engine.Validate` ora riconosce come "modulo configurato" anche i moduli senza regole esplicite (es. `tcp`, `tls`, `redis`) via reflection sui campi di `checks`, così un config con solo quei moduli non è più segnalato erroneamente come vuoto. Apre l'onboarding di M18.

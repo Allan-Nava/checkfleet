@@ -255,3 +255,18 @@ select { cursor: pointer; }
   outline: none; border-color: color-mix(in srgb, var(--brand) 55%, transparent);
 }
 .editor-msg.sched { color: var(--text); background: var(--surface); border: 1px solid var(--border); }
+
+/* trend sparkline (persistent history) */
+.spark {
+  display: flex; align-items: flex-end; gap: 3px; height: 72px;
+  padding: 10px 0; margin: 6px 0 12px; overflow-x: auto;
+}
+.spark-bar {
+  width: 10px; flex: 0 0 auto; border-radius: 3px 3px 0 0;
+  background: var(--muted); min-height: 4px;
+}
+.spark-bar i { display: none; }
+.spark-bar.s-OK    { height: 30%; background: var(--ok); }
+.spark-bar.s-WARN  { height: 55%; background: var(--warn); }
+.spark-bar.s-BAD   { height: 80%; background: var(--bad); }
+.spark-bar.s-ERROR { height: 100%; background: var(--err); }

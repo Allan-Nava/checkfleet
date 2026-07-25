@@ -288,3 +288,38 @@ func TestScheduleSnippet(t *testing.T) {
 		t.Error("empty path should fall back to checkfleet.yml")
 	}
 }
+
+func TestTrendPersistsAcrossRuns(t *testing.T) {
+	addr := startTCP(t)
+	dir := t.TempDir()
+	cfg := dir + "/checkfleet.yml"
+	if err := os.WriteFile(cfg,
+		[]byte("timeout_seconds: 5\nchecks:\n  tcp:\n    targets:\n      - address: \""+addr+"\"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	app := NewApp("test")
+	app.RunChecks(cfg, "")
+	app.RunChecks(cfg, "")
+
+	points, err := app.Trend(cfg, 10)
+	if err != nil {
+		t.Fatalf("Trend: %v", err)
+	}
+	if len(points) != 2 {
+		t.Fatalf("want 2 persisted runs, got %d", len(points))
+	}
+	if points[0].Worst != "OK" || points[0].OK != 1 {
+		t.Errorf("unexpected trend point: %+v", points[0])
+	}
+
+	// A fresh App reading the same file still sees the history (survives restart).
+	if again, _ := NewApp("test").Trend(cfg, 10); len(again) != 2 {
+		t.Errorf("history should survive a new App instance, got %d", len(again))
+	}
+}
+
+func TestTrendNoConfigNoError(t *testing.T) {
+	if pts, err := NewApp("test").Trend("", 10); err != nil || pts != nil {
+		t.Errorf("empty config path: want nil,nil got %v,%v", pts, err)
+	}
+}

@@ -41,6 +41,15 @@
       const base = yaml && yaml.trim() ? yaml.replace(/\s*$/, "\n") : "checks:\n";
       return (base.includes("checks:") ? base : base + "checks:\n") + block;
     },
+    Trend: async () => {
+      const kinds = ["OK", "OK", "WARN", "OK", "WARN", "BAD", "WARN", "OK", "OK", "ERROR", "WARN", "OK"];
+      const base = Math.floor(Date.now() / 1000) - kinds.length * 3600;
+      return kinds.map((w, i) => ({
+        unix: base + i * 3600, worst: w,
+        ok: w === "OK" ? 14 : 11, warn: w === "WARN" ? 3 : 0,
+        bad: w === "BAD" ? 2 : 0, error: w === "ERROR" ? 1 : 0,
+      }));
+    },
     ScheduleSnippet: async (path, interval) =>
       "# cron — run every 5 min:\n*/5 * * * * checkfleet check all --config " +
       (path || "checkfleet.yml") + " --exit-on-bad\n\n" +
@@ -350,6 +359,27 @@
     openDrawer("Changes since last run", rows);
   }
 
+  async function showTrend() {
+    let points = [];
+    try { points = (await Backend.Trend($("configPath").value, 40)) || []; }
+    catch (e) { openDrawer("Trend", `<p class="drawer-msg">${escapeHtml(String(e))}</p>`); return; }
+    if (!points.length) {
+      openDrawer("Trend", `<p class="drawer-msg">No history yet. Run the fleet a few times — each run is saved next to the config and shown here across restarts.</p>`);
+      return;
+    }
+    const bars = points.map((p) => {
+      const total = p.ok + p.warn + p.bad + p.error;
+      const when = new Date(p.unix * 1000).toLocaleString();
+      const tip = `${when} — worst ${p.worst} (${p.ok} OK, ${p.warn} WARN, ${p.bad} BAD, ${p.error} ERROR)`;
+      return `<span class="spark-bar s-${p.worst}" title="${escapeHtml(tip)}"><i>${total}</i></span>`;
+    }).join("");
+    const last = points[points.length - 1];
+    openDrawer("Trend — last " + points.length + " runs", `
+      <p class="drawer-msg">Worst status per run (oldest → newest). Persisted next to the config, survives restarts.</p>
+      <div class="spark">${bars}</div>
+      <div class="kv"><span>Latest</span><span class="badge ${last.worst}">${last.worst}</span></div>`);
+  }
+
   /* ---------------- wiring ---------------- */
   function bind() {
     $("run").addEventListener("click", run);
@@ -370,6 +400,7 @@
     $("theme").addEventListener("click", toggleTheme);
     $("validate").addEventListener("click", runValidate);
     $("changes").addEventListener("click", showChanges);
+    $("trend").addEventListener("click", showTrend);
     $("cfgToggle").addEventListener("click", () => setEditor(editorOn ? false : true));
     $("cfgReload").addEventListener("click", loadConfigText);
     $("cfgValidate").addEventListener("click", cfgValidate);

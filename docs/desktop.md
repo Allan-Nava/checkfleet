@@ -66,6 +66,16 @@ during an incident (in-session, no history file needed).
 
 ![checkfleet desktop — changes drawer](assets/desktop-changes.png)
 
+## Trend over time
+
+**Changes** is in-session only. **Trend** is persistent: every run is appended to
+a small history file next to the config (`.<name>.history.jsonl`), and the button
+opens a sparkline of the **worst status per run** — green/yellow/red/purple bars,
+oldest to newest — so you can see a fleet degrade (or recover) across restarts.
+Hover a bar for the timestamp and the OK/WARN/BAD/ERROR breakdown.
+
+![checkfleet desktop — trend sparkline](assets/desktop-trend.png)
+
 ## Edit the config
 
 The gear button (⚙, top-right) opens a full-panel YAML editor on the selected
