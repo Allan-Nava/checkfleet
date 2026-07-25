@@ -163,5 +163,45 @@
       `role="img" aria-label="${title}"><title>${title}</title>${inner}</svg>`;
   }
 
-  return { LAYERS, total, niceMax, stackedPolys, donutArcs, svgArea, svgDonut, svgBand };
+  // svgWrapPx renders at natural pixel size (host scrolls) — used by the heatmap
+  // so cells stay square regardless of how many runs there are.
+  function svgWrapPx(w, h, title, inner) {
+    return `<svg class="chart" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" ` +
+      `role="img" aria-label="${title}"><title>${title}</title>${inner}</svg>`;
+  }
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  // svgHeatmap draws a module×run grid: one row per module, one column per run,
+  // each cell colored by that module's worst status in that run (empty = the
+  // module didn't run). Row labels and cells carry data-module for drill-down.
+  function svgHeatmap(modules, runs, opts) {
+    opts = opts || {};
+    const labelW = opts.labelW || 96, cell = opts.cell || 15, gap = opts.gap || 3;
+    const rows = modules.length, cols = runs.length;
+    if (!rows || !cols) return "";
+    const w = labelW + cols * (cell + gap) - gap;
+    const h = rows * (cell + gap) - gap;
+    let out = "";
+    modules.forEach((m, r) => {
+      const y = r * (cell + gap);
+      out += `<text class="hm-label" x="${labelW - 8}" y="${fmt(y + cell - 3)}" ` +
+        `text-anchor="end" data-module="${esc(m)}">${esc(m)}</text>`;
+      runs.forEach((run, c) => {
+        const raw = run.worst && run.worst[m];
+        const st = raw ? String(raw).toUpperCase() : "";
+        const x = labelW + c * (cell + gap);
+        const cls = st ? "hm-cell band-" + st : "hm-cell hm-empty";
+        const tip = st ? m + " — " + st : m + " — (not run)";
+        out += `<rect class="${cls}" x="${fmt(x)}" y="${fmt(y)}" width="${cell}" height="${cell}" ` +
+          `rx="2" data-module="${esc(m)}"><title>${esc(tip)}</title></rect>`;
+      });
+    });
+    return svgWrapPx(w, h, "Module status heatmap", out);
+  }
+
+  return { LAYERS, total, niceMax, stackedPolys, donutArcs, svgArea, svgDonut, svgBand, svgHeatmap };
 });

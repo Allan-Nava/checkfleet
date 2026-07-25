@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.94.0
+
+- Desktop (CF-93, M25): **heatmap per modulo** nella Dashboard. Nuovo binding `App.TrendByModule` che collassa lo storico persistente (`internal/history`) nel worst status di ogni modulo per run; il frontend lo disegna come griglia modulo×run color-coded (`charts.js` → `svgHeatmap`, zero-dep, theme-aware): una riga per modulo, una colonna per run, cella colorata per status (assenza del modulo = cella vuota), con scroll orizzontale quando i run sono tanti. Click su una riga/cella → drawer con la **banda worst-status** di quel modulo nel tempo. Binding e geometria coperti da test (`TestTrendByModule`, `TestWorseOf`, smoke `charts.test.js`). Nessun cambio all'engine. _(solo frontend statico + binding desktop)_
+
 ## 0.93.0
 
 - Endpoint `/healthz` & `/readyz` su `serve` (CF-88, M24): **liveness** (`/healthz` → `ok`, il processo è su) e **readiness** (`/readyz` → `503` finché il primo run non è completato, poi `200`) per le probe di Kubernetes/Nomad. La readiness diventa vera quando il primo giro di check popola `/metrics`, così l'orchestratore non manda traffico/allarmi prima che ci siano dati. La root `/` elenca gli endpoint disponibili.

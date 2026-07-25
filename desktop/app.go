@@ -150,6 +150,64 @@ type TrendPoint struct {
 	ERROR int    `json:"error"`
 }
 
+// ModuleTrend is the per-module history used by the dashboard heatmap (CF-93):
+// a sorted list of modules seen across the recent runs, plus one column per run
+// carrying the worst status each module reached in that run.
+type ModuleTrend struct {
+	Modules []string         `json:"modules"`
+	Runs    []ModuleTrendRun `json:"runs"`
+}
+
+// ModuleTrendRun is one run's worst status per module (missing = module absent).
+type ModuleTrendRun struct {
+	Unix  int64             `json:"unix"`
+	Worst map[string]string `json:"worst"`
+}
+
+var statusRank = map[string]int{"OK": 0, "WARN": 1, "BAD": 2, "ERROR": 3}
+
+// worseOf returns the more severe of two statuses (ERROR>BAD>WARN>OK).
+func worseOf(a, b string) string {
+	if statusRank[b] > statusRank[a] {
+		return b
+	}
+	return a
+}
+
+// TrendByModule returns the last n persisted runs collapsed per module, so the
+// GUI can draw a module×run heatmap and drill into a single module's history.
+// Same persistence as Trend (survives restarts).
+func (a *App) TrendByModule(configPath string, n int) (ModuleTrend, error) {
+	p := historyPath(configPath)
+	if p == "" {
+		return ModuleTrend{}, nil
+	}
+	records, err := history.Open(p).Recent(n)
+	if err != nil {
+		return ModuleTrend{}, err
+	}
+	seen := map[string]bool{}
+	runs := make([]ModuleTrendRun, 0, len(records))
+	for _, r := range records {
+		worst := map[string]string{}
+		for _, e := range r.Entries {
+			seen[e.Check] = true
+			if cur, ok := worst[e.Check]; ok {
+				worst[e.Check] = worseOf(cur, e.Status)
+			} else {
+				worst[e.Check] = e.Status
+			}
+		}
+		runs = append(runs, ModuleTrendRun{Unix: r.Unix, Worst: worst})
+	}
+	modules := make([]string, 0, len(seen))
+	for m := range seen {
+		modules = append(modules, m)
+	}
+	sort.Strings(modules)
+	return ModuleTrend{Modules: modules, Runs: runs}, nil
+}
+
 // Trend returns the last n persisted runs for a config (oldest first), so the
 // GUI can draw a worst-status sparkline that survives restarts — unlike the
 // in-session diff (CF-64).

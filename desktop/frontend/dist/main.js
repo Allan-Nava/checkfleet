@@ -50,6 +50,23 @@
         bad: w === "BAD" ? 2 : 0, error: w === "ERROR" ? 1 : 0,
       }));
     },
+    TrendByModule: async () => {
+      const kinds = ["OK", "OK", "WARN", "OK", "WARN", "BAD", "WARN", "OK", "OK", "ERROR", "WARN", "OK"];
+      const base = Math.floor(Date.now() / 1000) - kinds.length * 3600;
+      const mods = ["certs", "http", "nats", "redis"];
+      return {
+        modules: mods,
+        runs: kinds.map((w, i) => ({
+          unix: base + i * 3600,
+          worst: {
+            certs: "OK",
+            http: i % 3 === 0 ? w : "OK",
+            nats: w === "ERROR" ? "ERROR" : "OK",
+            redis: w === "WARN" ? "WARN" : "OK",
+          },
+        })),
+      };
+    },
     ScheduleSnippet: async (path, interval) =>
       "# cron — run every 5 min:\n*/5 * * * * checkfleet check all --config " +
       (path || "checkfleet.yml") + " --exit-on-bad\n\n" +
@@ -63,6 +80,7 @@
   let visibleFindings = [];
   let editorOn = false;
   let dashboardOn = false;
+  let moduleTrend = { modules: [], runs: [] };
 
   /* ---------------- rendering ---------------- */
   function severityAllowed(status, min) {
@@ -304,6 +322,32 @@
     const when = (u) => new Date(u * 1000).toLocaleString();
     $("bandAxis").innerHTML =
       `<span>${escapeHtml(when(points[0].unix))}</span><span>${escapeHtml(when(last.unix))}</span>`;
+
+    // Per-module heatmap (CF-93) — a second history read, collapsed per module.
+    let mt = { modules: [], runs: [] };
+    try { mt = (await Backend.TrendByModule($("configPath").value, 60)) || mt; }
+    catch (_) { mt = { modules: [], runs: [] }; }
+    moduleTrend = mt;
+    $("chartHeatmap").innerHTML = mt.modules && mt.modules.length
+      ? CFCharts.svgHeatmap(mt.modules, mt.runs, {})
+      : `<p class="drawer-msg">Only one module in history — nothing to compare yet.</p>`;
+  }
+
+  // showModuleDrill opens a drawer with one module's worst-status band over time.
+  function showModuleDrill(m) {
+    const runs = (moduleTrend.runs || []).filter((r) => r.worst && r.worst[m]);
+    if (!runs.length) {
+      openDrawer("Module: " + m, `<p class="drawer-msg">No history for ${escapeHtml(m)}.</p>`);
+      return;
+    }
+    const points = runs.map((r) => ({ worst: r.worst[m], unix: r.unix }));
+    const last = points[points.length - 1];
+    const when = (u) => new Date(u * 1000).toLocaleString();
+    openDrawer("Module: " + m, `
+      <p class="drawer-msg">Worst status of <b>${escapeHtml(m)}</b> across ${points.length} run(s), oldest → newest.</p>
+      <div class="chart-host band-host">${CFCharts.svgBand(points, { w: 680, h: 26 })}</div>
+      <div class="band-axis"><span>${escapeHtml(when(points[0].unix))}</span><span>${escapeHtml(when(last.unix))}</span></div>
+      <div class="kv"><span>Latest</span><span class="badge ${last.worst}">${last.worst}</span></div>`);
   }
 
   async function loadConfigText() {
@@ -484,6 +528,10 @@
     $("groupBy").addEventListener("change", () => { render(); saveSettings(); });
     $("dashToggle").addEventListener("click", () => setDashboard(dashboardOn ? false : true));
     $("dashRefresh").addEventListener("click", renderDashboard);
+    $("chartHeatmap").addEventListener("click", (e) => {
+      const el = e.target.closest("[data-module]");
+      if (el) showModuleDrill(el.getAttribute("data-module"));
+    });
     $("cfgToggle").addEventListener("click", () => setEditor(editorOn ? false : true));
     $("cfgReload").addEventListener("click", loadConfigText);
     $("cfgValidate").addEventListener("click", cfgValidate);

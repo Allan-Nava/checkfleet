@@ -75,3 +75,26 @@ test("svgArea on empty input is a no-op", () => {
   assert.equal(C.svgArea([], {}), "");
   assert.equal(C.svgBand([], {}), "");
 });
+
+test("svgHeatmap grids modules × runs, coloring by worst and marking absences", () => {
+  const modules = ["certs", "http"];
+  const runs = [
+    { unix: 1, worst: { certs: "OK", http: "WARN" } },
+    { unix: 2, worst: { certs: "BAD" } }, // http didn't run this time
+  ];
+  const svg = C.svgHeatmap(modules, runs, {});
+  assert.match(svg, /^<svg class="chart"/);
+  assert.doesNotMatch(svg, /NaN/);
+  // one label per module, carrying data-module for drill-down
+  assert.match(svg, /class="hm-label"[^>]*data-module="certs"/);
+  assert.match(svg, /class="hm-label"[^>]*data-module="http"/);
+  // colored cells + the absent http cell rendered empty
+  assert.match(svg, /hm-cell band-WARN/);
+  assert.match(svg, /hm-cell band-BAD/);
+  assert.match(svg, /hm-cell hm-empty/);
+});
+
+test("svgHeatmap is a no-op without modules or runs", () => {
+  assert.equal(C.svgHeatmap([], [{ unix: 1, worst: {} }], {}), "");
+  assert.equal(C.svgHeatmap(["certs"], [], {}), "");
+});

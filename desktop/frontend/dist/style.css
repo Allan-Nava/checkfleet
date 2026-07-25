@@ -335,6 +335,15 @@ select { cursor: pointer; }
 .legend .sw.ok { background: var(--ok); } .legend .sw.warn { background: var(--warn); }
 .legend .sw.bad { background: var(--bad); } .legend .sw.error { background: var(--err); }
 .band-axis { display: flex; justify-content: space-between; margin-top: 6px; font-size: 10.5px; color: var(--muted); font-family: ui-monospace, Menlo, monospace; }
+
+/* module heatmap (CF-93) */
+.hm-host { overflow-x: auto; padding-bottom: 4px; }
+.hm-host .chart { max-width: none; }
+.chart .hm-label { fill: var(--brand-2); font-size: 11px; font-family: ui-monospace, Menlo, monospace; cursor: pointer; }
+.chart .hm-label:hover { fill: var(--heading); }
+.chart .hm-cell { cursor: pointer; }
+.chart .hm-cell:hover { stroke: var(--heading); stroke-width: 1.5; }
+.chart .hm-empty { fill: var(--border); }
 .dash-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: var(--muted); text-align: center; }
 .dash-empty p { max-width: 380px; }
 .dash-empty img { opacity: .9; filter: drop-shadow(0 10px 26px color-mix(in srgb, var(--brand) 40%, transparent)); }

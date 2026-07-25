@@ -323,3 +323,49 @@ func TestTrendNoConfigNoError(t *testing.T) {
 		t.Errorf("empty config path: want nil,nil got %v,%v", pts, err)
 	}
 }
+
+func TestTrendByModule(t *testing.T) {
+	addr := startTCP(t)
+	dir := t.TempDir()
+	cfg := dir + "/checkfleet.yml"
+	if err := os.WriteFile(cfg,
+		[]byte("timeout_seconds: 5\nchecks:\n  tcp:\n    targets:\n      - address: \""+addr+"\"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	app := NewApp("test")
+	app.RunChecks(cfg, "")
+	app.RunChecks(cfg, "")
+
+	mt, err := app.TrendByModule(cfg, 10)
+	if err != nil {
+		t.Fatalf("TrendByModule: %v", err)
+	}
+	if len(mt.Modules) != 1 || mt.Modules[0] != "tcp" {
+		t.Fatalf("modules = %v, want [tcp]", mt.Modules)
+	}
+	if len(mt.Runs) != 2 {
+		t.Fatalf("want 2 runs, got %d", len(mt.Runs))
+	}
+	if got := mt.Runs[0].Worst["tcp"]; got != "OK" {
+		t.Errorf("run[0] tcp worst = %q, want OK", got)
+	}
+
+	// Empty config path is a no-op, not an error.
+	if mt, err := app.TrendByModule("", 10); err != nil || len(mt.Modules) != 0 || len(mt.Runs) != 0 {
+		t.Errorf("empty path: want empty/no-error, got %+v %v", mt, err)
+	}
+}
+
+func TestWorseOf(t *testing.T) {
+	cases := []struct{ a, b, want string }{
+		{"OK", "WARN", "WARN"},
+		{"ERROR", "BAD", "ERROR"},
+		{"BAD", "OK", "BAD"},
+		{"WARN", "WARN", "WARN"},
+	}
+	for _, c := range cases {
+		if got := worseOf(c.a, c.b); got != c.want {
+			t.Errorf("worseOf(%q,%q) = %q, want %q", c.a, c.b, got, c.want)
+		}
+	}
+}
