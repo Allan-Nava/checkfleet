@@ -50,9 +50,33 @@ type ChecksConfig struct {
 	GRPC     *GRPCConfig     `yaml:"grpc"`
 	LDAP     *LDAPConfig     `yaml:"ldap"`
 	Kafka    *KafkaConfig    `yaml:"kafka"`
-	Ingest   *IngestConfig   `yaml:"ingest"`
-	S3       *S3Config       `yaml:"s3"`
-	SMTP     *SMTPConfig     `yaml:"smtp"`
+	Ingest        *IngestConfig        `yaml:"ingest"`
+	S3            *S3Config            `yaml:"s3"`
+	SMTP          *SMTPConfig          `yaml:"smtp"`
+	Elasticsearch *ElasticsearchConfig `yaml:"elasticsearch"`
+}
+
+// ElasticsearchConfig configures the Elasticsearch/OpenSearch cluster check.
+// Disk watermark thresholds are cluster-wide; credentials come from env.
+type ElasticsearchConfig struct {
+	Targets     []ElasticsearchTarget `yaml:"targets"`
+	DiskWarnPct int                   `yaml:"disk_warn_pct"` // default 85 (ES low watermark)
+	DiskCritPct int                   `yaml:"disk_crit_pct"` // default 90 (ES high watermark)
+}
+
+// ElasticsearchTarget is one cluster endpoint (any node answers cluster-wide).
+type ElasticsearchTarget struct {
+	Name string `yaml:"name"`
+	// Base URL including scheme, e.g. https://es.example.com:9200.
+	URL string `yaml:"url"`
+	// HTTP basic auth (password from env) or an API key from env.
+	Username    string `yaml:"username"`
+	PasswordEnv string `yaml:"password_env"`
+	APIKeyEnv   string `yaml:"api_key_env"`
+	// Skip TLS verification (self-signed clusters).
+	Insecure bool `yaml:"insecure_skip_verify"`
+	// BAD when the cluster reports fewer nodes than this (0 disables).
+	ExpectNodes int `yaml:"expect_nodes"`
 }
 
 // SMTPConfig configures the SMTP relay reachability check. It never sends mail;
@@ -659,6 +683,14 @@ func applyDefaults(cfg *Config) {
 		}
 		if sm.CritDays <= 0 {
 			sm.CritDays = 7
+		}
+	}
+	if es := cfg.Checks.Elasticsearch; es != nil {
+		if es.DiskWarnPct <= 0 {
+			es.DiskWarnPct = 85
+		}
+		if es.DiskCritPct <= 0 {
+			es.DiskCritPct = 90
 		}
 	}
 }

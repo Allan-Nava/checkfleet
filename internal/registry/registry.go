@@ -8,6 +8,7 @@ import (
 	"github.com/Allan-Nava/checkfleet/internal/checks/certs"
 	"github.com/Allan-Nava/checkfleet/internal/checks/consul"
 	"github.com/Allan-Nava/checkfleet/internal/checks/dns"
+	"github.com/Allan-Nava/checkfleet/internal/checks/elasticsearch"
 	"github.com/Allan-Nava/checkfleet/internal/checks/grpccheck"
 	"github.com/Allan-Nava/checkfleet/internal/checks/haproxy"
 	"github.com/Allan-Nava/checkfleet/internal/checks/httpcheck"
@@ -61,6 +62,7 @@ func Modules(cfg *engine.Config) []Spec {
 		{"ingest", c.Ingest != nil, func() engine.Check { return ingest.New(*c.Ingest) }},
 		{"s3", c.S3 != nil, func() engine.Check { return s3.New(*c.S3) }},
 		{"smtp", c.SMTP != nil, func() engine.Check { return smtp.New(*c.SMTP) }},
+		{"elasticsearch", c.Elasticsearch != nil, func() engine.Check { return elasticsearch.New(*c.Elasticsearch) }},
 	}
 }
 

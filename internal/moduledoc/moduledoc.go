@@ -26,6 +26,7 @@ var Docs = map[string]string{
 	"ingest":   "Streaming ingest reachability: RTMP handshake (TCP) or SRT induction handshake (UDP), with connect latency. Answers 'can the streamer publish?'.",
 	"s3":       "S3/object storage: bucket reachable, optional sentinel object present and fresh (`max_age_warn_seconds`). AWS SigV4 signed (creds from env), path- or virtual-hosted style.",
 	"smtp":     "SMTP relay: accepts connections, 220 greeting (optional `expect_banner`), EHLO ok, optional STARTTLS/implicit TLS and relay cert expiry (`warn_days`/`crit_days`). Never sends mail.",
+	"elasticsearch": "Elasticsearch/OpenSearch via HTTP: cluster health green/yellow(WARN)/red(BAD), unassigned shards, `expect_nodes`, per-node disk watermark (`disk_warn_pct`/`disk_crit_pct`).",
 }
 
 // Doc returns the description for a module and whether it exists.

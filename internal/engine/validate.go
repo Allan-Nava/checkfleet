@@ -118,6 +118,21 @@ func Validate(cfg *Config) []string {
 		}
 	}
 
+	if x := c.Elasticsearch; x != nil {
+		configured++
+		if len(x.Targets) == 0 {
+			add("elasticsearch: no target")
+		}
+		for i, t := range x.Targets {
+			if strings.TrimSpace(t.URL) == "" {
+				add("elasticsearch: target #%d has no url", i+1)
+			}
+		}
+		if x.DiskWarnPct > x.DiskCritPct {
+			add("elasticsearch: disk_warn_pct (%d) should be <= disk_crit_pct (%d)", x.DiskWarnPct, x.DiskCritPct)
+		}
+	}
+
 	if configured == 0 {
 		add("no module configured under `checks`")
 	}

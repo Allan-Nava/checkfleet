@@ -206,3 +206,15 @@ checks:
       - {name: relay, address: mail.example.com:25, starttls: true, expect_banner: mail.example.com}
       - {name: submission, address: mail.example.com:587, starttls: true}
       - {name: smtps, address: mail.example.com:465, tls: true}
+
+  # Elasticsearch/OpenSearch cluster health. Credentials from env (never inline).
+  elasticsearch:
+    disk_warn_pct: 85
+    disk_crit_pct: 90
+    targets:
+      - name: logs
+        url: https://es.example.com:9200
+        username: elastic
+        password_env: ES_PASSWORD
+        insecure_skip_verify: true    # self-signed cluster
+        expect_nodes: 3

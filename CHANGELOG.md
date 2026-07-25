@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.66.0
+
+- Modulo `elasticsearch`/`opensearch` (CF-25): salute cluster via HTTP API. `_cluster/health` → **green/OK, yellow/WARN, red/BAD** (con conteggio nodi, shard non assegnati e % shard attivi nel messaggio); `expect_nodes` → **BAD** se il cluster riporta meno nodi del previsto (cluster ridotto anche se green); **disk watermark per-nodo** via `_cat/allocation` → WARN oltre `disk_warn_pct` (default 85, low watermark ES), BAD oltre `disk_crit_pct` (default 90, high watermark). Credenziali **da env** (basic `username`+`password_env` o `api_key_env`), `insecure_skip_verify` per cluster self-signed. **Zero dipendenze** (HTTP/JSON); testato contro un cluster finto (`httptest`). CLI `checkfleet check elasticsearch`.
+
 ## 0.65.0
 
 - Modulo `smtp` (CF-24): reachability di un relay SMTP — **non invia mai posta**. Verifica connessione + greeting `220` (opz. `expect_banner`), `EHLO`, e — se richiesto — **STARTTLS** (`starttls: true`, BAD se non offerto/fallisce) o **TLS implicito** (`tls: true`, es. porta 465); quando c'è TLS legge il certificato del relay e riporta la scadenza (`warn_days`/`crit_days`, come `certs`). WARN su `max_latency_ms`. Porta di default 25 (465 con `tls`). **Zero dipendenze** (stdlib `net`/`crypto/tls`/`bufio`, parsing risposte multi-linea a mano); testato contro relay fake in-test (plain, STARTTLS, TLS implicito, cert in scadenza/scaduto). CLI `checkfleet check smtp`.

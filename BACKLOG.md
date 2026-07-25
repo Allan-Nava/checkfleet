@@ -52,7 +52,7 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 - [x] **CF-22 — Modulo `ingest` (RTMP/SRT)**: handshake RTMP (C0/C1→S0/S1/S2 su TCP) o induction SRT (UDP, best-effort) + latenza; OK/WARN(latenza)/ERROR(handshake)/BAD(protocollo ignoto). Zero-dep, testato con server fake RTMP/SRT in-test. _(v0.61.0)_
 - [x] **CF-23 — Modulo `s3`/object storage**: bucket raggiungibile (HEAD) + oggetto sentinella presente/fresco (`max_age_warn_seconds`). **AWS SigV4 scritto a mano** (zero-dep, no SDK), creds da env o anonimo; path/virtual-hosted style. Testato con finto S3 (httptest). _(v0.62.0; quota non esposta da S3 standard, rimandata)_
 - [x] **CF-24 — Modulo `smtp`**: reachability relay SMTP — connessione + greeting `220` (opz. `expect_banner`), `EHLO`, STARTTLS/TLS implicito e scadenza cert del relay (`warn_days`/`crit_days`). **Mai invio reale**. Zero-dep (stdlib `net`/`crypto/tls`), testato con relay fake in-test (plain/STARTTLS/implicit TLS). _(v0.65.0)_
-- [ ] **CF-25 — Modulo `elasticsearch`/`opensearch`**: `_cluster/health` (green/yellow/red), shard unassigned, nodi attesi presenti, disk watermark.
+- [x] **CF-25 — Modulo `elasticsearch`/`opensearch`**: `_cluster/health` (green→OK/yellow→WARN/red→BAD), shard unassigned nel messaggio, `expect_nodes` (BAD se cluster ridotto), disk watermark per-nodo via `_cat/allocation` (`disk_warn_pct`/`disk_crit_pct`, default 85/90). HTTP/JSON zero-dep, creds da env (basic o api key), `insecure_skip_verify`. Testato con cluster fake (`httptest`). _(v0.66.0)_
 
 ## M7 — Alerting & output (fase 2)
 

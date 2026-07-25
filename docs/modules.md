@@ -370,6 +370,33 @@ tested against in-test fake relays (plain, STARTTLS, implicit TLS).
       - {name: smtps, address: mail.example.com:465, tls: true}
 ```
 
+## `elasticsearch` — cluster health
+
+Checks an Elasticsearch or OpenSearch cluster over its HTTP API (any node
+answers cluster-wide):
+
+- **Cluster health** (`/_cluster/health`) — `green` → `OK`, `yellow` → `WARN`,
+  `red` → `BAD`; the message carries node count, unassigned shards and active
+  shard percentage.
+- **Expected nodes** (`expect_nodes`) — `BAD` if the cluster reports fewer nodes
+  than expected (a shrunk cluster, even when still green).
+- **Disk watermark** (`/_cat/allocation`) — per node, `WARN` over
+  `disk_warn_pct` (default 85, ES low watermark), `BAD` over `disk_crit_pct`
+  (default 90, high watermark).
+- `ERROR` if the API is unreachable.
+
+Credentials come from env — `username` + `password_env` (basic auth) or
+`api_key_env` (API key) — never inline; `insecure_skip_verify` for self-signed
+clusters. Zero-dep (HTTP/JSON); tested against an in-test fake cluster.
+
+```yaml
+  elasticsearch:
+    disk_warn_pct: 85
+    disk_crit_pct: 90
+    targets:
+      - {name: logs, url: https://es.example.com:9200, username: elastic, password_env: ES_PASSWORD, expect_nodes: 3}
+```
+
 ## Ansible inventory as a target source
 
 The `certs`, `nats`, `haproxy`, `patroni`, `consul`, `redis` and `tls` modules can read
