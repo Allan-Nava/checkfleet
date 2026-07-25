@@ -44,6 +44,15 @@ Everything is one screen, scanned top-to-bottom.
   save the current run via a native save dialog. Same renderers as the CLI's
   `--output`.
 
+## Details, validate & explain
+
+Click a finding row to open a **detail drawer** with the full message and a
+**Copy** button. Click a **module chip** in the summary to see what that check
+verifies (**Explain**), and the **Validate** button checks the config without
+running anything (the same problems as `checkfleet validate`).
+
+![checkfleet desktop — finding detail drawer](assets/desktop-detail.png)
+
 ## Light theme
 
 The theme toggle (top-right) switches light/dark and remembers your choice.

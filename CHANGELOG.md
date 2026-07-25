@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.58.0
+
+- Desktop (CF-62, M16): **dettaglio & insight**. Click su un finding → drawer con messaggio completo e bottone **Copy**; click su una chip modulo → **Explain** (cosa controlla); bottone **Validate** che mostra i problemi di config (`engine.Validate`) senza eseguire i check. Le descrizioni dei moduli sono ora in `internal/moduledoc`, condivise tra CLI (`explain`) e GUI (con test anti-drift). Fix: `.drawer` con `display:flex` ignorava l'attributo `hidden` (drawer sempre aperto) → aggiunto `.drawer[hidden]{display:none}`. Binding `Explain`/`Validate` testate.
+
 ## 0.57.0
 
 - Desktop (CF-61, M16): l'export supporta **tutti i formati** — Markdown, JSON, HTML, JUnit, Prometheus, OTLP — via un selettore + bottone Export con file-dialog nativo (riusa i renderer `internal/output`). Helper `renderReport` testato.

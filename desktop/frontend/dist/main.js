@@ -22,11 +22,14 @@
     OpenConfigDialog: async () => "/home/ops/checkfleet.yml",
     SaveReport: async (fmt) => "~/checkfleet-report." + (fmt === "json" ? "json" : "md"),
     RunChecks: async () => mockReport(),
+    Validate: async () => [],
+    Explain: async (m) => "Sample explanation for the " + m + " module (preview).",
   };
 
   /* ---------------- state ---------------- */
   let report = null;
   let timer = null;
+  let visibleFindings = [];
 
   /* ---------------- rendering ---------------- */
   function severityAllowed(status, min) {
@@ -68,7 +71,7 @@
     $("mDur").textContent = report.durationMs != null ? report.durationMs + " ms" : "—";
     $("mStarted").textContent = report.started ? new Date(report.started).toLocaleTimeString() : "—";
     $("mModules").innerHTML = (report.modules || [])
-      .map((m) => `<span class="chip">${escapeHtml(m)}</span>`).join("");
+      .map((m) => `<span class="chip" data-mod="${escapeHtml(m)}" title="Explain ${escapeHtml(m)}">${escapeHtml(m)}</span>`).join("");
 
     // table (preserve backend worst-first order)
     const q = $("filter").value.trim().toLowerCase();
@@ -78,9 +81,10 @@
       if (!q) return true;
       return (f.check + " " + f.target + " " + f.message).toLowerCase().includes(q);
     });
+    visibleFindings = visible;
 
-    rows.innerHTML = visible.map((f) => `
-      <tr>
+    rows.innerHTML = visible.map((f, i) => `
+      <tr data-i="${i}">
         <td><span class="badge ${f.status}">${f.status}</span></td>
         <td class="cell-check">${escapeHtml(f.check)}</td>
         <td class="cell-target">${escapeHtml(f.target)}</td>
@@ -149,6 +153,46 @@
     try { localStorage.setItem("cf-theme", next); } catch (_) {}
   }
 
+  /* ---------------- drawer (detail / explain / validate) ---------------- */
+  function openDrawer(title, bodyHTML) {
+    $("drawerTitle").textContent = title;
+    $("drawerBody").innerHTML = bodyHTML;
+    $("drawer").hidden = false;
+    $("drawerScrim").hidden = false;
+  }
+  function closeDrawer() {
+    $("drawer").hidden = true;
+    $("drawerScrim").hidden = true;
+  }
+
+  function showFindingDetail(f) {
+    const text = `${f.status} ${f.check} ${f.target} — ${f.message}`;
+    openDrawer("Finding", `
+      <div class="kv"><span>Status</span><span class="badge ${f.status}">${f.status}</span></div>
+      <div class="kv"><span>Check</span><b class="mono">${escapeHtml(f.check)}</b></div>
+      <div class="kv"><span>Target</span><b class="mono">${escapeHtml(f.target)}</b></div>
+      <p class="drawer-msg">${escapeHtml(f.message)}</p>
+      <button class="btn copy-btn" data-copy="${escapeHtml(text)}">Copy</button>`);
+  }
+
+  async function showExplain(module) {
+    let doc = "";
+    try { doc = await Backend.Explain(module); } catch (_) {}
+    openDrawer("Explain: " + module, doc
+      ? `<p class="drawer-msg">${escapeHtml(doc)}</p>`
+      : `<p class="drawer-msg">No description for “${escapeHtml(module)}”.</p>`);
+  }
+
+  async function runValidate() {
+    let problems = [];
+    try { problems = (await Backend.Validate($("configPath").value, $("stack").value)) || []; }
+    catch (e) { problems = [String(e)]; }
+    const body = problems.length === 0
+      ? `<p class="ok-note">Config is valid ✅</p>`
+      : `<ul class="problems">${problems.map((p) => `<li>${escapeHtml(p)}</li>`).join("")}</ul>`;
+    openDrawer("Validate", body);
+  }
+
   /* ---------------- wiring ---------------- */
   function bind() {
     $("run").addEventListener("click", run);
@@ -165,6 +209,28 @@
     $("interval").addEventListener("change", () => { if ($("auto").checked) setAutoRefresh(true); });
     $("export").addEventListener("click", () => save($("expfmt").value));
     $("theme").addEventListener("click", toggleTheme);
+    $("validate").addEventListener("click", runValidate);
+
+    // Row click -> finding detail.
+    $("rows").addEventListener("click", (e) => {
+      const tr = e.target.closest("tr[data-i]");
+      if (tr) showFindingDetail(visibleFindings[+tr.dataset.i]);
+    });
+    // Module chip click -> explain.
+    $("mModules").addEventListener("click", (e) => {
+      const chip = e.target.closest("[data-mod]");
+      if (chip) showExplain(chip.dataset.mod);
+    });
+    // Copy button inside the drawer.
+    $("drawerBody").addEventListener("click", (e) => {
+      const btn = e.target.closest(".copy-btn");
+      if (btn) {
+        try { navigator.clipboard.writeText(btn.dataset.copy); btn.textContent = "Copied"; } catch (_) {}
+      }
+    });
+    $("drawerClose").addEventListener("click", closeDrawer);
+    $("drawerScrim").addEventListener("click", closeDrawer);
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDrawer(); });
   }
 
   function updateHint() {

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Allan-Nava/checkfleet/internal/engine"
+	"github.com/Allan-Nava/checkfleet/internal/moduledoc"
 	"github.com/Allan-Nava/checkfleet/internal/output"
 	"github.com/Allan-Nava/checkfleet/internal/registry"
 	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
@@ -164,6 +165,21 @@ func (a *App) StartupConfig() Startup {
 		path = a.DefaultConfigPath()
 	}
 	return Startup{Path: path, AutoRun: os.Getenv("CHECKFLEET_AUTORUN") == "1"}
+}
+
+// Validate returns config problems without running any check (empty = valid).
+func (a *App) Validate(configPath, stack string) []string {
+	cfg, err := loadConfig(configPath, stack)
+	if err != nil {
+		return []string{err.Error()}
+	}
+	return engine.Validate(cfg)
+}
+
+// Explain returns what a module checks and its thresholds ("" if unknown).
+func (a *App) Explain(module string) string {
+	d, _ := moduledoc.Doc(module)
+	return d
 }
 
 // OpenConfigDialog shows a native file picker and returns the chosen path.

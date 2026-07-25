@@ -5,14 +5,15 @@ import (
 	"testing"
 
 	"github.com/Allan-Nava/checkfleet/internal/engine"
+	"github.com/Allan-Nava/checkfleet/internal/moduledoc"
 	"github.com/Allan-Nava/checkfleet/internal/registry"
 )
 
 // Every registered module must have an explain entry (keeps docs from drifting).
 func TestModuleDocsCoverAllModules(t *testing.T) {
 	for _, m := range registry.All(&engine.Config{}) {
-		if strings.TrimSpace(moduleDocs[m]) == "" {
-			t.Errorf("module %q has no moduleDocs entry", m)
+		if strings.TrimSpace(moduledoc.Docs[m]) == "" {
+			t.Errorf("module %q has no moduledoc entry", m)
 		}
 	}
 }

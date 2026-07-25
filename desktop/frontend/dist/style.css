@@ -181,3 +181,27 @@ select { cursor: pointer; }
 /* scrollbar */
 .table-wrap::-webkit-scrollbar { width: 12px; height: 12px; }
 .table-wrap::-webkit-scrollbar-thumb { background: var(--border-str); border-radius: 8px; border: 3px solid var(--bg); }
+
+/* clickable rows & chips */
+.findings tbody tr { cursor: pointer; }
+.chip { cursor: pointer; }
+
+/* detail / explain / validate drawer */
+.drawer[hidden], .drawer-scrim[hidden] { display: none; } /* [hidden] must win over display:flex */
+.drawer-scrim { position: fixed; inset: 0; z-index: 60; background: rgba(2,6,15,.5); }
+.drawer {
+  position: fixed; top: 0; right: 0; z-index: 61; width: 380px; max-width: 90vw; height: 100vh;
+  background: var(--bg-2); border-left: 1px solid var(--border-str); box-shadow: var(--shadow);
+  display: flex; flex-direction: column;
+}
+.drawer-head {
+  display: flex; align-items: center; gap: 10px; padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.drawer-head b { font-size: 15px; color: var(--heading); flex: 1; }
+.drawer-body { padding: 16px; overflow-y: auto; }
+.drawer-body .kv { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.drawer-body .kv > span:first-child { color: var(--muted); text-transform: uppercase; font-size: 11px; letter-spacing: .06em; }
+.drawer-msg { margin: 14px 0; color: var(--text); user-select: text; line-height: 1.6; }
+.drawer-body .problems { margin: 0; padding-left: 18px; color: var(--bad); }
+.drawer-body .problems li { margin: 6px 0; }

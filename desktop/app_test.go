@@ -180,3 +180,21 @@ func TestRenderReportFormats(t *testing.T) {
 		}
 	}
 }
+
+func TestExplainAndValidate(t *testing.T) {
+	app := NewApp("test")
+	if app.Explain("certs") == "" {
+		t.Error("Explain(certs) should not be empty")
+	}
+	if app.Explain("nope") != "" {
+		t.Error("Explain(unknown) should be empty")
+	}
+	valid := writeConfig(t, "checkfleet.yml",
+		"checks:\n  certs:\n    warn_days: 30\n    crit_days: 7\n    targets: [\"x:443\"]\n")
+	if p := app.Validate(valid, ""); len(p) != 0 {
+		t.Errorf("valid config: want no problems, got %v", p)
+	}
+	if p := app.Validate(writeConfig(t, "checkfleet.yml", "checks: {}\n"), ""); len(p) == 0 {
+		t.Error("config with no modules should report problems")
+	}
+}
