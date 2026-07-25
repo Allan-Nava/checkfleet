@@ -152,6 +152,18 @@ export MY_HOOK="https://hooks.example/checkfleet"
 checkfleet check all --config checkfleet.yml --output webhook --webhook-env MY_HOOK
 ```
 
+Pass `--template FILE` to shape the payload with a Go
+[text/template](https://pkg.go.dev/text/template) instead of the default JSON.
+The template is executed against `{{.Title}}`, `{{.Worst}}`, `{{.Total}}`,
+`{{.OK}}`/`{{.WARN}}`/`{{.BAD}}`/`{{.ERROR}}`, and `{{range .Findings}}` (each
+with `.Check`, `.Target`, `.Status`, `.Message`). Unknown fields are an error, so
+typos don't ship silently.
+
+```bash
+checkfleet check all --config checkfleet.yml --output webhook \
+  --webhook-env MY_HOOK --template payload.tmpl
+```
+
 
 ## `otlp`
 

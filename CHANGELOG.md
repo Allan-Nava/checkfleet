@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.82.0
+
+- Webhook con **template custom** (CF-82, M22): `--output webhook --template FILE` plasma il payload con un **Go text/template** invece del JSON di default. Il template viene eseguito su `{{.Title}}`, `{{.Worst}}`, `{{.Total}}`, `{{.OK}}`/`{{.WARN}}`/`{{.BAD}}`/`{{.ERROR}}` e `{{range .Findings}}` (con `.Check`/`.Target`/`.Status`/`.Message`). `missingkey=error` fa emergere i typo nel template invece di emettere silenziosamente `<no value>`. Renderer `output.RenderTemplate` testato. Senza `--template` il comportamento resta il JSON di prima.
+
 ## 0.81.0
 
 - Output `csv` (CF-81, M22): `--output csv` emette i finding come CSV con header (`status,check,target,message`), worst-first, un finding per riga. I campi sono quotati/escapati via `encoding/csv` (virgole e newline nei messaggi sono al sicuro) — comodo per fogli di calcolo o ingestione. Renderer `output.CSV` testato (incluso l'escaping). CLI `--output csv` (spesso con `--out-file`).

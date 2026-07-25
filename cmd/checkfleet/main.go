@@ -114,6 +114,7 @@ func runCheck(args []string) error {
 	webhookEnv := fs.String("webhook-env", "SLACK_WEBHOOK", "env var holding the Slack webhook URL (slack output)")
 	tgTokenEnv := fs.String("telegram-token-env", "TELEGRAM_TOKEN", "env var holding the Telegram bot token (telegram output)")
 	tgChatEnv := fs.String("telegram-chat-env", "TELEGRAM_CHAT_ID", "env var holding the Telegram chat id (telegram output)")
+	tmplFile := fs.String("template", "", "Go text/template file to shape the payload (webhook output)")
 	only := fs.String("only", "", "show only these checks (comma-separated list)")
 	minSeverity := fs.String("min-severity", "", "show only findings at or above: ok|warn|bad|error")
 	targetGlob := fs.String("target", "", "show only targets matching this glob")
@@ -231,7 +232,17 @@ func runCheck(args []string) error {
 		}
 		fmt.Println("checkfleet: report sent to Telegram")
 	case "webhook":
-		payload, err := output.JSON(res)
+		var payload string
+		var err error
+		if *tmplFile != "" {
+			tmpl, rerr := os.ReadFile(*tmplFile)
+			if rerr != nil {
+				return fmt.Errorf("reading template %s: %w", *tmplFile, rerr)
+			}
+			payload, err = output.RenderTemplate(res, module, string(tmpl))
+		} else {
+			payload, err = output.JSON(res)
+		}
 		if err != nil {
 			return err
 		}
