@@ -106,6 +106,7 @@ Layer a `checkfleet.<stack>.yml` on top of the base with `--stack <name>` (per-m
 ## Usage
 
 ```bash
+checkfleet init        --modules certs,http                      # scaffold a starter config
 checkfleet check all   --config checkfleet.yml                    # terminal
 checkfleet check certs --config checkfleet.yml --output markdown  # ops report
 checkfleet check nats  --config checkfleet.yml --output markdown  # NATS cluster health

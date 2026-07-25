@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.69.0
+
+- Comando `checkfleet init` (CF-69, M18): scaffolding di un `checkfleet.yml` commentato e pronto da editare. `--modules certs,http,...` sceglie i moduli (default `certs,http`), `--list` elenca quelli disponibili, `--config` la destinazione; **non sovrascrive** un file esistente senza `--force`. Gli snippet per-modulo vivono in `internal/scaffold` (uno per ciascun modulo, con target/soglie placeholder e i segreti da env) e un test garantisce che ogni snippet generato **carichi e validi** senza problemi. Fix collegato: `engine.Validate` ora riconosce come "modulo configurato" anche i moduli senza regole esplicite (es. `tcp`, `tls`, `redis`) via reflection sui campi di `checks`, così un config con solo quei moduli non è più segnalato erroneamente come vuoto. Apre l'onboarding di M18.
+
 ## 0.68.0
 
 - Output `text` a colori sul terminale (CF-68, M18): lo status è colorato con ANSI (OK verde, WARN giallo, BAD rosso, ERROR magenta) tramite `output.TextColor`. Il colore si attiva **solo quando l'output va a un terminale** (rilevamento TTY zero-dep via `ModeCharDevice`): resta disattivato su pipe, redirezione, `--out-file`, o con `NO_COLOR` (standard) e il nuovo flag `--no-color`. I codici ANSI sono a larghezza zero, quindi l'allineamento delle colonne è invariato. Vale anche per `--watch`. Apre **M18 (Prodotto & UX)**.

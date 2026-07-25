@@ -3,6 +3,7 @@ package engine
 import (
 	"fmt"
 	"net/url"
+	"reflect"
 	"strings"
 )
 
@@ -14,6 +15,9 @@ func Validate(cfg *Config) []string {
 	add := func(format string, args ...any) { problems = append(problems, fmt.Sprintf(format, args...)) }
 
 	c := cfg.Checks
+	// configured is kept per rule-bearing module below for readability; the
+	// "nothing configured" check uses anyModuleConfigured so a module without
+	// explicit rules (e.g. tcp, tls) still counts as a configured module.
 	configured := 0
 
 	if x := c.Certs; x != nil {
@@ -148,7 +152,7 @@ func Validate(cfg *Config) []string {
 		}
 	}
 
-	if configured == 0 {
+	if configured == 0 && !anyModuleConfigured(c) {
 		add("no module configured under `checks`")
 	}
 	return problems
@@ -158,4 +162,17 @@ func requireTargets(add func(string, ...any), module string, nTargets int, inven
 	if nTargets == 0 && inventory == "" {
 		add("%s: no target or ansible_inventory", module)
 	}
+}
+
+// anyModuleConfigured reports whether at least one check module is set. Every
+// ChecksConfig field is a *Config pointer, so a non-nil pointer means the module
+// is present — this covers modules that have no explicit validation rules above.
+func anyModuleConfigured(c ChecksConfig) bool {
+	v := reflect.ValueOf(c)
+	for i := 0; i < v.NumField(); i++ {
+		if f := v.Field(i); f.Kind() == reflect.Ptr && !f.IsNil() {
+			return true
+		}
+	}
+	return false
 }

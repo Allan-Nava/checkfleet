@@ -11,6 +11,9 @@ description: A fleet of domain-aware infrastructure checks in one Go binary.
 # build from source
 go build -o checkfleet ./cmd/checkfleet
 
+# scaffold a starter config, then edit the placeholders
+./checkfleet init --modules certs,http
+
 # run every configured check
 ./checkfleet check all --config checkfleet.yml
 

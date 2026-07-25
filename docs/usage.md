@@ -8,6 +8,21 @@ checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns
 checkfleet version
 ```
 
+## Scaffolding a config with `init`
+
+Start from a ready-to-edit config instead of a blank file:
+
+```bash
+checkfleet init                                   # a starter config (certs + http)
+checkfleet init --modules certs,http,dns,tls      # pick the modules you want
+checkfleet init --list                            # list the modules init can scaffold
+```
+
+`init` writes a commented `checkfleet.yml` with placeholder targets that already
+load and validate — edit the values, keep secrets in the environment, then run
+`checkfleet check all`. It refuses to overwrite an existing file unless you pass
+`--force`.
+
 ## The `check` command
 
 ```bash
