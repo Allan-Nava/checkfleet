@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.102.1
+
+- Desktop (fix logo): rimossa la fascia scura di separazione che avevo aggiunto attorno al check — a dimensione dock si leggeva come una linea nera/glitch. Ora il check verde è disegnato pulito sopra l'arco teal (bordi netti, niente glow, niente knockout). `appicon.png` rigenerato dall'SVG. Solo asset frontend.
+
 ## 0.102.0
 
 - Desktop (CF-96, M25): **shell UX v3**. Le tre schermate (Fleet / Dashboard / Config) diventano **viste di prima classe** con tab nel titlebar, guidate da un unico `setView` (niente più toggle separati). Nuova **command-palette** (⌘K): campo di ricerca, navigazione con frecce + Enter, click, che invoca le stesse azioni del resto della UI (run, cambio vista, validate, trend, export, tema). **Keyboard shortcut**: ⌘K palette, ⌘↵ run, `1/2/3` per le viste, `/` per il filtro, `r` per run, Esc per chiudere. Layout responsive (la griglia della dashboard collassa su schermi stretti) e la vista corrente è persistita in localStorage. **Chiude M25 (Desktop GUI v3 — dashboard & grafici).** _(solo frontend statico)_

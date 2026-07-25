@@ -34,11 +34,7 @@
   <path d="M330 150 A150 150 0 1 0 330 362"
         fill="none" stroke="url(#cf-arc)" stroke-width="36" stroke-linecap="round"/>
 
-  <!-- crisp dark separation so the check reads as cleanly cut over the arc -->
+  <!-- the check: bold emerald hero mark, crisp edges, drawn cleanly over the arc -->
   <path d="M172 266 L236 332 L366 164"
-        fill="none" stroke="#0b1327" stroke-width="70" stroke-linecap="round" stroke-linejoin="round"/>
-
-  <!-- the check: bold emerald hero mark, sharp edges (no blur) -->
-  <path d="M172 266 L236 332 L366 164"
-        fill="none" stroke="url(#cf-check)" stroke-width="50" stroke-linecap="round" stroke-linejoin="round"/>
+        fill="none" stroke="url(#cf-check)" stroke-width="52" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
