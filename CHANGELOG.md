@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.112.1
+
+- Docs (sync desktop): aggiornate `docs/desktop.md` (sito) e `desktop/README.md` alle feature spedite in M25/M26/M27, che erano rimaste indietro. Aggiunte le sezioni **Dashboard** (stacked-area, donut, banda worst-status, heatmap modulo×run, availability/SLO, metric-over-time), **History browser** (sfoglia/confronta run passati) e "**Views, command palette & shortcuts**". Corretti riferimenti stale: l'editor si apre dalla **tab Config** (non più dal bottone ⚙), e la tabella dei finding ora ha la colonna **Trend** con sparkline inline. Nessun cambio di codice.
+
 ## 0.112.0
 
 - Modulo `cassandra`/`scylla` (CF-79, M21 — completamento): il modulo di v0.79.0 copriva la reachability ma **non lo "stato nodi"** chiesto dalla spec. Aggiunto un finding `cluster` che aggrega le probe: quanti nodi accettano CQL su quelli configurati, come **metrica** (unit `nodes`). **BAD** sotto `expect_nodes` (0 = li si vuole tutti), **WARN** quando la soglia è raggiunta ma un nodo configurato è comunque giù, **OK** se sono tutti su. Un nodo lento (WARN per `max_latency_ms`) conta come **up**: l'handshake l'ha completato. Il rollup è omesso con un solo target senza `expect_nodes`, dove ripeterebbe soltanto il finding del nodo.

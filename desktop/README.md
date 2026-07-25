@@ -10,12 +10,35 @@ the repo root never pull them in.
 
 ## What it does
 
+Three views, switched from the titlebar (Fleet / Dashboard / Config), a **⌘K
+command palette** and keyboard shortcuts (CF-96).
+
 - **Fleet view** (CF-16): load a `checkfleet.yml`, run every configured module,
   show a summary (worst status + OK/WARN/BAD/ERROR tiles + module chips) and the
-  findings table, sorted worst-first, with per-status colors.
+  findings table, sorted worst-first, with per-status colors and an inline
+  per-target **Trend sparkline** (CF-102).
 - **Run & refresh** (CF-17): a Run button, optional auto-refresh on an interval,
   a stack selector (discovers `checkfleet.<stack>.yml` beside the config), live
-  filtering + min-severity, and export to Markdown/JSON via `internal/output`.
+  filtering + min-severity, and **export to Markdown/JSON/HTML/JUnit/Prometheus/
+  OTLP** via `internal/output` (CF-61).
+- **Dashboard** (M25): charts over the persisted history — stacked-area of the
+  status counts, a distribution donut, a worst-status band, a module×run
+  **heatmap**, an **availability/SLO** card, and a **metric-over-time** line
+  chart. All hand-rolled inline SVG — no chart library, no build step.
+- **Numeric metrics** (CF-91/94/97): checks that measure a value (latency,
+  days-to-expiry, replication lag…) attach it to their findings; the GUI charts
+  it over time and as the table's inline sparklines.
+- **History & diff**: in-session **Changes** (CF-64), a persistent worst-status
+  **Trend** sparkline (CF-70), and a **History browser** to open and compare any
+  two past runs (CF-104) — all from the `.<name>.history.jsonl` beside the config.
+- **Details, explain, validate, notify** (CF-62/63): a detail drawer with Copy,
+  module **Explain**, config **Validate**, and native desktop **Notify** on a
+  bad run.
+- **Config editor** (CF-65/66): a YAML panel with Reload/Validate/Save, a quick
+  **Add endpoint** form and a **Schedule** snippet (cron / `serve`).
+- **UX & a11y** (M26): a design-token system, loading/empty/error states,
+  motion, non-blocking **toasts**, and keyboard/ARIA accessibility (focus-trap,
+  focus-visible, `prefers-reduced-motion`).
 
 ## Develop
 

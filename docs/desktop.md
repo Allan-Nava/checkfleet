@@ -11,6 +11,21 @@ CLI stays the source of truth; the GUI is just another frontend.
 
 ![checkfleet desktop — fleet view](assets/desktop-dark.png)
 
+## Views, command palette & shortcuts
+
+The titlebar switches between three views:
+
+- **Fleet** — the run summary and findings table (below).
+- **Dashboard** — charts over the persisted history (see [Dashboard](#dashboard)).
+- **Config** — the YAML editor for the selected file (see [Edit the config](#edit-the-config)).
+
+Press **⌘K** (Ctrl-K) for a **command palette** — a searchable list of every
+action (run, switch view, validate, export, toggle theme…). Keyboard shortcuts:
+`⌘↵` run, `1`/`2`/`3` switch view, `/` focus the filter, `r` run, `Esc` closes
+any drawer or the palette. Long actions (a run, a history read) show a top
+progress bar and a spinner on **Run**, and outcomes (exported, saved, validated)
+pop a non-blocking **toast**.
+
 ## The fleet view
 
 Everything is one screen, scanned top-to-bottom.
@@ -39,7 +54,10 @@ launches.
 **Findings table**
 
 - One row per finding, **worst-first** (same order as the CLI), with a colored
-  status badge and the `Status / Check / Target / Message` columns.
+  status badge and the `Status / Check / Target / Trend / Message` columns.
+- The **Trend** column draws a tiny inline sparkline of that target's numeric
+  metric (latency, days-to-expiry, lag…) from the history, for the checks that
+  measure one.
 - **Filter** box — live substring match over check, target and message.
 - **Severity** dropdown — show all, or only `≥ WARN`, `≥ BAD`, `ERROR`.
 
@@ -57,6 +75,27 @@ verifies (**Explain**), and the **Validate** button checks the config without
 running anything (the same problems as `checkfleet validate`).
 
 ![checkfleet desktop — finding detail drawer](assets/desktop-detail.png)
+
+## Dashboard
+
+The **Dashboard** view charts the persisted history (each Run is appended next
+to the config), so you see how the fleet behaves over time rather than just now:
+
+- **Findings per run** — a stacked-area timeline of the OK/WARN/BAD/ERROR counts
+  across recent runs.
+- **Current distribution** — a donut of the latest run's status split.
+- **Worst status per run** — a compact color band, oldest → newest.
+- **By module** — a module × run **heatmap**, color-coded by each module's worst
+  status; click a row to drill into that module's trend.
+- **Availability** — fleet **uptime** (share of runs that were all-OK) over the
+  window, how long the current status has held, and the least-available targets
+  with an SLO meter.
+- **Metric over time** — a line chart of a numeric metric (latency, days-to-expiry,
+  replication lag…) for a chosen target; hover a point for the value. A
+  metric-bearing finding's detail drawer shows the same line inline.
+
+Every chart is hand-drawn inline SVG — no chart library, no CDN — and follows
+the light/dark theme. The Dashboard refreshes after each Run.
 
 ## Changes since the last run
 
@@ -76,6 +115,16 @@ Hover a bar for the timestamp and the OK/WARN/BAD/ERROR breakdown.
 
 ![checkfleet desktop — trend sparkline](assets/desktop-trend.png)
 
+## History browser
+
+**Trend** shows worst-status bars; **History** browses the runs themselves. The
+button opens a drawer listing every persisted run — newest first, each with its
+worst-status badge, timestamp and OK/WARN/BAD/ERROR counts. Open a run to see
+its findings (status and numeric value — the compact history file doesn't store
+messages), and **Compare with previous** shows exactly what changed versus the
+run before it (new / resolved / worsened / improved) — the same delta as
+**Changes**, but between historical runs.
+
 ## Group by module
 
 Tick **Group** to fold the findings table into collapsible sections, one per
@@ -88,7 +137,7 @@ between restarts.
 
 ## Edit the config
 
-The gear button (⚙, top-right) opens a full-panel YAML editor on the selected
+The **Config** tab (titlebar) opens a full-panel YAML editor on the selected
 `checkfleet.yml`:
 
 - **Reload** — re-read the file from disk, discarding unsaved edits.
