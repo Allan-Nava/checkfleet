@@ -27,6 +27,7 @@ that one; if it isn't configured, the command fails.
 | `--stack` | — | Overlay a per-stack profile `checkfleet.<stack>.yml` on the base config. See [Configuration → multi-stack](configuration.md#multi-stack-profiles). |
 | `--output` | `text` | Output format: `text`, `markdown`, `json`, `junit`, `prometheus`, `slack`, or `webhook`. See [Output formats](output.md). |
 | `--out-file` | — | Write the output atomically to this file instead of stdout (e.g. a node_exporter `.prom` file). |
+| `--no-color` | — | Disable ANSI colour in the `text` output. Colour is on automatically only when writing to a terminal; it is always off when piped, redirected to a file, or when `NO_COLOR` is set. |
 | `--webhook-env` | `SLACK_WEBHOOK` | Env var holding the webhook URL (used by `--output slack` and `--output webhook`). |
 | `--only` | — | Show only these checks (comma-separated, e.g. `--only certs,http`). |
 | `--min-severity` | — | Show only findings at or above `ok`\|`warn`\|`bad`\|`error`. |

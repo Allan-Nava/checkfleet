@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.68.0
+
+- Output `text` a colori sul terminale (CF-68, M18): lo status è colorato con ANSI (OK verde, WARN giallo, BAD rosso, ERROR magenta) tramite `output.TextColor`. Il colore si attiva **solo quando l'output va a un terminale** (rilevamento TTY zero-dep via `ModeCharDevice`): resta disattivato su pipe, redirezione, `--out-file`, o con `NO_COLOR` (standard) e il nuovo flag `--no-color`. I codici ANSI sono a larghezza zero, quindi l'allineamento delle colonne è invariato. Vale anche per `--watch`. Apre **M18 (Prodotto & UX)**.
+
 ## 0.67.1
 
 - Docs: tabella moduli del README allineata al codice — aggiunti `ingest`, `s3`, `smtp`, `elasticsearch`, `mongodb` (mancavano 5 dei 23 moduli). Aggiornata la riga roadmap: l'unico modulo ancora da fare è `mediamtx`.

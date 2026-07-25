@@ -134,3 +134,12 @@ Configurare da GUI cosa monitorare e con che frequenza, poi usare il software "t
 
 - [x] **CF-65 — Editor YAML in GUI**: bottone ⚙ apre un editor a pannello (Reload/Validate/Save) sul `checkfleet.yml` selezionato. **Validate** sul testo non salvato via `engine.LoadBytes` (interpola `${...}` + default, no disco). Binding `ReadConfig`/`SaveConfig`/`ValidateText`, testati. _(v0.63.0)_
 - [x] **CF-66 — Form "Add endpoint"**: form rapido per i check comuni (http/certs/tcp/dns) che scrive nello YAML via `engine.AddEndpoint` (edita il node tree, preserva commenti/formattazione); bottone **Schedule…** con snippet cron + `serve` (`App.ScheduleSnippet`). Binding e logica testati. **Chiude M17.** _(v0.64.0)_
+
+## M18 — Prodotto & UX (fase 3)
+
+Migliora l'esperienza d'uso di CLI e desktop, riusando `internal/*`. Ogni item è una release a sé; test come per gli altri (unit + server/fixture in-test).
+
+- [x] **CF-68 — Output `text` a colori (TTY)**: `output.TextColor` colora lo status (OK verde/WARN giallo/BAD rosso/ERROR magenta) con ANSI; il CLI lo attiva solo su terminale (rilevamento TTY zero-dep via `ModeCharDevice`), mai su pipe/file/`--out-file`. Disattivabile con `NO_COLOR` e `--no-color`. Vale anche per `--watch`. _(v0.68.0)_
+- [ ] **CF-69 — `checkfleet init`**: scaffold di un `checkfleet.yml` minimale — scelta dei moduli (flag `--modules` o interattivo) → config d'esempio commentato pronto da editare. Onboarding, zero-dep, non sovrascrive un file esistente senza `--force`.
+- [ ] **CF-70 — Storico persistente + trend (GUI)**: la desktop app salva ogni run su file (riusa `internal/history`) e mostra un trend/sparkline del worst-status nel tempo, oltre al diff in-sessione (CF-64).
+- [ ] **CF-71 — Raggruppa per modulo (GUI)**: fleet view con sezioni collassabili per modulo e rollup di stato per sezione. **Chiude M18.**

@@ -81,7 +81,7 @@ func main() {
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `usage:
-  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka|ingest|s3|smtp|elasticsearch|mongodb> --config checkfleet.yml [--output text|markdown|json|junit|html|prometheus|otlp|slack|discord|teams|webhook] [--out-file PATH] [--only ...] [--min-severity warn] [--target glob] [--watch 5s] [--history F --diff] [--exit-on-bad]
+  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka|ingest|s3|smtp|elasticsearch|mongodb> --config checkfleet.yml [--output text|markdown|json|junit|html|prometheus|otlp|slack|discord|teams|webhook] [--out-file PATH] [--no-color] [--only ...] [--min-severity warn] [--target glob] [--watch 5s] [--history F --diff] [--exit-on-bad]
   checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s]   # export Prometheus metrics
   checkfleet report-issues --config checkfleet.yml [--forge github|gitlab]     # open/close tracker issues from BAD findings
   checkfleet alert --config checkfleet.yml --provider pagerduty --key-env K    # create/resolve on-call alerts from BAD/ERROR
@@ -103,6 +103,7 @@ func runCheck(args []string) error {
 	stack := fs.String("stack", "", "stack profile: overlays checkfleet.<stack>.yml onto the base")
 	format := fs.String("output", "text", "format: text, markdown, json, junit, html, prometheus, otlp, slack, discord, teams, webhook")
 	outFile := fs.String("out-file", "", "write the output to this file (atomically) instead of stdout")
+	noColor := fs.Bool("no-color", false, "disable ANSI colour in the text output (also honours NO_COLOR)")
 	webhookEnv := fs.String("webhook-env", "SLACK_WEBHOOK", "env var holding the Slack webhook URL (slack output)")
 	only := fs.String("only", "", "show only these checks (comma-separated list)")
 	minSeverity := fs.String("min-severity", "", "show only findings at or above: ok|warn|bad|error")
@@ -153,7 +154,8 @@ func runCheck(args []string) error {
 	}
 
 	if *watch > 0 {
-		return runWatch(selected, cfg, filter, *watch)
+		watchColor := !*noColor && os.Getenv("NO_COLOR") == "" && isTerminal(os.Stdout)
+		return runWatch(selected, cfg, filter, *watch, watchColor)
 	}
 
 	res := engine.RunWith(context.Background(), selected, runOptions(cfg))
@@ -220,7 +222,9 @@ func runCheck(args []string) error {
 		}
 		fmt.Println("checkfleet: report sent to the webhook")
 	default:
-		rendered, err := render(*format, res, module)
+		color := *format == "text" && *outFile == "" && !*noColor &&
+			os.Getenv("NO_COLOR") == "" && isTerminal(os.Stdout)
+		rendered, err := render(*format, res, module, color)
 		if err != nil {
 			return err
 		}
@@ -252,21 +256,25 @@ func runCheck(args []string) error {
 
 // runWatch re-runs the selected checks on an interval, redrawing a live text
 // view until interrupted (Ctrl-C). Maintenance and filters apply each tick.
-func runWatch(checks []engine.Check, cfg *engine.Config, filter engine.FilterOptions, interval time.Duration) error {
+func runWatch(checks []engine.Check, cfg *engine.Config, filter engine.FilterOptions, interval time.Duration, color bool) error {
 	for {
 		res := engine.RunWith(context.Background(), checks, runOptions(cfg))
 		res.Findings = engine.ApplyMaintenance(res.Findings, cfg.Maintenance, time.Now())
 		res.Findings = engine.Filter(res.Findings, filter)
-		fmt.Print(watchFrame(res, time.Now(), interval))
+		fmt.Print(watchFrame(res, time.Now(), interval, color))
 		time.Sleep(interval)
 	}
 }
 
 // watchFrame renders one live frame: clear the screen, a header, then the text
 // output. Kept separate so it can be tested without the loop.
-func watchFrame(res engine.Result, now time.Time, interval time.Duration) string {
+func watchFrame(res engine.Result, now time.Time, interval time.Duration, color bool) string {
+	body := output.Text(res)
+	if color {
+		body = output.TextColor(res)
+	}
 	return fmt.Sprintf("\033[H\033[2Jcheckfleet — watch every %s — %s\n\n%s",
-		interval, now.Format("15:04:05"), output.Text(res))
+		interval, now.Format("15:04:05"), body)
 }
 
 // pingDeadman pings a dead-man's-switch URL (Healthchecks.io-style): the base
@@ -291,9 +299,12 @@ func pingDeadman(ctx context.Context, url string, worst engine.Status) error {
 }
 
 // render turns a run into the printable output for a format (not slack).
-func render(format string, res engine.Result, module string) (string, error) {
+func render(format string, res engine.Result, module string, color bool) (string, error) {
 	switch format {
 	case "text":
+		if color {
+			return output.TextColor(res), nil
+		}
 		return output.Text(res), nil
 	case "markdown":
 		return output.Markdown(res, module), nil
@@ -313,6 +324,16 @@ func render(format string, res engine.Result, module string) (string, error) {
 	default:
 		return "", fmt.Errorf("unknown format %q", format)
 	}
+}
+
+// isTerminal reports whether f is a character device (a terminal), so we only
+// emit ANSI colour when a human is watching — never into a pipe or file.
+func isTerminal(f *os.File) bool {
+	fi, err := f.Stat()
+	if err != nil {
+		return false
+	}
+	return fi.Mode()&os.ModeCharDevice != 0
 }
 
 // atomicWrite writes content to path via a temp file + rename, so a reader

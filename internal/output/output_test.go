@@ -50,3 +50,31 @@ func TestJSONHasWorst(t *testing.T) {
 		t.Errorf("worst missing from JSON:\n%s", s)
 	}
 }
+
+func TestTextColor(t *testing.T) {
+	res := engine.Result{Findings: []engine.Finding{
+		{Check: "http", Target: "x/health", Status: engine.BAD, Message: "500"},
+		{Check: "certs", Target: "x:443", Status: engine.OK, Message: "ok"},
+	}}
+	plain := Text(res)
+	colored := TextColor(res)
+
+	// Plain output must be free of ANSI escapes; colored must contain them.
+	if strings.Contains(plain, "\x1b[") {
+		t.Error("Text() must not emit ANSI escapes")
+	}
+	if !strings.Contains(colored, "\x1b[31m") || !strings.Contains(colored, ansiReset) {
+		t.Errorf("TextColor() should colour BAD red and reset:\n%q", colored)
+	}
+	if !strings.Contains(colored, "\x1b[32m") {
+		t.Error("TextColor() should colour OK green")
+	}
+	// Stripping the escapes must reproduce the plain rendering (alignment intact).
+	stripped := colored
+	for _, code := range []string{"\x1b[31m", "\x1b[32m", "\x1b[33m", "\x1b[35m", ansiReset} {
+		stripped = strings.ReplaceAll(stripped, code, "")
+	}
+	if stripped != plain {
+		t.Errorf("colored minus escapes != plain:\n%q\nvs\n%q", stripped, plain)
+	}
+}
