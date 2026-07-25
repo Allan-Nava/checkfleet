@@ -183,3 +183,16 @@ checks:
     targets:
       - {name: rtmp-ingest, address: ingest.example.com:1935, protocol: rtmp, max_latency_ms: 2000}
       - {name: srt-ingest, address: ingest.example.com:8890, protocol: srt}
+
+  # S3/object storage: bucket reachable + optional fresh sentinel object.
+  # Credentials from env (never in config); path_style for MinIO/Ceph.
+  s3:
+    targets:
+      - name: backups
+        endpoint: https://s3.example.com
+        bucket: backups
+        region: us-east-1
+        object: latest/db.dump          # optional sentinel
+        max_age_warn_seconds: 86400      # WARN if older than 24h
+        access_key_env: S3_ACCESS_KEY
+        secret_key_env: S3_SECRET_KEY

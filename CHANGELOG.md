@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.62.0
+
+- Modulo `s3`/object storage (CF-23): verifica che un bucket S3-compatibile (AWS S3, MinIO, Ceph) sia raggiungibile e, opzionalmente, che un **oggetto sentinella** esista e sia fresco (`max_age_warn_seconds` → WARN se stantìo, BAD se mancante). Firma **AWS Signature V4 scritta a mano** (zero dipendenze, nessun SDK AWS); credenziali da env (`access_key_env`/`secret_key_env`) o richieste anonime per bucket pubblici; `path_style` per MinIO/Ceph. Testato contro un finto S3 (`httptest`). CLI `checkfleet check s3`. (Quota/spazio non esposti da S3 standard: rimandati.)
+
 ## 0.61.0
 
 - Modulo `ingest` (CF-22): reachability degli endpoint di ingest streaming — "lo streamer riesce a pubblicare?". `protocol: rtmp` fa l'handshake RTMP semplice su TCP (C0/C1→S0/S1/S2, versione verificata); `protocol: srt` fa l'induction handshake SRT su UDP (reachability best-effort). OK/WARN(`max_latency_ms`)/ERROR(handshake fallito)/BAD(protocollo ignoto). **Zero dipendenze** (protocolli scritti a mano); testato contro finti server RTMP/SRT in-test. CLI `checkfleet check ingest`.

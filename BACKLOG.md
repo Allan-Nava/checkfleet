@@ -50,7 +50,7 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 - [x] **CF-20 — Modulo `keycloak`**: health endpoint UP, discovery OIDC per realm (token_endpoint presente, issuer coerente con `/realms/<realm>`). HTTP/JSON zero-dip, nessuna credenziale. _(v0.21.0; versione via admin rimandata — richiede auth)_
 - [ ] **CF-21 — Modulo `mediamtx`**: API di mediamtx — path attivi, reader/publisher per path, path attesi presenti, ingest fermi. Codifica l'uso interno (KV_mediamtx nel runbook NATS). **Deprioritizzato: da fare per ultimo (dopo M16).**
 - [x] **CF-22 — Modulo `ingest` (RTMP/SRT)**: handshake RTMP (C0/C1→S0/S1/S2 su TCP) o induction SRT (UDP, best-effort) + latenza; OK/WARN(latenza)/ERROR(handshake)/BAD(protocollo ignoto). Zero-dep, testato con server fake RTMP/SRT in-test. _(v0.61.0)_
-- [ ] **CF-23 — Modulo `s3`/object storage**: bucket raggiungibile, oggetto sentinella presente e fresco (last-modified sotto soglia), spazio/quota se esposta. Credenziali da env.
+- [x] **CF-23 — Modulo `s3`/object storage**: bucket raggiungibile (HEAD) + oggetto sentinella presente/fresco (`max_age_warn_seconds`). **AWS SigV4 scritto a mano** (zero-dep, no SDK), creds da env o anonimo; path/virtual-hosted style. Testato con finto S3 (httptest). _(v0.62.0; quota non esposta da S3 standard, rimandata)_
 - [ ] **CF-24 — Modulo `smtp`**: il relay accetta connessioni, STARTTLS ok, cert del relay non scaduto, banner atteso. Nessun invio reale.
 - [ ] **CF-25 — Modulo `elasticsearch`/`opensearch`**: `_cluster/health` (green/yellow/red), shard unassigned, nodi attesi presenti, disk watermark.
 

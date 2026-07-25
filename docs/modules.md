@@ -332,6 +332,19 @@ prove a real server is listening, not just an open port:
 connection or handshake fails, `BAD` on an unknown protocol. Zero dependencies;
 tested against in-test fake RTMP/SRT servers.
 
+## `s3` — object storage
+
+Checks an S3-compatible bucket (AWS S3, MinIO, Ceph):
+
+- **Bucket reachable** — `OK` on 200, `BAD` on 404 (missing) / 403 (denied).
+- **Sentinel object** (optional `object`) — `BAD` if missing, `WARN` if older
+  than `max_age_warn_seconds` (a stale drop/backup), else `OK`.
+
+Requests are signed with **AWS Signature V4 written by hand** (zero deps, no AWS
+SDK); credentials come from `access_key_env`/`secret_key_env` (env only), or it
+falls back to anonymous for public buckets. `path_style: true` for MinIO/Ceph.
+Tested against an in-test fake S3 (`httptest`).
+
 ## Ansible inventory as a target source
 
 The `certs`, `nats`, `haproxy`, `patroni`, `consul`, `redis` and `tls` modules can read
