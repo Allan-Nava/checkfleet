@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.97.1
+
+- CI/frontend (CF-97): il job `frontend-smoke` ora, oltre ad asserire che la fleet view si renderizzi, **cattura uno screenshot** della UI (render headless con dati mock) e lo carica come artifact **`frontend-preview`** — così ogni run porta con sé un'anteprima visiva scaricabile del frontend, senza dover buildare/lanciare l'app. Reso a 1280×860 @2x (`--force-device-scale-factor=2`), con una nota nel job summary che punta all'artifact. Riusa il Chrome già installato nel job (nessun setup extra).
+
 ## 0.97.0
 
 - Maintenance window **ricorrenti** (CF-85, M23): oltre alle finestre una-tantum (`from`/`to`), una finestra può ora ripetersi ogni giorno con `daily: "HH:MM-HH:MM"` (orario locale, gestisce il wrap oltre la mezzanotte), opzionalmente ristretta a certi `weekdays` (es. `[Sat, Sun]`). `from`/`to` continuano a delimitare la validità complessiva (es. finestra notturna valida solo per un mese). Un range `daily` malformato non silenzia nulla (fail-safe). Nuovi campi `daily`/`weekdays` su `MaintenanceWindow`; logica testata (dentro/fuori finestra, wrap notturno, restrizione weekday). Documentato in `configuration.md`.

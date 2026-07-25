@@ -64,7 +64,8 @@ jobs:
           done
 
   # Smoke test the frontend: load it headless (mock backend) and assert the UI
-  # actually renders the fleet view — summary + findings table.
+  # actually renders the fleet view — summary + findings table — then capture a
+  # preview PNG uploaded as the "frontend-preview" artifact (CF-97).
   frontend-smoke:
     runs-on: ubuntu-latest
     steps:
@@ -86,6 +87,30 @@ jobs:
           grep -q 'cell-check">stream'  dom.html || fail "findings table not populated"
           grep -q 'live.example.com'    dom.html || fail "finding target not rendered"
           echo "frontend smoke test OK — fleet view renders"
+
+      # Capture a preview PNG of the same render (mock data) so every run ships a
+      # visual of the frontend — download the "frontend-preview" artifact.
+      - name: Render preview screenshot
+        shell: bash
+        run: |
+          CHROME='${{ steps.chrome.outputs.chrome-path }}'
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --hide-scrollbars \
+            --force-device-scale-factor=2 --window-size=1280,860 \
+            --virtual-time-budget=6000 --screenshot=frontend-preview.png \
+            "file://$PWD/desktop/frontend/dist/index.html"
+          ls -la frontend-preview.png
+          {
+            echo "### Frontend preview"
+            echo "Rendered headless from \`desktop/frontend/dist/index.html\` with mock data."
+            echo "Download the **frontend-preview** artifact below for the full image."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload preview
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-preview
+          path: frontend-preview.png
+          if-no-files-found: warn
 
   # End-to-end: build the real Wails binary, launch it headless under Xvfb with
   # a seeded config + auto-run, and assert the actual native webview creates a
