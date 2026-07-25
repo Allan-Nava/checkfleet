@@ -132,3 +132,14 @@ The cask ships the release archive's prebuilt binary (darwin amd64/arm64) and
 strips the `com.apple.quarantine` attribute on install (the binary is
 unsigned). Only tags *after* the tap was enabled carry the cask — older
 releases won't install via brew.
+
+## CI quality gates
+
+Beyond `go vet` + `go test`, CI runs a `lint` job:
+
+- **`govulncheck` (gate)** — fails the build on vulnerabilities your code
+  actually reaches (run with the latest stable Go, so patched stdlib issues
+  clear automatically). Run it locally with
+  `go run golang.org/x/vuln/cmd/govulncheck@latest ./...`.
+- **`golangci-lint` (advisory)** — reports lint findings without blocking; it
+  will be promoted to a gate once the tree is clean (drop `continue-on-error`).

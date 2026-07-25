@@ -23,5 +23,26 @@ jobs:
       - name: English output guardrail (M15/CF-60)
         run: ./scripts/check-english.sh
 
+  # Quality & security gate (CF-57). govulncheck is a hard gate — it only fails
+  # on vulnerabilities your code actually reaches (mostly resolved by keeping Go
+  # patched, hence `stable`). golangci-lint is advisory for now (won't block);
+  # drop continue-on-error to promote it to a gate once the tree is clean.
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "stable"
+      - name: govulncheck (gate)
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+      - name: golangci-lint (advisory)
+        continue-on-error: true
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+
 # Releases (cross-platform archives, checksums, Homebrew formula) are built by
 # .github/workflows/release.yml with goreleaser on v* tags.

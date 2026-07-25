@@ -108,7 +108,7 @@ Stack scelto: **Wails** (core Go che riusa direttamente `internal/engine`, front
 
 - [ ] **CF-55 — Immagine Docker**: immagine multi-arch (linux/amd64+arm64) pubblicata su GHCR via goreleaser, con l'exporter come entrypoint. Utile in k8s/nomad.
 - [ ] **CF-56 — Firma & SBOM**: firma delle release con cosign (keyless) + SBOM (goreleaser). Provenienza verificabile.
-- [ ] **CF-57 — Lint & vuln in CI**: `govulncheck` e `golangci-lint` come gate in CI, accanto a vet/test.
+- [x] **CF-57 — Lint & vuln in CI**: nuovo job `lint` in `ci.yml` — `govulncheck` come **gate** (Go `stable`, fallisce solo su vuln raggiungibili) e `golangci-lint` **advisory** (`continue-on-error`, da promuovere a gate quando il tree è pulito). _(v0.54.0)_
 
 ## M15 — Output in inglese (i18n) (fase 3)
 

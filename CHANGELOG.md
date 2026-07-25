@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.54.0
+
+- Lint & vuln in CI (CF-57): nuovo job `lint` in `ci.yml`. **`govulncheck` come gate** (con Go `stable`: fallisce solo sulle vulnerabilità effettivamente raggiungibili dal codice; le vuln stdlib si risolvono tenendo Go aggiornato, quelle nelle dipendenze non-chiamate non bloccano). **`golangci-lint` advisory** (`continue-on-error`, non blocca) — si promuove a gate togliendo `continue-on-error` quando il tree è pulito. Docs in `development.md`.
+
 ## 0.53.0
 
 - Export OTLP (CF-30): `--output otlp` emette una richiesta OTLP/HTTP **metrics** in codifica JSON — gli stessi gauge del formato `prometheus` (`checkfleet.finding.status`, `.findings.total`, `.worst.status`) — costruita a mano **senza dipendenze** (niente SDK OpenTelemetry). Si POSTa al `/v1/metrics` di un collector. `output.OTLP` testato. **Chiude M7 (alerting & output).**
