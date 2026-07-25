@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.75.0
+
+- Modulo `etcd` (CF-75, M20): health check di un cluster etcd v3 via il suo **HTTP JSON gateway** (nessuna dipendenza `clientv3`). `/health` (ERROR se irraggiungibile, BAD se unhealthy), `POST /v3/maintenance/status` → **BAD se non c'è un leader** (quorum perso) + versione etcd, `POST /v3/cluster/member/list` → **BAD** se i membri sono meno di `expect_members` (rischio quorum). Token auth opzionale (`username`+`password_env` → `/v3/auth/authenticate`) e `insecure_skip_verify` per cluster self-signed. **Zero dipendenze** (HTTP/JSON); i 64-bit (leader/member id) arrivano come stringhe dal gateway proto3. Testato contro un gateway finto (`httptest`). CLI `checkfleet check etcd`. **Chiude M20 (Più datastore).**
+
 ## 0.74.0
 
 - Modulo `mysql`/`mariadb` (CF-74, M20): health check read-only. Server raggiungibile (con versione e ruolo **read-only**), **saturazione connessioni** (`Threads_connected` vs `max_connections`, WARN oltre `conn_warn_pct` default 80), e su una **replica** lo stato dei thread IO/SQL (BAD se fermi) e il **lag** (`Seconds_Behind`, WARN/BAD oltre `lag_warn_seconds`/`lag_crit_seconds` default 10/60; BAD se non sta replicando). Gestisce sia `SHOW REPLICA STATUS` (MySQL 8.0.22+) sia il legacy `SHOW SLAVE STATUS` (MariaDB/vecchie versioni). Usa il driver standard `go-sql-driver/mysql` (eccezione motivata come `pgx`); la **password sta nell'ambiente** via interpolazione `${...}` nel DSN, mai inline. Logica dietro l'interfaccia `collector`, **testata con un fake** (nessun DB reale). CLI `checkfleet check mysql`. Apre M20 (Più datastore).

@@ -451,6 +451,29 @@ with a fake collector; no real database in tests.
       - {name: primary, dsn: "monitor:${MYSQL_PASSWORD}@tcp(db-01:3306)/"}
 ```
 
+## `etcd` — etcd v3 cluster
+
+Checks an etcd v3 cluster over its **HTTP JSON gateway** — no `clientv3`
+dependency:
+
+- **Health** (`/health`) — `ERROR` if unreachable, `BAD` if the endpoint reports
+  unhealthy.
+- **Leader** (`/v3/maintenance/status`) — `BAD` if there is no leader (the
+  cluster has lost quorum); otherwise reports the etcd version.
+- **Members** (`/v3/cluster/member/list`) — `BAD` if fewer members than
+  `expect_members` (quorum risk), else the count is shown in the healthy message.
+
+Optional token auth (`username` + `password_env`, resolved from the environment)
+and `insecure_skip_verify` for self-signed clusters. Zero-dep (HTTP/JSON); tested
+against an in-test fake gateway.
+
+```yaml
+  etcd:
+    expect_members: 3
+    targets:
+      - {name: etcd-01, url: https://etcd-01:2379, insecure_skip_verify: true}
+```
+
 ## Ansible inventory as a target source
 
 The `certs`, `nats`, `haproxy`, `patroni`, `consul`, `redis` and `tls` modules can read

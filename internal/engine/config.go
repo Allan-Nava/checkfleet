@@ -56,6 +56,25 @@ type ChecksConfig struct {
 	Elasticsearch *ElasticsearchConfig `yaml:"elasticsearch"`
 	MongoDB       *MongoDBConfig       `yaml:"mongodb"`
 	MySQL         *MySQLConfig         `yaml:"mysql"`
+	Etcd          *EtcdConfig          `yaml:"etcd"`
+}
+
+// EtcdConfig configures the etcd v3 cluster check (HTTP JSON gateway).
+type EtcdConfig struct {
+	Targets       []EtcdTarget `yaml:"targets"`
+	ExpectMembers int          `yaml:"expect_members"` // BAD if fewer members (0 disables)
+}
+
+// EtcdTarget is one etcd client endpoint.
+type EtcdTarget struct {
+	Name string `yaml:"name"`
+	// Client URL including scheme, e.g. https://etcd-01:2379.
+	URL string `yaml:"url"`
+	// Optional token auth; password from env, never inline.
+	Username    string `yaml:"username"`
+	PasswordEnv string `yaml:"password_env"`
+	// Skip TLS verification (self-signed clusters).
+	Insecure bool `yaml:"insecure_skip_verify"`
 }
 
 // MySQLConfig configures the MySQL/MariaDB check. Read-only; put the password in

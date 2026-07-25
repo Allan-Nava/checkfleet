@@ -75,6 +75,7 @@ See [Installation](https://allan-nava.github.io/checkfleet/installation/) for al
 | `elasticsearch` | Elasticsearch/OpenSearch via HTTP: cluster health green/yellow/red, unassigned shards, expected nodes, per-node disk watermark |
 | `mongodb` | MongoDB via the official driver: replica-set status (primary present, member health, secondary lag) and connection saturation |
 | `mysql` | MySQL/MariaDB via go-sql-driver: reachable, read-only role, connection saturation, replica IO/SQL threads + lag |
+| `etcd` | etcd v3 via the HTTP JSON gateway: /health, leader present (quorum), member count vs expected |
 
 The only module still on the roadmap (see [BACKLOG.md](BACKLOG.md)) is `mediamtx`.
 

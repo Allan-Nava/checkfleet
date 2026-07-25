@@ -240,3 +240,10 @@ checks:
     targets:
       - {name: primary, dsn: "monitor:${MYSQL_PASSWORD}@tcp(db-01:3306)/"}
       - {name: replica, dsn: "monitor:${MYSQL_PASSWORD}@tcp(db-02:3306)/"}
+
+  # etcd v3 cluster health via the HTTP JSON gateway (zero-dep).
+  etcd:
+    expect_members: 3
+    targets:
+      - {name: etcd-01, url: https://etcd-01:2379, insecure_skip_verify: true}
+      - {name: etcd-02, url: https://etcd-02:2379, insecure_skip_verify: true}

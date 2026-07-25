@@ -9,6 +9,7 @@ import (
 	"github.com/Allan-Nava/checkfleet/internal/checks/consul"
 	"github.com/Allan-Nava/checkfleet/internal/checks/dns"
 	"github.com/Allan-Nava/checkfleet/internal/checks/elasticsearch"
+	"github.com/Allan-Nava/checkfleet/internal/checks/etcd"
 	"github.com/Allan-Nava/checkfleet/internal/checks/grpccheck"
 	"github.com/Allan-Nava/checkfleet/internal/checks/haproxy"
 	"github.com/Allan-Nava/checkfleet/internal/checks/httpcheck"
@@ -67,6 +68,7 @@ func Modules(cfg *engine.Config) []Spec {
 		{"elasticsearch", c.Elasticsearch != nil, func() engine.Check { return elasticsearch.New(*c.Elasticsearch) }},
 		{"mongodb", c.MongoDB != nil, func() engine.Check { return mongodb.New(*c.MongoDB) }},
 		{"mysql", c.MySQL != nil, func() engine.Check { return mysql.New(*c.MySQL) }},
+		{"etcd", c.Etcd != nil, func() engine.Check { return etcd.New(*c.Etcd) }},
 	}
 }
 

@@ -167,6 +167,18 @@ func Validate(cfg *Config) []string {
 		}
 	}
 
+	if x := c.Etcd; x != nil {
+		configured++
+		if len(x.Targets) == 0 {
+			add("etcd: no target")
+		}
+		for i, t := range x.Targets {
+			if strings.TrimSpace(t.URL) == "" {
+				add("etcd: target #%d has no url", i+1)
+			}
+		}
+	}
+
 	if configured == 0 && !anyModuleConfigured(c) {
 		add("no module configured under `checks`")
 	}

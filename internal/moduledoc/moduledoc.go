@@ -29,6 +29,7 @@ var Docs = map[string]string{
 	"elasticsearch": "Elasticsearch/OpenSearch via HTTP: cluster health green/yellow(WARN)/red(BAD), unassigned shards, `expect_nodes`, per-node disk watermark (`disk_warn_pct`/`disk_crit_pct`).",
 	"mongodb":       "MongoDB (official driver): replica-set status (PRIMARY present, member health, SECONDARY lag `lag_warn_seconds`/`lag_crit_seconds`) and connection saturation (`conn_warn_pct`). Read-only.",
 	"mysql":         "MySQL/MariaDB (go-sql-driver): reachable, read-only role, connection saturation (`conn_warn_pct`), and on a replica the IO/SQL threads + lag (`lag_warn_seconds`/`lag_crit_seconds`). Read-only.",
+	"etcd":          "etcd v3 via the HTTP JSON gateway: /health, leader present (BAD if no leader / lost quorum), etcd version and member count vs `expect_members`. Zero-dep.",
 }
 
 // Doc returns the description for a module and whether it exists.
