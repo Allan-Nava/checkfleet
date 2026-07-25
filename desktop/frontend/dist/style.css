@@ -541,3 +541,26 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 6px; border-radius
 /* livelier hover feedback (chip/rows/palette rows transition via their base
    rules; row & palette-li transitions are added there to avoid duplicate selectors) */
 .chip:hover { color: var(--heading); border-color: color-mix(in srgb, var(--brand-2) 55%, transparent); }
+
+/* ================= toasts (CF-101) ================= */
+.toasts { position: fixed; right: 16px; bottom: 42px; z-index: 80;
+  display: flex; flex-direction: column; gap: 8px; align-items: flex-end; pointer-events: none; }
+.toast { pointer-events: auto; display: flex; align-items: center; gap: 10px; max-width: 380px;
+  padding: 10px 12px 10px 13px; border-radius: var(--r-md); font-size: var(--fs-sm);
+  background: var(--bg-2); color: var(--text); border: 1px solid var(--border-str); box-shadow: var(--shadow-md);
+  opacity: 0; transform: translateY(8px);
+  transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease); }
+.toast.in { opacity: 1; transform: none; }
+.toast.out { opacity: 0; transform: translateY(8px); }
+.toast-dot { flex: 0 0 auto; width: 8px; height: 8px; border-radius: 50%; background: var(--brand-2); }
+.toast-success .toast-dot { background: var(--ok); }
+.toast-error .toast-dot { background: var(--bad); }
+.toast-warn .toast-dot { background: var(--warn); }
+.toast-msg { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.toast-action { margin-left: 4px; height: 24px; padding: 0 10px; border-radius: var(--r-sm);
+  border: 1px solid var(--border-str); background: var(--surface); color: var(--heading);
+  font-size: 12px; font-weight: 600; cursor: pointer; }
+.toast-action:hover { border-color: var(--brand); }
+.toast-x { margin-left: 2px; padding: 2px 3px; background: transparent; border: none;
+  color: var(--muted); cursor: pointer; font-size: 12px; line-height: 1; }
+.toast-x:hover { color: var(--heading); }

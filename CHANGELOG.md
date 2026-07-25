@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.107.0
+
+- Desktop (CF-101, M26 — toast in-app): nuove notifiche non-bloccanti al posto (in aggiunta) del solo testo nella status bar. Helper `toast(msg, {kind, timeout, action})` + un container `aria-live="polite"`: card con dot per tipo (info/success/warn/error), auto-dismiss (in pausa se ci passi sopra col mouse), pulsante di chiusura e azione opzionale, stack limitato a 4. Agganciato alle azioni: export ("Exported … → path" / errore), salvataggio config, validate ("valid" / "N problems"), copy ("Copied to clipboard"). Enter/exit animati via classi, `prefers-reduced-motion` rispettato. Solo frontend statico.
+
 ## 0.106.0
 
 - Desktop (CF-100, M26 — micro-interazioni & motion): la GUI ora ha transizioni curate, tutte in CSS (nessun refactor JS). Cambio vista con **fade-up**, drawer che **scivola** da destra, command-palette in **pop-in**, scrim in dissolvenza, grafici che compaiono in fade; feedback hover/press più vivo su tab, bottoni, righe della tabella e chip. Tutto rispetta `prefers-reduced-motion` (animazioni azzerate). Le transizioni sui selettori già esistenti sono fuse nelle regole base per non violare lo stylelint. Solo `dist/style.css`.

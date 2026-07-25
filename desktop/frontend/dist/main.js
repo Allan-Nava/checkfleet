@@ -324,8 +324,8 @@
   async function save(fmt) {
     try {
       const path = await Backend.SaveReport(fmt);
-      if (path) setStatus("saved: " + path);
-    } catch (e) { setStatus("export error: " + e); }
+      if (path) { setStatus("saved: " + path); toast("Exported " + fmt.toUpperCase() + " → " + path, { kind: "success" }); }
+    } catch (e) { setStatus("export error: " + e); toast("Export failed: " + e, { kind: "error" }); }
   }
 
   function toggleTheme() {
@@ -553,8 +553,9 @@
     try {
       await Backend.SaveConfig($("configPath").value, $("cfgText").value);
       cfgMessage("Saved " + $("configPath").value, false);
+      toast("Config saved", { kind: "success" });
       await refreshStacks();
-    } catch (e) { cfgMessage("Save error: " + e, true); }
+    } catch (e) { cfgMessage("Save error: " + e, true); toast("Save failed: " + e, { kind: "error" }); }
   }
 
   /* ---------------- drawer (detail / explain / validate) ---------------- */
@@ -567,6 +568,41 @@
   function closeDrawer() {
     $("drawer").hidden = true;
     $("drawerScrim").hidden = true;
+  }
+
+  /* ---------------- toasts (CF-101) ---------------- */
+  // toast(msg, {kind, timeout, action:{label, fn}}) — a non-blocking notification.
+  function toast(msg, opts) {
+    opts = opts || {};
+    const host = $("toasts");
+    if (!host) return;
+    const el = document.createElement("div");
+    el.className = "toast toast-" + (opts.kind || "info");
+    el.setAttribute("role", opts.kind === "error" ? "alert" : "status");
+    let html = `<span class="toast-dot"></span><span class="toast-msg">${escapeHtml(msg)}</span>`;
+    if (opts.action) html += `<button class="toast-action">${escapeHtml(opts.action.label)}</button>`;
+    html += `<button class="toast-x" aria-label="Dismiss">✕</button>`;
+    el.innerHTML = html;
+    host.appendChild(el);
+    while (host.children.length > 4) host.firstChild.remove();
+    requestAnimationFrame(() => el.classList.add("in"));
+
+    let timer = setTimeout(() => dismissToast(el), opts.timeout || 3600);
+    el.addEventListener("mouseenter", () => clearTimeout(timer));
+    el.addEventListener("mouseleave", () => { timer = setTimeout(() => dismissToast(el), 1500); });
+    el.querySelector(".toast-x").addEventListener("click", () => dismissToast(el));
+    if (opts.action) {
+      el.querySelector(".toast-action").addEventListener("click", () => {
+        try { opts.action.fn(); } catch (_) {}
+        dismissToast(el);
+      });
+    }
+  }
+  function dismissToast(el) {
+    if (!el || el.classList.contains("out")) return;
+    el.classList.add("out");
+    el.addEventListener("transitionend", () => el.remove(), { once: true });
+    setTimeout(() => el.remove(), 320); // fallback if transitionend doesn't fire
   }
 
   /* ---------------- command palette (CF-96) ---------------- */
@@ -673,6 +709,8 @@
       ? `<p class="ok-note">Config is valid ✅</p>`
       : `<ul class="problems">${problems.map((p) => `<li>${escapeHtml(p)}</li>`).join("")}</ul>`;
     openDrawer("Validate", body);
+    if (problems.length === 0) toast("Config is valid", { kind: "success" });
+    else toast(problems.length + " problem" + (problems.length > 1 ? "s" : "") + " found", { kind: "warn" });
   }
 
   const CHANGE_SYMBOL = { new: "+", resolved: "-", worsened: "!", improved: "~" };
@@ -781,7 +819,7 @@
     $("drawerBody").addEventListener("click", (e) => {
       const btn = e.target.closest(".copy-btn");
       if (btn) {
-        try { navigator.clipboard.writeText(btn.dataset.copy); btn.textContent = "Copied"; } catch (_) {}
+        try { navigator.clipboard.writeText(btn.dataset.copy); btn.textContent = "Copied"; toast("Copied to clipboard", { kind: "success", timeout: 2000 }); } catch (_) {}
       }
     });
     $("drawerClose").addEventListener("click", closeDrawer);
