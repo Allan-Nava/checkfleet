@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.102.2
+
+- Desktop (icona completa): nuovo script `desktop/build/gen-icon.sh` che rigenera `appicon.png` dall'SVG e costruisce un **iconset `.icns` completo** — tutte le taglie da 16 a 1024 in 1x **e** 2x (Wails da solo emette solo le varianti @2x). Agganciato al workflow `desktop.yml` (step macOS dopo `wails build`), così anche gli artefatti di release hanno l'icona a piena risoluzione a ogni dimensione. Zero-dep: usa solo `qlmanage`/`sips`/`iconutil` di sistema.
+
 ## 0.102.1
 
 - Desktop (fix logo): rimossa la fascia scura di separazione che avevo aggiunto attorno al check — a dimensione dock si leggeva come una linea nera/glitch. Ora il check verde è disegnato pulito sopra l'arco teal (bordi netti, niente glow, niente knockout). `appicon.png` rigenerato dall'SVG. Solo asset frontend.

@@ -80,6 +80,12 @@ jobs:
           [ "${{ runner.os }}" = "Linux" ] && TAGS="-tags webkit2_41"
           wails build -platform ${{ matrix.platform }} $TAGS -ldflags "-X main.version=${VERSION}"
 
+      - name: Complete app icon (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        # Wails emits only @2x icon reps; swap in a full iconset (16→1024, 1x+2x).
+        run: desktop/build/gen-icon.sh
+
       - name: Package (macOS)
         if: runner.os == 'macOS'
         shell: bash
