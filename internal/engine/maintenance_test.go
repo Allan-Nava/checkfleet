@@ -45,3 +45,45 @@ func TestApplyMaintenance(t *testing.T) {
 		t.Fatalf("input findings mutated: %+v", findings[0])
 	}
 }
+
+func TestRecurringDailyWindow(t *testing.T) {
+	findings := []Finding{{Check: "http", Target: "x", Status: BAD, Message: "down"}}
+	win := []MaintenanceWindow{{Daily: "01:00-03:00", Action: "mute"}}
+
+	inside := time.Date(2026, 7, 25, 2, 0, 0, 0, time.Local)
+	if got := ApplyMaintenance(findings, win, inside); len(got) != 0 {
+		t.Errorf("02:00 in 01:00-03:00 should mute, got %+v", got)
+	}
+	outside := time.Date(2026, 7, 25, 4, 0, 0, 0, time.Local)
+	if got := ApplyMaintenance(findings, win, outside); len(got) != 1 {
+		t.Errorf("04:00 outside window should keep finding, got %+v", got)
+	}
+}
+
+func TestRecurringOvernightWrap(t *testing.T) {
+	findings := []Finding{{Check: "http", Target: "x", Status: BAD, Message: "down"}}
+	win := []MaintenanceWindow{{Daily: "23:00-02:00", Action: "mute"}}
+	for _, hh := range []int{23, 0, 1} {
+		at := time.Date(2026, 7, 25, hh, 30, 0, 0, time.Local)
+		if got := ApplyMaintenance(findings, win, at); len(got) != 0 {
+			t.Errorf("%02d:30 should be inside overnight window", hh)
+		}
+	}
+	at := time.Date(2026, 7, 25, 12, 0, 0, 0, time.Local)
+	if got := ApplyMaintenance(findings, win, at); len(got) != 1 {
+		t.Errorf("noon should be outside overnight window")
+	}
+}
+
+func TestRecurringWeekdayRestriction(t *testing.T) {
+	findings := []Finding{{Check: "http", Target: "x", Status: BAD, Message: "down"}}
+	win := []MaintenanceWindow{{Daily: "00:00-23:59", Weekdays: []string{"Sat", "Sun"}, Action: "mute"}}
+	sat := time.Date(2026, 7, 25, 12, 0, 0, 0, time.Local) // 2026-07-25 is a Saturday
+	if got := ApplyMaintenance(findings, win, sat); len(got) != 0 {
+		t.Errorf("Saturday should mute, got %+v", got)
+	}
+	mon := time.Date(2026, 7, 27, 12, 0, 0, 0, time.Local) // Monday
+	if got := ApplyMaintenance(findings, win, mon); len(got) != 1 {
+		t.Errorf("Monday should keep finding, got %+v", got)
+	}
+}

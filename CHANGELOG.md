@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.97.0
+
+- Maintenance window **ricorrenti** (CF-85, M23): oltre alle finestre una-tantum (`from`/`to`), una finestra può ora ripetersi ogni giorno con `daily: "HH:MM-HH:MM"` (orario locale, gestisce il wrap oltre la mezzanotte), opzionalmente ristretta a certi `weekdays` (es. `[Sat, Sun]`). `from`/`to` continuano a delimitare la validità complessiva (es. finestra notturna valida solo per un mese). Un range `daily` malformato non silenzia nulla (fail-safe). Nuovi campi `daily`/`weekdays` su `MaintenanceWindow`; logica testata (dentro/fuori finestra, wrap notturno, restrizione weekday). Documentato in `configuration.md`.
+
 ## 0.96.1
 
 - CI/frontend (CF-97): nuovo job **`frontend-lint`** in `desktop-test.yml` che valida gli asset statici del desktop — finora coperti solo dallo smoke-render, che non intercetta uno stylesheet rotto o un SVG malformato. `stylelint` (config recommended, `no-descending-specificity` disattivata perché rumorosa) sul CSS, `html-validate` (recommended; disattivate `doctype-style` e `no-implicit-button-type` opinabili, e `no-inline-style` perché Wails **richiede** l'attributo `--wails-draggable` inline sulle drag-region della titlebar) sull'HTML, `node --check` sulla sintassi di `main.js` e `xmllint` sugli SVG. Le config vivono in `desktop/frontend/{.stylelintrc.json,.htmlvalidate.json}`; i linter si installano freschi in CI (`npm install --no-save`, `node_modules/` ora in `.gitignore`). Il linter ha già scovato e fatto correggere 2 selettori CSS duplicati (`.findings tbody tr:hover` scritto due volte, `.chip` definito in due punti).

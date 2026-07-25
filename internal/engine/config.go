@@ -29,6 +29,11 @@ type MaintenanceWindow struct {
 	From   string `yaml:"from"`   // RFC3339 start (inclusive); "" = unbounded
 	To     string `yaml:"to"`     // RFC3339 end (inclusive); "" = unbounded
 	Action string `yaml:"action"` // "mute" (drop, default) or "warn" (cap at WARN)
+	// Recurring window: a daily local clock range "HH:MM-HH:MM" (wraps past
+	// midnight), optionally restricted to Weekdays. When set, From/To still bound
+	// the overall validity. Empty Daily = one-shot window (From/To only).
+	Daily    string   `yaml:"daily"`
+	Weekdays []string `yaml:"weekdays"` // e.g. [Sat, Sun]; empty = every day
 }
 
 type ChecksConfig struct {

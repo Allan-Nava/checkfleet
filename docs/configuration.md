@@ -531,3 +531,18 @@ maintenance:
 
 `action: mute` (default) drops the finding; `action: warn` caps `BAD`/`ERROR` at
 `WARN`. Applies to `check` (before `--exit-on-bad`) and to `serve`.
+
+**Recurring windows** — add `daily: "HH:MM-HH:MM"` (local clock, wraps past
+midnight) for a window that repeats every day, optionally restricted to
+`weekdays`. `from`/`to` still bound the overall validity (e.g. a nightly window
+only for one month).
+
+```yaml
+maintenance:
+  - check: postgres            # every night 01:00–03:00 local, muted
+    daily: "01:00-03:00"
+  - target: "cdn.*"            # only on weekends, capped at WARN
+    daily: "00:00-23:59"
+    weekdays: [Sat, Sun]
+    action: warn
+```
