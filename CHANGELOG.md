@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.99.0
+
+- Desktop (CF-95, M25): card **Availability / SLO** nella Dashboard. Nuovo binding `App.Availability` che dallo storico persistente (`internal/history`) calcola l'**uptime** della flotta (quota di run col worst status OK) sulla finestra recente, la **streak** dello stato corrente (da quando dura) e l'**uptime per-target** ordinato dal meno disponibile. Il frontend mostra un hero con la percentuale + stato corrente e la lista dei target peggiori con una barra SVG (`charts.js` → `svgMeter`, zero-dep, colorata per soglia SLO). Binding e helper `pct` coperti da test (`TestAvailability`, `TestPct`, smoke `charts.test.js`). Nessun cambio all'engine. _(solo frontend statico + binding desktop)_
+
 ## 0.98.3
 
 - Desktop (fix logo): il mark aveva un glow gaussiano sul check che lo faceva leggere come una sagoma sfocata/non ritagliata; sostituito con un mark netto + una fascia scura di separazione (`#0b1327`) così il check risulta pulitamente scontornato sopra l'arco teal. Inoltre **rigenerato `desktop/build/appicon.png`** dall'SVG rifinito: era fermo allo scaffold iniziale (v0.26.0), quindi il dock mostrava ancora il logo pre-rifinitura. Solo asset frontend (`desktop/frontend/dist/assets/logo.svg` + sync `docs/assets/logo.svg` + `appicon.png`); l'icona dell'app si rigenera al `wails build`.

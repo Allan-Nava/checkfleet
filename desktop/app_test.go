@@ -374,10 +374,55 @@ func TestWorseOf(t *testing.T) {
 	}
 }
 
+func TestPct(t *testing.T) {
+	if got := pct(0, 0); got != 0 {
+		t.Errorf("pct(0,0) = %v, want 0 (no divide-by-zero)", got)
+	}
+	if got := pct(3, 4); got != 75 {
+		t.Errorf("pct(3,4) = %v, want 75", got)
+	}
+}
+
+func TestAvailability(t *testing.T) {
+	addr := startTCP(t)
+	dir := t.TempDir()
+	cfg := dir + "/checkfleet.yml"
+	if err := os.WriteFile(cfg,
+		[]byte("timeout_seconds: 5\nchecks:\n  tcp:\n    targets:\n      - address: \""+addr+"\"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	app := NewApp("test")
+	app.RunChecks(cfg, "")
+	app.RunChecks(cfg, "")
+
+	av, err := app.Availability(cfg, 10)
+	if err != nil {
+		t.Fatalf("Availability: %v", err)
+	}
+	if av.Runs != 2 || av.OKRuns != 2 || av.Uptime != 100 {
+		t.Fatalf("av = %+v, want 2 runs all OK (100%% uptime)", av)
+	}
+	if av.CurrentWorst != "OK" {
+		t.Errorf("currentWorst = %q, want OK", av.CurrentWorst)
+	}
+	// The streak started at the first (oldest) run since both are OK.
+	if av.CurrentSinceUnix != av.FromUnix {
+		t.Errorf("currentSince = %d, want fromUnix %d (contiguous OK streak)", av.CurrentSinceUnix, av.FromUnix)
+	}
+	if len(av.Targets) != 1 || av.Targets[0].Check != "tcp" || av.Targets[0].Uptime != 100 {
+		t.Fatalf("targets = %+v, want one tcp target at 100%%", av.Targets)
+	}
+
+	// Empty config path is a no-op, not an error.
+	if av, err := app.Availability("", 10); err != nil || av.Runs != 0 {
+		t.Errorf("empty path: want empty/no-error, got %+v %v", av, err)
+	}
+}
+
 func TestEnsureStarterConfig(t *testing.T) {
 	tmp := t.TempDir()
-	t.Setenv("HOME", tmp)             // darwin: UserConfigDir = $HOME/Library/Application Support
-	t.Setenv("XDG_CONFIG_HOME", tmp)  // linux: UserConfigDir = $XDG_CONFIG_HOME
+	t.Setenv("HOME", tmp)            // darwin: UserConfigDir = $HOME/Library/Application Support
+	t.Setenv("XDG_CONFIG_HOME", tmp) // linux: UserConfigDir = $XDG_CONFIG_HOME
 
 	p, created, err := ensureStarterConfig()
 	if err != nil || !created {

@@ -209,6 +209,116 @@ func (a *App) TrendByModule(configPath string, n int) (ModuleTrend, error) {
 	return ModuleTrend{Modules: modules, Runs: runs}, nil
 }
 
+// Availability is the SLO rollup for the dashboard (CF-95): fleet uptime over
+// the recent window (share of runs whose worst status is OK), the current
+// status streak, and the least-available targets.
+type Availability struct {
+	Runs             int           `json:"runs"`
+	FromUnix         int64         `json:"fromUnix"`
+	ToUnix           int64         `json:"toUnix"`
+	OKRuns           int           `json:"okRuns"`
+	Uptime           float64       `json:"uptime"`
+	CurrentWorst     string        `json:"currentWorst"`
+	CurrentSinceUnix int64         `json:"currentSinceUnix"`
+	Targets          []TargetAvail `json:"targets"`
+}
+
+// TargetAvail is one target's uptime over the window (worst-uptime first).
+type TargetAvail struct {
+	Check  string  `json:"check"`
+	Target string  `json:"target"`
+	Runs   int     `json:"runs"`
+	OKRuns int     `json:"okRuns"`
+	Uptime float64 `json:"uptime"`
+	Last   string  `json:"last"`
+}
+
+// Availability computes the SLO rollup from the last n persisted runs.
+func (a *App) Availability(configPath string, n int) (Availability, error) {
+	p := historyPath(configPath)
+	if p == "" {
+		return Availability{}, nil
+	}
+	records, err := history.Open(p).Recent(n)
+	if err != nil {
+		return Availability{}, err
+	}
+	av := Availability{Runs: len(records)}
+	if len(records) == 0 {
+		return av, nil
+	}
+	av.FromUnix = records[0].Unix
+	av.ToUnix = records[len(records)-1].Unix
+
+	type acc struct {
+		runs, ok int
+		last     string
+	}
+	per := map[string]*acc{}
+	order := []string{}
+	runWorst := make([]string, len(records))
+	for i, r := range records {
+		worst := "OK"
+		for _, e := range r.Entries {
+			worst = worseOf(worst, e.Status)
+			key := e.Check + diffSep + e.Target
+			m, ok := per[key]
+			if !ok {
+				m = &acc{}
+				per[key] = m
+				order = append(order, key)
+			}
+			m.runs++
+			if e.Status == "OK" {
+				m.ok++
+			}
+			m.last = e.Status
+		}
+		runWorst[i] = worst
+		if worst == "OK" {
+			av.OKRuns++
+		}
+	}
+	av.Uptime = pct(av.OKRuns, av.Runs)
+
+	// Current streak: walk back from the newest run while its worst is unchanged.
+	av.CurrentWorst = runWorst[len(runWorst)-1]
+	av.CurrentSinceUnix = av.ToUnix
+	for i := len(runWorst) - 1; i >= 0; i-- {
+		if runWorst[i] != av.CurrentWorst {
+			break
+		}
+		av.CurrentSinceUnix = records[i].Unix
+	}
+
+	for _, key := range order {
+		m := per[key]
+		check, target, _ := strings.Cut(key, diffSep)
+		av.Targets = append(av.Targets, TargetAvail{
+			Check: check, Target: target, Runs: m.runs, OKRuns: m.ok,
+			Uptime: pct(m.ok, m.runs), Last: m.last,
+		})
+	}
+	sort.SliceStable(av.Targets, func(i, j int) bool {
+		if av.Targets[i].Uptime != av.Targets[j].Uptime {
+			return av.Targets[i].Uptime < av.Targets[j].Uptime
+		}
+		if av.Targets[i].Check != av.Targets[j].Check {
+			return av.Targets[i].Check < av.Targets[j].Check
+		}
+		return av.Targets[i].Target < av.Targets[j].Target
+	})
+	return av, nil
+}
+
+// pct is a zero-safe percentage helper.
+func pct(num, den int) float64 {
+	if den == 0 {
+		return 0
+	}
+	return float64(num) / float64(den) * 100
+}
+
 // Trend returns the last n persisted runs for a config (oldest first), so the
 // GUI can draw a worst-status sparkline that survives restarts — unlike the
 // in-session diff (CF-64).

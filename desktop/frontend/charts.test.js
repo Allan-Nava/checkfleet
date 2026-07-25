@@ -98,3 +98,14 @@ test("svgHeatmap is a no-op without modules or runs", () => {
   assert.equal(C.svgHeatmap([], [{ unix: 1, worst: {} }], {}), "");
   assert.equal(C.svgHeatmap(["certs"], [], {}), "");
 });
+
+test("svgMeter classes the fill by SLO thresholds and clamps", () => {
+  assert.match(C.svgMeter(100, {}), /meter-ok/);
+  assert.match(C.svgMeter(99, {}), /meter-ok/);
+  assert.match(C.svgMeter(97, {}), /meter-warn/);
+  assert.match(C.svgMeter(80, {}), /meter-bad/);
+  // clamps out-of-range and survives junk input without NaN
+  const over = C.svgMeter(140, {});
+  assert.match(over, /width="120"/); // full width, not 168
+  assert.doesNotMatch(C.svgMeter(undefined, {}), /NaN/);
+});

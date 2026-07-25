@@ -335,6 +335,25 @@ select { cursor: pointer; }
 .legend .sw.bad { background: var(--bad); } .legend .sw.error { background: var(--err); }
 .band-axis { display: flex; justify-content: space-between; margin-top: 6px; font-size: 10.5px; color: var(--muted); font-family: ui-monospace, Menlo, monospace; }
 
+/* availability / SLO (CF-95) */
+.slo { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+.slo-hero {
+  display: grid; grid-template-columns: auto auto; align-items: baseline; gap: 4px 8px;
+  padding: 6px 4px; min-width: 210px;
+}
+.slo-hero b { font-size: 34px; line-height: 1; letter-spacing: -.02em; color: var(--heading); }
+.slo-hero > span { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.slo-hero .slo-meta { grid-column: 1 / -1; margin-top: 6px; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.slo-hero.s-OK b { color: var(--ok); } .slo-hero.s-WARN b { color: var(--warn); }
+.slo-hero.s-BAD b { color: var(--bad); } .slo-hero.s-ERROR b { color: var(--err); }
+.slo-targets { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 7px; }
+.slo-row { display: grid; grid-template-columns: 1fr 120px 40px; align-items: center; gap: 10px; font-size: 12px; }
+.slo-name { color: var(--brand-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slo-pct { text-align: right; color: var(--heading); font-variant-numeric: tabular-nums; }
+.meter { display: block; }
+.meter .meter-track { fill: var(--border); }
+.meter .meter-ok { fill: var(--ok); } .meter .meter-warn { fill: var(--warn); } .meter .meter-bad { fill: var(--bad); }
+
 /* module heatmap (CF-93) */
 .hm-host { overflow-x: auto; padding-bottom: 4px; }
 .hm-host .chart { max-width: none; }

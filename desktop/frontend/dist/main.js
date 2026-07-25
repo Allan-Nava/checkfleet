@@ -67,6 +67,19 @@
         })),
       };
     },
+    Availability: async () => {
+      const now = Math.floor(Date.now() / 1000);
+      return {
+        runs: 12, fromUnix: now - 12 * 3600, toUnix: now, okRuns: 7, uptime: 58.3,
+        currentWorst: "OK", currentSinceUnix: now - 2 * 3600,
+        targets: [
+          { check: "postgres", target: "pg-01:5432", runs: 12, okRuns: 9, uptime: 75, last: "ERROR" },
+          { check: "redis", target: "redis-cache-01:6379", runs: 12, okRuns: 10, uptime: 83.3, last: "WARN" },
+          { check: "stream", target: "live.example.com", runs: 12, okRuns: 11, uptime: 91.7, last: "OK" },
+          { check: "certs", target: "api.example.com:443", runs: 12, okRuns: 12, uptime: 100, last: "OK" },
+        ],
+      };
+    },
     ScheduleSnippet: async (path, interval) =>
       "# cron — run every 5 min:\n*/5 * * * * checkfleet check all --config " +
       (path || "checkfleet.yml") + " --exit-on-bad\n\n" +
@@ -331,6 +344,33 @@
     $("chartHeatmap").innerHTML = mt.modules && mt.modules.length
       ? CFCharts.svgHeatmap(mt.modules, mt.runs, {})
       : `<p class="drawer-msg">Only one module in history — nothing to compare yet.</p>`;
+
+    // Availability / SLO (CF-95) — a third history read, rolled up per target.
+    let av = null;
+    try { av = await Backend.Availability($("configPath").value, 60); }
+    catch (_) { av = null; }
+    renderAvailability(av);
+  }
+
+  // renderAvailability paints the uptime hero + the least-available targets.
+  function renderAvailability(av) {
+    const box = $("sloBox");
+    if (!av || !av.runs) { box.innerHTML = `<p class="drawer-msg">No history yet.</p>`; return; }
+    const when = (u) => new Date(u * 1000).toLocaleString();
+    const worst = av.currentWorst || "OK";
+    const hero = `
+      <div class="slo-hero s-${worst}">
+        <b>${(av.uptime || 0).toFixed(1)}%</b><span>uptime</span>
+        <div class="slo-meta">${av.runs} runs · now
+          <span class="badge ${worst}">${worst}</span> since ${escapeHtml(when(av.currentSinceUnix))}</div>
+      </div>`;
+    const targets = (av.targets || []).slice(0, 6).map((t) => `
+      <div class="slo-row">
+        <span class="slo-name mono" title="${escapeHtml(t.check + " " + t.target)}">${escapeHtml(t.check)} ${escapeHtml(t.target)}</span>
+        ${CFCharts.svgMeter(t.uptime)}
+        <span class="slo-pct">${(t.uptime || 0).toFixed(0)}%</span>
+      </div>`).join("");
+    box.innerHTML = hero + `<div class="slo-targets">${targets}</div>`;
   }
 
   // showModuleDrill opens a drawer with one module's worst-status band over time.

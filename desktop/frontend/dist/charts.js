@@ -203,5 +203,22 @@
     return svgWrapPx(w, h, "Module status heatmap", out);
   }
 
-  return { LAYERS, total, niceMax, stackedPolys, donutArcs, svgArea, svgDonut, svgBand, svgHeatmap };
+  // svgMeter draws a horizontal uptime bar. The fill is classed by SLO
+  // thresholds (>= warn → ok, >= bad → warn, else bad) so themes/colors follow
+  // the same variables as everything else.
+  function svgMeter(pctVal, opts) {
+    opts = opts || {};
+    const w = opts.w || 120, h = opts.h || 8;
+    const warn = opts.warn == null ? 99 : opts.warn;
+    const bad = opts.bad == null ? 95 : opts.bad;
+    const p = Math.max(0, Math.min(100, Number(pctVal) || 0));
+    const cls = p >= warn ? "meter-ok" : p >= bad ? "meter-warn" : "meter-bad";
+    const r = h / 2;
+    return `<svg class="chart meter" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" ` +
+      `preserveAspectRatio="none" role="img" aria-label="uptime ${fmt(p)}%">` +
+      `<rect class="meter-track" x="0" y="0" width="${w}" height="${h}" rx="${r}"/>` +
+      `<rect class="${cls}" x="0" y="0" width="${fmt(w * p / 100)}" height="${h}" rx="${r}"/></svg>`;
+  }
+
+  return { LAYERS, total, niceMax, stackedPolys, donutArcs, svgArea, svgDonut, svgBand, svgHeatmap, svgMeter };
 });
