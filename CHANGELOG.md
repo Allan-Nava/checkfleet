@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.104.2
+
+- CI (fix gate golangci-lint): il job `lint` falliva da diverse commit con _"the Go language version (go1.24) used to build golangci-lint is lower than the targeted Go version (1.25.0)"_ — `go.mod` targetta go1.25 ma la `golangci-lint-action` scarica il binario ufficiale v1.64.8 **buildato con go1.24**, che rifiuta un target più recente. Aggiunto `run.go: "1.24"` in `.golangci.yml` così l'analisi targetta 1.24 (i linter abilitati — errcheck/govet/ineffassign/staticcheck/unused — non dipendono dalla semantica 1.25). Nessun finding reale nel codice (verificato in locale). Da rivedere quando si passa a golangci-lint v2.
+
 ## 0.104.1
 
 - Desktop (fix CI): il design-system pass di CF-98 ri-dichiarava `.worst b`, `.tile b` e `.btn-primary` in coda, facendo fallire lo stylelint del workflow "Desktop tests" (`no-duplicate-selectors`). Fuse quelle proprietà nelle regole originali; stylelint di nuovo verde (verificato in locale con `stylelint-config-recommended`). Nessun cambiamento visivo.

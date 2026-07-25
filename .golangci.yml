@@ -1,5 +1,12 @@
 # golangci-lint config (CF-72). The default linter set is a hard gate in CI.
 # Kept intentionally close to the defaults so it stays low-noise and stable.
+run:
+  # go.mod targets go1.25, but the golangci-lint-action downloads the official
+  # v1.64.8 binary built with go1.24, which refuses to analyze a newer target.
+  # Pin the analysis target to 1.24 so the released binary can run (the enabled
+  # linters don't depend on 1.25 semantics). Revisit when bumping to golangci v2.
+  go: "1.24"
+
 linters:
   enable:
     - errcheck
