@@ -5,36 +5,32 @@
       <stop offset="0.55" stop-color="#0e1830"/>
       <stop offset="1" stop-color="#0a1020"/>
     </linearGradient>
-    <radialGradient id="cf-glow" cx="256" cy="296" r="215" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#10b981" stop-opacity="0.22"/>
-      <stop offset="1" stop-color="#10b981" stop-opacity="0"/>
-    </radialGradient>
     <linearGradient id="cf-rim" x1="256" y1="8" x2="256" y2="248" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#ffffff" stop-opacity="0.16"/>
       <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
     </linearGradient>
-    <linearGradient id="cf-arc" x1="120" y1="140" x2="300" y2="400" gradientUnits="userSpaceOnUse">
+    <linearGradient id="cf-arc" x1="120" y1="150" x2="300" y2="380" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#5eead4"/>
       <stop offset="1" stop-color="#2dd4bf"/>
     </linearGradient>
-    <linearGradient id="cf-check" x1="150" y1="360" x2="392" y2="150" gradientUnits="userSpaceOnUse">
+    <linearGradient id="cf-check" x1="170" y1="330" x2="360" y2="180" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#059669"/>
       <stop offset="0.55" stop-color="#10b981"/>
       <stop offset="1" stop-color="#34d399"/>
     </linearGradient>
   </defs>
 
-  <!-- app-icon plate: dark slate with an emerald ambient glow + top rim light -->
+  <!-- app-icon plate: dark slate with a top rim light -->
   <rect x="8" y="8" width="496" height="496" rx="116" fill="url(#cf-bg)"/>
-  <rect x="8" y="8" width="496" height="496" rx="116" fill="url(#cf-glow)"/>
   <rect x="8" y="8" width="496" height="496" rx="116" fill="url(#cf-rim)"/>
   <rect x="8.75" y="8.75" width="494.5" height="494.5" rx="115.25" fill="none" stroke="#ffffff" stroke-opacity="0.09" stroke-width="1.5"/>
 
-  <!-- the 'c': an open arc that cradles the check -->
-  <path d="M330 150 A150 150 0 1 0 330 362"
-        fill="none" stroke="url(#cf-arc)" stroke-width="36" stroke-linecap="round"/>
+  <!-- the 'c': an open teal arc, opening on the right -->
+  <path d="M334 148 A155 155 0 1 0 334 364"
+        fill="none" stroke="url(#cf-arc)" stroke-width="34" stroke-linecap="round"/>
 
-  <!-- the check: bold emerald hero mark, crisp edges, drawn cleanly over the arc -->
-  <path d="M172 266 L236 332 L366 164"
-        fill="none" stroke="url(#cf-check)" stroke-width="52" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- the check: nestled inside the 'c', its long arm exits cleanly through the
+       opening without crossing the teal, so the two marks read as distinct -->
+  <path d="M175 258 L232 318 L356 190"
+        fill="none" stroke="url(#cf-check)" stroke-width="46" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

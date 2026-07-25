@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.102.3
+
+- Desktop (logo ridisegnato): il check e l'arco "c" si sovrapponevano in modo confuso (e il tentativo di separarli con una fascia scura si leggeva come una linea nera/glitch a dimensione dock). Ridisegnata la geometria: il check verde ora è **annidato dentro la "c"** e il suo braccio lungo esce pulito dall'apertura a destra **senza incrociare il teal** — i due segni restano distinti, niente sovrapposizioni né knockout. `appicon.png` + iconset completo rigenerati. Solo asset frontend.
+
 ## 0.102.2
 
 - Desktop (icona completa): nuovo script `desktop/build/gen-icon.sh` che rigenera `appicon.png` dall'SVG e costruisce un **iconset `.icns` completo** — tutte le taglie da 16 a 1024 in 1x **e** 2x (Wails da solo emette solo le varianti @2x). Agganciato al workflow `desktop.yml` (step macOS dopo `wails build`), così anche gli artefatti di release hanno l'icona a piena risoluzione a ogni dimensione. Zero-dep: usa solo `qlmanage`/`sips`/`iconutil` di sistema.
