@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.76.1
+
+- Desktop (CF-90, M18): **rifinitura grafica del logo e della UI**. Il mark dell'app (plate slate scuro + arco "c" teal che culla il check smeraldo) prima si confondeva con la titlebar quasi dello stesso colore: ora ha un gradiente slate più chiaro, un glow smeraldo ambientale, un rim-light in alto e un anello hairline, così si stacca e legge come una vera app-icon. Più respiro attorno al brand (gap 8→11px, mark 22→24px con ring + ombra morbida), la pill di versione (`dev`/tag) diventa un chip brand-tinted, l'empty-state passa da logo sbiadito al 50% a mark a piena forza con alone brand, e micro-transizioni su bottoni/input/mark. Solo frontend statico (`desktop/frontend/dist/{index.html,style.css,assets/logo.svg}` + sync `docs/assets/logo.svg`), nessun binding Go nuovo.
+
 ## 0.76.0
 
 - Modulo `clickhouse` (CF-76, M21): health check di ClickHouse via l'interfaccia **HTTP** (zero-dep). `/ping` (ERROR se irraggiungibile, BAD se non risponde `Ok.`) + `SELECT version()` per la reachability e la versione; per ogni **tabella replicata** (`system.replicas`) segnala **BAD** se la replica è read-only (tipicamente sessione ZooKeeper/Keeper persa) e il **ritardo di replica** (`absolute_delay`) con WARN/BAD oltre `delay_warn_seconds`/`delay_crit_seconds` (default 30/300). Le tabelle sane non producono finding. Credenziali **da env** (basic auth `username`+`password_env`), `insecure_skip_verify` per HTTPS self-signed. Testato contro un finto server HTTP (`httptest`). CLI `checkfleet check clickhouse`. Apre M21 (Più datastore/infra).

@@ -29,20 +29,32 @@ body {
 }
 b { color: var(--heading); }
 .spacer { flex: 1; }
+.btn, .icon-btn, .chip, .brand .logo, input, select {
+  transition: background .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease, filter .15s ease;
+}
 
 .app { display: flex; flex-direction: column; height: 100vh; }
 
 /* title bar */
 .titlebar {
-  display: flex; align-items: center; height: 46px; padding: 0 12px 0 78px;
-  background: var(--bg-2); border-bottom: 1px solid var(--border); flex: 0 0 auto;
+  display: flex; align-items: center; height: 48px; padding: 0 12px 0 78px;
+  background: linear-gradient(180deg, var(--surface-2), var(--bg-2));
+  border-bottom: 1px solid var(--border); flex: 0 0 auto;
 }
-.brand { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--heading); }
+.brand { display: flex; align-items: center; gap: 11px; color: var(--heading); }
+.brand .wordmark { font-size: 15px; font-weight: 600; letter-spacing: -.005em; }
 .brand b { font-weight: 700; color: var(--brand); }
-.brand img { border-radius: 6px; }
+/* the mark gets a soft ring + drop so it separates from the dark titlebar */
+.brand .logo {
+  border-radius: 7px;
+  box-shadow: 0 0 0 1px var(--border-str), 0 3px 9px -3px rgba(0,0,0,.6);
+}
 .pill-mini {
-  margin-left: 4px; padding: 1px 7px; border-radius: 999px; font-size: 10.5px;
-  color: var(--muted); background: var(--surface); border: 1px solid var(--border);
+  margin-left: 3px; padding: 2px 8px; border-radius: 999px;
+  font-size: 10px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--brand-2);
+  background: color-mix(in srgb, var(--brand-2) 13%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand-2) 30%, transparent);
 }
 .tb-right { margin-left: auto; display: flex; gap: 4px; }
 
@@ -167,9 +179,13 @@ select { cursor: pointer; }
 
 .empty {
   position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
-  justify-content: center; gap: 12px; color: var(--muted); text-align: center;
+  justify-content: center; gap: 16px; color: var(--muted); text-align: center;
 }
-.empty img { opacity: .5; }
+.empty img {
+  opacity: .95;
+  filter: drop-shadow(0 10px 26px color-mix(in srgb, var(--brand) 40%, transparent));
+}
+.empty p { font-size: 14px; }
 
 /* status bar */
 .statusbar {
