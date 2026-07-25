@@ -519,6 +519,7 @@ func runServe(args []string) error {
 		mu.Unlock()
 		w.Header().Set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
 		fmt.Fprint(w, output.Prometheus(res))
+		fmt.Fprint(w, output.SelfMetrics(res)) // metrics about checkfleet itself (CF-87)
 	})
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "checkfleet %s\n\nmetrics: /metrics\n%d modules, re-run every %s\n", version, len(checks), *interval)

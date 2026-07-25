@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.92.0
+
+- Self-metrics dell'exporter (CF-87, M24): l'endpoint `/metrics` di `serve` ora espone anche metriche **sul tool stesso**, non solo sui target — `checkfleet_run_duration_seconds` (durata dell'ultimo run), `checkfleet_last_run_timestamp_seconds` (quando è partito), e per modulo `checkfleet_module_findings{module}` e `checkfleet_module_errors{module}` (ERROR = misurazioni fallite). Così si può allertare sul checker stesso (run bloccati, modulo che va sempre in errore). Renderer `output.SelfMetrics` testato. Apre M24 (Osservabilità del tool).
+
 ## 0.91.0
 
 - Alert **AWS SNS** (CF-83, M22): `checkfleet alert --provider sns --sns-topic-arn <arn>` pubblica ogni finding BAD/ERROR su un topic SNS — sink stateless, quindi solo publish (nessun resolve). Le richieste sono firmate con **AWS Signature V4 scritta a mano** in un nuovo package condiviso `internal/awssig` (zero-dep, nessun SDK AWS, gestisce il body per le POST); la region è ricavata dal topic ARN e le credenziali arrivano **dall'ambiente** (`--aws-access-key-env`/`--aws-secret-key-env`, default `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`). Payload SNS `Publish` form-encoded (`internal/alert.SNSForm`, subject sanitizzato ≤100 char). Firma e form testati (deterministici, con body diversi → firme diverse). **Chiude M22 (Alerting & sink).**
