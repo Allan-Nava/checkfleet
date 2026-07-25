@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.98.2
+
+- Desktop: **primo avvio senza config** ora crea uno starter valido invece di aprire una schermata vuota (che sembrava rotta). Se non c'è né `CHECKFLEET_CONFIG` né `./checkfleet.yml`, `StartupConfig` genera un `checkfleet.yml` starter (via `internal/scaffold`, moduli certs+http) nella cartella config utente (`os.UserConfigDir()/checkfleet/`) e apre quello; `Startup` ora riporta `created`/`note` così la GUI può segnalarlo. Non sovrascrive mai un file esistente. `ensureStarterConfig` testato (crea + valida + idempotente).
+
 ## 0.98.1
 
 - Desktop DX: `wails dev` non partiva (`frontend:dev:serverUrl: "auto"` senza watcher, con frontend statico → errore "unable to auto discover"). Impostato `frontend:dev:serverUrl: ""` così Wails serve direttamente `frontend/dist/` con hot-reload; ora `wails dev` funziona (finestra nativa + DevTools su http://localhost:34115 con i binding Go reali → dati veri, non il mock). README desktop aggiornato.

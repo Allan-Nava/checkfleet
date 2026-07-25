@@ -16,6 +16,7 @@ import (
 	"github.com/Allan-Nava/checkfleet/internal/moduledoc"
 	"github.com/Allan-Nava/checkfleet/internal/output"
 	"github.com/Allan-Nava/checkfleet/internal/registry"
+	"github.com/Allan-Nava/checkfleet/internal/scaffold"
 	"github.com/gen2brain/beeep"
 	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -323,6 +324,8 @@ func (a *App) DefaultConfigPath() string {
 type Startup struct {
 	Path    string `json:"path"`
 	AutoRun bool   `json:"autoRun"`
+	Created bool   `json:"created"` // a starter config was created on this launch
+	Note    string `json:"note"`    // human note (e.g. "created a starter config")
 }
 
 // StartupConfig lets the app open straight into a fleet: CHECKFLEET_CONFIG picks
@@ -333,7 +336,50 @@ func (a *App) StartupConfig() Startup {
 	if path == "" {
 		path = a.DefaultConfigPath()
 	}
-	return Startup{Path: path, AutoRun: os.Getenv("CHECKFLEET_AUTORUN") == "1"}
+	// Nothing configured anywhere: create a valid starter config so the app opens
+	// into something editable instead of an empty screen (which looks broken).
+	created := false
+	note := ""
+	if path == "" {
+		if p, didCreate, err := ensureStarterConfig(); err == nil {
+			path, created = p, didCreate
+			if created {
+				note = "Created a starter config at " + p + " — edit it to add your targets."
+			}
+		}
+	}
+	return Startup{
+		Path:    path,
+		AutoRun: os.Getenv("CHECKFLEET_AUTORUN") == "1",
+		Created: created,
+		Note:    note,
+	}
+}
+
+// ensureStarterConfig writes a valid starter checkfleet.yml under the user config
+// directory when none exists yet, returning its path and whether it was just
+// created. It never overwrites an existing file.
+func ensureStarterConfig() (string, bool, error) {
+	base, err := os.UserConfigDir()
+	if err != nil {
+		return "", false, err
+	}
+	dir := filepath.Join(base, "checkfleet")
+	path := filepath.Join(dir, "checkfleet.yml")
+	if _, err := os.Stat(path); err == nil {
+		return path, false, nil // already present
+	}
+	content, err := scaffold.Config(nil) // default starter modules (certs, http)
+	if err != nil {
+		return "", false, err
+	}
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return "", false, err
+	}
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		return "", false, err
+	}
+	return path, true, nil
 }
 
 // Validate returns config problems without running any check (empty = valid).

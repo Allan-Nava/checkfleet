@@ -134,12 +134,16 @@ func TestDefaultConfigPath(t *testing.T) {
 func TestStartupConfig(t *testing.T) {
 	app := NewApp("test")
 
-	// No env, no ./checkfleet.yml → empty, no auto-run.
-	t.Chdir(t.TempDir())
+	// No env, no ./checkfleet.yml → a starter config is created under the (temp)
+	// user config dir and returned, with no auto-run.
+	tmp := t.TempDir()
+	t.Chdir(tmp)
+	t.Setenv("HOME", tmp)            // darwin user config dir
+	t.Setenv("XDG_CONFIG_HOME", tmp) // linux user config dir
 	t.Setenv("CHECKFLEET_CONFIG", "")
 	t.Setenv("CHECKFLEET_AUTORUN", "")
-	if s := app.StartupConfig(); s.Path != "" || s.AutoRun {
-		t.Fatalf("StartupConfig = %+v, want empty/no-autorun", s)
+	if s := app.StartupConfig(); s.Path == "" || !s.Created || s.AutoRun {
+		t.Fatalf("StartupConfig = %+v, want a created starter path and no autorun", s)
 	}
 
 	// Env-chosen path + auto-run.
@@ -367,5 +371,28 @@ func TestWorseOf(t *testing.T) {
 		if got := worseOf(c.a, c.b); got != c.want {
 			t.Errorf("worseOf(%q,%q) = %q, want %q", c.a, c.b, got, c.want)
 		}
+	}
+}
+
+func TestEnsureStarterConfig(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("HOME", tmp)             // darwin: UserConfigDir = $HOME/Library/Application Support
+	t.Setenv("XDG_CONFIG_HOME", tmp)  // linux: UserConfigDir = $XDG_CONFIG_HOME
+
+	p, created, err := ensureStarterConfig()
+	if err != nil || !created {
+		t.Fatalf("first call: created=%v err=%v", created, err)
+	}
+	b, err := os.ReadFile(p)
+	if err != nil {
+		t.Fatalf("starter config not written: %v", err)
+	}
+	cfg, err := engine.LoadBytes(b)
+	if err != nil || len(engine.Validate(cfg)) != 0 {
+		t.Fatalf("starter config must load and validate: err=%v problems=%v", err, engine.Validate(cfg))
+	}
+	// Idempotent: a second call finds the file and does not recreate it.
+	if _, created2, _ := ensureStarterConfig(); created2 {
+		t.Error("second call should not recreate an existing config")
 	}
 }
