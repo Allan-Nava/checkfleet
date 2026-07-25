@@ -76,6 +76,16 @@ Hover a bar for the timestamp and the OK/WARN/BAD/ERROR breakdown.
 
 ![checkfleet desktop — trend sparkline](assets/desktop-trend.png)
 
+## Group by module
+
+Tick **Group** to fold the findings table into collapsible sections, one per
+module, each with a rollup badge showing the module's worst status and how many
+findings it has. Click a section header to collapse it — handy when a fleet has
+many targets and you want to scan module-by-module. The choice is remembered
+between restarts.
+
+![checkfleet desktop — grouped by module](assets/desktop-group.png)
+
 ## Edit the config
 
 The gear button (⚙, top-right) opens a full-panel YAML editor on the selected

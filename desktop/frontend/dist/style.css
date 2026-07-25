@@ -270,3 +270,16 @@ select { cursor: pointer; }
 .spark-bar.s-WARN  { height: 55%; background: var(--warn); }
 .spark-bar.s-BAD   { height: 80%; background: var(--bad); }
 .spark-bar.s-ERROR { height: 100%; background: var(--err); }
+
+/* group-by-module rows */
+.group-row td {
+  padding: 9px 12px; cursor: pointer; user-select: none;
+  background: var(--bg-2); border-top: 1px solid var(--border);
+}
+.group-row:hover td { background: var(--surface); }
+.group-row .group-caret { display: inline-block; width: 14px; color: var(--muted); }
+.group-row b { margin-left: 4px; }
+.group-row .group-count {
+  margin-left: 6px; padding: 0 7px; border-radius: 999px; font-size: 11px;
+  color: var(--muted); background: var(--surface); border: 1px solid var(--border);
+}

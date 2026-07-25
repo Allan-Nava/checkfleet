@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.71.0
+
+- Desktop (CF-71, M18): **raggruppa per modulo**. Il nuovo toggle **Group** ripiega la tabella dei finding in sezioni collassabili, una per modulo, ognuna con un badge di rollup (lo status peggiore del modulo) e il conteggio dei finding; click sull'header per collassare/espandere. La scelta è ricordata tra i riavvii (localStorage). Utile per scorrere flotte con molti target modulo per modulo. **Chiude M18 (Prodotto & UX).**
+
 ## 0.70.0
 
 - Desktop (CF-70, M18): **storico persistente & trend**. Ogni run viene appeso a un file JSONL nascosto accanto al config (`.<nome>.history.jsonl`, riusa `internal/history`); il nuovo bottone **Trend** apre un drawer con una **sparkline del worst-status per run** (barre verde/giallo/rosso/viola, dalla più vecchia alla più recente, con timestamp e conteggi OK/WARN/BAD/ERROR in tooltip). A differenza di **Changes** (solo in-sessione, CF-64), il trend **sopravvive ai riavvii**. Nuovo binding `App.Trend`; persistenza in `RunChecks`; testato (persistenza su file + lettura da una nuova istanza dell'app).

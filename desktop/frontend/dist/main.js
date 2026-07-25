@@ -114,13 +114,38 @@
     });
     visibleFindings = visible;
 
-    rows.innerHTML = visible.map((f, i) => `
-      <tr data-i="${i}">
+    const findingRow = (f, i) => `
+      <tr data-i="${i}"${$("groupBy").checked ? ` data-grp="${escapeHtml(f.check)}"` : ""}>
         <td><span class="badge ${f.status}">${f.status}</span></td>
         <td class="cell-check">${escapeHtml(f.check)}</td>
         <td class="cell-target">${escapeHtml(f.target)}</td>
         <td class="cell-msg">${escapeHtml(f.message)}</td>
-      </tr>`).join("");
+      </tr>`;
+
+    if ($("groupBy").checked) {
+      const order = [];
+      const groups = {};
+      visible.forEach((f, i) => {
+        if (!groups[f.check]) { groups[f.check] = []; order.push(f.check); }
+        groups[f.check].push([f, i]);
+      });
+      rows.innerHTML = order.map((mod) => {
+        const items = groups[mod];
+        const worst = worstOf(items.map(([f]) => f.status));
+        const header = `
+          <tr class="group-row" data-group="${escapeHtml(mod)}">
+            <td colspan="4">
+              <span class="group-caret">▾</span>
+              <span class="badge ${worst}">${worst}</span>
+              <b>${escapeHtml(mod)}</b>
+              <span class="group-count">${items.length}</span>
+            </td>
+          </tr>`;
+        return header + items.map(([f, i]) => findingRow(f, i)).join("");
+      }).join("");
+    } else {
+      rows.innerHTML = visible.map(findingRow).join("");
+    }
 
     empty.style.display = visible.length ? "none" : "flex";
     if (!visible.length) $("emptyText").textContent = "No findings match these filters.";
@@ -135,9 +160,20 @@
 
   function setStatus(t) { $("statusText").textContent = t; }
 
+  const SEVERITY = { OK: 0, WARN: 1, BAD: 2, ERROR: 3 };
+  function worstOf(statuses) {
+    let worst = "OK";
+    for (const s of statuses) if ((SEVERITY[s] || 0) > (SEVERITY[worst] || 0)) worst = s;
+    return worst;
+  }
+
   function escapeHtml(s) {
     return String(s == null ? "" : s)
       .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function cssEscape(s) {
+    return window.CSS && CSS.escape ? CSS.escape(s) : String(s).replace(/["\\]/g, "\\$&");
   }
 
   /* ---------------- actions ---------------- */
@@ -173,6 +209,7 @@
         interval: $("interval").value,
         auto: $("auto").checked,
         notify: $("notify").checked,
+        groupBy: $("groupBy").checked,
       }));
     } catch (_) {}
   }
@@ -401,6 +438,7 @@
     $("validate").addEventListener("click", runValidate);
     $("changes").addEventListener("click", showChanges);
     $("trend").addEventListener("click", showTrend);
+    $("groupBy").addEventListener("change", () => { render(); saveSettings(); });
     $("cfgToggle").addEventListener("click", () => setEditor(editorOn ? false : true));
     $("cfgReload").addEventListener("click", loadConfigText);
     $("cfgValidate").addEventListener("click", cfgValidate);
@@ -413,6 +451,15 @@
 
     // Row click -> finding detail.
     $("rows").addEventListener("click", (e) => {
+      const head = e.target.closest("tr.group-row");
+      if (head) {
+        const mod = head.dataset.group;
+        const collapsed = head.classList.toggle("collapsed");
+        head.querySelector(".group-caret").textContent = collapsed ? "▸" : "▾";
+        $("rows").querySelectorAll(`tr[data-grp="${cssEscape(mod)}"]`)
+          .forEach((r) => { r.hidden = collapsed; });
+        return;
+      }
       const tr = e.target.closest("tr[data-i]");
       if (tr) showFindingDetail(visibleFindings[+tr.dataset.i]);
     });
@@ -459,6 +506,7 @@
     if (s.interval) $("interval").value = s.interval;
     if (s.auto) $("auto").checked = true;
     if (s.notify) $("notify").checked = true;
+    if (s.groupBy) $("groupBy").checked = true;
     updateHint();
     await refreshStacks();
     if (s.stack) $("stack").value = s.stack;
