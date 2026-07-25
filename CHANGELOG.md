@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.67.1
+
+- Docs: tabella moduli del README allineata al codice — aggiunti `ingest`, `s3`, `smtp`, `elasticsearch`, `mongodb` (mancavano 5 dei 23 moduli). Aggiornata la riga roadmap: l'unico modulo ancora da fare è `mediamtx`.
+
 ## 0.67.0
 
 - Modulo `mongodb` (CF-44): health check read-only di MongoDB. `replSetGetStatus` → **BAD** se manca un `PRIMARY` sano, **BAD** per membri con health 0 (irraggiungibili), e lag delle SECONDARY (**WARN** oltre `lag_warn_seconds`, **BAD** oltre `lag_crit_seconds`, default 10/60); un nodo standalone (non replica set) è riportato raggiungibile e i check di replica sono saltati. `serverStatus` → **WARN** su saturazione connessioni (`conn_warn_pct`, default 80). Credenziali **da env** (`username`+`password_env`, mai nell'URI/config), `auth_source` default `admin`. Usa il **driver ufficiale** `go.mongodb.org/mongo-driver/v2` — eccezione motivata alla regola zero-dep (come `pgx` per Postgres, per wire protocol BSON + auth SCRAM); la logica dei finding è dietro l'interfaccia `collector` e **testata con un fake** (nessun DB reale nei test). CLI `checkfleet check mongodb`.

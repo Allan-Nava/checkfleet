@@ -69,8 +69,13 @@ See [Installation](https://allan-nava.github.io/checkfleet/installation/) for al
 | `grpc` | gRPC Health Checking Protocol over HTTP/2+TLS (protobuf hand-rolled, no gRPC dep) |
 | `ldap` | LDAP directory: connect, bind (anon or creds), optional sanity search |
 | `kafka` | Kafka via kadm: controller present, broker count, under-replicated partitions, consumer-group lag |
+| `ingest` | Streaming ingest reachability: RTMP handshake (TCP) or SRT induction (UDP), connect latency — "can the streamer publish?" |
+| `s3` | S3/object storage: bucket reachable, optional sentinel object present & fresh; AWS SigV4 signed by hand (creds from env) |
+| `smtp` | SMTP relay: accepts connections, 220 greeting, EHLO, optional STARTTLS/implicit TLS and relay cert expiry — never sends mail |
+| `elasticsearch` | Elasticsearch/OpenSearch via HTTP: cluster health green/yellow/red, unassigned shards, expected nodes, per-node disk watermark |
+| `mongodb` | MongoDB via the official driver: replica-set status (primary present, member health, secondary lag) and connection saturation |
 
-More modules on the roadmap (see [BACKLOG.md](BACKLOG.md)): `mongodb`, plus more alerting outputs.
+The only module still on the roadmap (see [BACKLOG.md](BACKLOG.md)) is `mediamtx`.
 
 ## Configuration
 
