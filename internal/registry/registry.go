@@ -5,6 +5,8 @@
 package registry
 
 import (
+	"time"
+
 	"github.com/Allan-Nava/checkfleet/internal/checks/certs"
 	"github.com/Allan-Nava/checkfleet/internal/checks/cassandra"
 	"github.com/Allan-Nava/checkfleet/internal/checks/clickhouse"
@@ -78,6 +80,37 @@ func Modules(cfg *engine.Config) []Spec {
 		{"memcached", c.Memcached != nil, func() engine.Check { return memcached.New(*c.Memcached) }},
 		{"cassandra", c.Cassandra != nil, func() engine.Check { return cassandra.New(*c.Cassandra) }},
 	}
+}
+
+// OptionsFor returns base with any per-module override applied for module
+// (CF-84): a non-zero override field wins, otherwise the base value is kept.
+func OptionsFor(cfg *engine.Config, module string, base engine.Options) engine.Options {
+	o, ok := cfg.ModuleOverrides[module]
+	if !ok {
+		return base
+	}
+	if o.TimeoutSeconds > 0 {
+		base.Timeout = time.Duration(o.TimeoutSeconds) * time.Second
+	}
+	if o.Retries > 0 {
+		base.Retries = o.Retries
+	}
+	if o.RetryBackoffMS > 0 {
+		base.Backoff = time.Duration(o.RetryBackoffMS) * time.Millisecond
+	}
+	return base
+}
+
+// Jobs builds every configured module as an engine.Job, applying per-module
+// option overrides on top of base. Registry order is preserved.
+func Jobs(cfg *engine.Config, base engine.Options) []engine.Job {
+	var jobs []engine.Job
+	for _, s := range Modules(cfg) {
+		if s.Configured {
+			jobs = append(jobs, engine.Job{Check: s.Build(), Opts: OptionsFor(cfg, s.Name, base)})
+		}
+	}
+	return jobs
 }
 
 // Configured builds every module present in the config, in registry order.

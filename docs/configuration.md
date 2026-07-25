@@ -36,7 +36,19 @@ checks:
 | `timeout_seconds` | int | `30` | Per-check (and per-attempt) deadline. |
 | `retries` | int | `0` | Retry a check that produced an ERROR finding (transient network/handshake), up to this many times. |
 | `retry_backoff_ms` | int | `500` (when `retries`>0) | Base backoff between attempts; doubles each retry. |
+| `module_overrides` | map | — | Per-module override of `timeout_seconds`/`retries`/`retry_backoff_ms`, keyed by module name. A zero field falls back to the global value. |
 | `checks` | map | — | One entry per module. A module runs only if its key is present. |
+
+Per-module tuning is handy when one module is slower or flakier than the rest —
+give a database check a shorter deadline and a couple of retries without changing
+the global settings:
+
+```yaml
+timeout_seconds: 30
+module_overrides:
+  postgres: {timeout_seconds: 10, retries: 2}
+  stream:   {timeout_seconds: 15}
+```
 
 A module that is **not** present in `checks` is skipped by `check all`, and
 `check <name>` for it fails with `modulo "<name>" non configurato`.

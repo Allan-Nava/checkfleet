@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.98.0
+
+- Timeout/retry **per-modulo** (CF-84, M23): nuova sezione `module_overrides` nel config — per ogni modulo si possono sovrascrivere `timeout_seconds`/`retries`/`retry_backoff_ms` (un campo a zero eredita il globale). Utile quando un modulo è più lento o più flaky degli altri (es. `postgres: {timeout_seconds: 10, retries: 2}`) senza cambiare i default globali. Nuovo `engine.Job` (check + Options) e `engine.RunJobs` (esegue ogni job con le sue Options); `RunWith` ora è un wrapper a Options uniforme sopra `RunJobs`, quindi il desktop resta invariato. `registry.OptionsFor`/`Jobs` applicano il merge; usati da `check`/`serve`/`--watch`. Testati (merge override + ordine dei job). **Chiude M23 (Engine & robustezza) e le milestone M21–M24.**
+
 ## 0.97.1
 
 - CI/frontend (CF-97): il job `frontend-smoke` ora, oltre ad asserire che la fleet view si renderizzi, **cattura uno screenshot** della UI (render headless con dati mock) e lo carica come artifact **`frontend-preview`** — così ogni run porta con sé un'anteprima visiva scaricabile del frontend, senza dover buildare/lanciare l'app. Reso a 1280×860 @2x (`--force-device-scale-factor=2`), con una nota nel job summary che punta all'artifact. Riusa il Chrome già installato nel job (nessun setup extra).

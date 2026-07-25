@@ -20,6 +20,17 @@ type Config struct {
 	// Maintenance windows: findings matching an active window are muted or
 	// downgraded so scheduled work doesn't page. See ApplyMaintenance.
 	Maintenance []MaintenanceWindow `yaml:"maintenance"`
+
+	// Per-module overrides of timeout/retries, keyed by module name. A field left
+	// zero falls back to the global setting above. See registry.Jobs.
+	ModuleOverrides map[string]ModuleOverride `yaml:"module_overrides"`
+}
+
+// ModuleOverride overrides run tuning for a single module (CF-84).
+type ModuleOverride struct {
+	TimeoutSeconds int `yaml:"timeout_seconds"`
+	Retries        int `yaml:"retries"`
+	RetryBackoffMS int `yaml:"retry_backoff_ms"`
 }
 
 // MaintenanceWindow suppresses (or downgrades) findings during a time range.

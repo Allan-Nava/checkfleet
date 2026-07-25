@@ -2,6 +2,7 @@ package registry
 
 import (
 	"testing"
+	"time"
 
 	"github.com/Allan-Nava/checkfleet/internal/engine"
 )
@@ -44,5 +45,43 @@ func TestAllListsEveryModule(t *testing.T) {
 	}
 	if !seen["certs"] {
 		t.Fatalf("All missing 'certs': %v", all)
+	}
+}
+
+func TestOptionsForOverride(t *testing.T) {
+	base := engine.Options{Timeout: 30 * time.Second, Retries: 0, Backoff: 500 * time.Millisecond}
+	cfg := &engine.Config{ModuleOverrides: map[string]engine.ModuleOverride{
+		"postgres": {TimeoutSeconds: 10, Retries: 2},
+	}}
+	// Module with an override: timeout+retries win, backoff falls back to base.
+	pg := OptionsFor(cfg, "postgres", base)
+	if pg.Timeout != 10*time.Second || pg.Retries != 2 || pg.Backoff != 500*time.Millisecond {
+		t.Errorf("postgres override wrong: %+v", pg)
+	}
+	// Module without an override: base unchanged.
+	if got := OptionsFor(cfg, "http", base); got != base {
+		t.Errorf("http should keep base, got %+v", got)
+	}
+}
+
+func TestJobsAppliesOverrides(t *testing.T) {
+	base := engine.Options{Timeout: 30 * time.Second}
+	cfg := &engine.Config{
+		Checks: engine.ChecksConfig{
+			HTTP:  &engine.HTTPConfig{Targets: []engine.HTTPTarget{{URL: "https://x/"}}},
+			Certs: &engine.CertsConfig{Targets: []string{"x:443"}},
+		},
+		ModuleOverrides: map[string]engine.ModuleOverride{"certs": {TimeoutSeconds: 5}},
+	}
+	jobs := Jobs(cfg, base)
+	if len(jobs) != 2 {
+		t.Fatalf("want 2 jobs, got %d", len(jobs))
+	}
+	// Jobs follow registry order (certs before http); certs got the override.
+	if jobs[0].Opts.Timeout != 5*time.Second {
+		t.Errorf("certs job should have 5s timeout, got %s", jobs[0].Opts.Timeout)
+	}
+	if jobs[1].Opts.Timeout != 30*time.Second {
+		t.Errorf("http job should keep base 30s, got %s", jobs[1].Opts.Timeout)
 	}
 }

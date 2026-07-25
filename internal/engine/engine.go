@@ -58,21 +58,39 @@ func Run(ctx context.Context, checks []Check, timeout time.Duration) Result {
 	return RunWith(ctx, checks, Options{Timeout: timeout})
 }
 
-// RunWith executes the checks concurrently under opts. Results are collected
-// per-check by index and flattened in check order, so the output is
-// deterministic regardless of completion order (the stable sort below then
-// orders by severity). Checks whose result contains an ERROR finding are
-// retried up to opts.Retries times with exponential backoff.
+// Job pairs a check with the options it should run under, so different modules
+// can have different timeouts/retries in the same run (CF-84).
+type Job struct {
+	Check Check
+	Opts  Options
+}
+
+// RunWith executes the checks concurrently under a single Options. It is the
+// uniform-options entry point (used by the desktop app); RunJobs is the
+// per-check-options variant.
 func RunWith(ctx context.Context, checks []Check, opts Options) Result {
-	started := time.Now()
-	perCheck := make([][]Finding, len(checks))
-	var wg sync.WaitGroup
+	jobs := make([]Job, len(checks))
 	for i, c := range checks {
+		jobs[i] = Job{Check: c, Opts: opts}
+	}
+	return RunJobs(ctx, jobs)
+}
+
+// RunJobs executes each job concurrently under its own Options. Results are
+// collected per-job by index and flattened in job order, so the output is
+// deterministic regardless of completion order (the stable sort below then
+// orders by severity). A job whose result contains an ERROR finding is retried
+// up to its Opts.Retries times with exponential backoff.
+func RunJobs(ctx context.Context, jobs []Job) Result {
+	started := time.Now()
+	perCheck := make([][]Finding, len(jobs))
+	var wg sync.WaitGroup
+	for i, j := range jobs {
 		wg.Add(1)
-		go func(i int, c Check) {
+		go func(i int, j Job) {
 			defer wg.Done()
-			perCheck[i] = runWithRetry(ctx, c, opts)
-		}(i, c)
+			perCheck[i] = runWithRetry(ctx, j.Check, j.Opts)
+		}(i, j)
 	}
 	wg.Wait()
 	var findings []Finding

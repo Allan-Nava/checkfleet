@@ -3,6 +3,11 @@ timeout_seconds: 30
 retries: 0                 # retry checks that produce ERROR findings (transient net/handshake); 0 = off
 retry_backoff_ms: 500      # base backoff between attempts (doubles each retry), used when retries > 0
 
+# Per-module overrides of the tuning above (a zero field falls back to the global).
+module_overrides:
+  postgres: {timeout_seconds: 10, retries: 2}   # DB checks: shorter deadline, retry transients
+  stream:   {timeout_seconds: 15}               # manifests can be slow
+
 checks:
   certs:
     warn_days: 30
