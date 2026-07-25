@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.81.0
+
+- Output `csv` (CF-81, M22): `--output csv` emette i finding come CSV con header (`status,check,target,message`), worst-first, un finding per riga. I campi sono quotati/escapati via `encoding/csv` (virgole e newline nei messaggi sono al sicuro) — comodo per fogli di calcolo o ingestione. Renderer `output.CSV` testato (incluso l'escaping). CLI `--output csv` (spesso con `--out-file`).
+
 ## 0.80.0
 
 - Output `telegram` (CF-80, M22): `--output telegram` invia il report come messaggio di testo via **Telegram Bot API** (`sendMessage`) — riga di summary + finding non-OK (worst-first, capped entro i 4096 caratteri). Token del bot e chat id **da env** (`--telegram-token-env` default `TELEGRAM_TOKEN`, `--telegram-chat-env` default `TELEGRAM_CHAT_ID`), mai da CLI. Testo semplice (niente escaping MarkdownV2). Renderer `output.Telegram` testato. Apre M22 (Alerting & sink).

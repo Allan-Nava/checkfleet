@@ -86,6 +86,16 @@ checkfleet check all --config checkfleet.yml --output prometheus \
 `--out-file` works for any printable format (writes to the file instead of
 stdout).
 
+## `csv`
+
+Emits CSV with a header row — `status,check,target,message` — worst first, one
+finding per row. Fields are quoted/escaped (commas and newlines in messages are
+safe), for spreadsheets or ingestion into another system.
+
+```bash
+checkfleet check all --config checkfleet.yml --output csv --out-file findings.csv
+```
+
 ## `slack`
 
 Posts a [Block Kit](https://api.slack.com/block-kit) message to a Slack incoming
