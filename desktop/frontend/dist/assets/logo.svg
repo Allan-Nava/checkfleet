@@ -6,7 +6,7 @@
       <stop offset="1" stop-color="#0a1020"/>
     </linearGradient>
     <radialGradient id="cf-glow" cx="256" cy="296" r="215" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#10b981" stop-opacity="0.30"/>
+      <stop offset="0" stop-color="#10b981" stop-opacity="0.22"/>
       <stop offset="1" stop-color="#10b981" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="cf-rim" x1="256" y1="8" x2="256" y2="248" gradientUnits="userSpaceOnUse">
@@ -22,10 +22,6 @@
       <stop offset="0.55" stop-color="#10b981"/>
       <stop offset="1" stop-color="#34d399"/>
     </linearGradient>
-    <filter id="cf-soft" x="-25%" y="-25%" width="150%" height="150%">
-      <feGaussianBlur stdDeviation="9" result="b"/>
-      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
   </defs>
 
   <!-- app-icon plate: dark slate with an emerald ambient glow + top rim light -->
@@ -38,7 +34,11 @@
   <path d="M330 150 A150 150 0 1 0 330 362"
         fill="none" stroke="url(#cf-arc)" stroke-width="36" stroke-linecap="round"/>
 
-  <!-- the check: bold emerald mark with a soft glow so it reads as the hero -->
-  <path d="M172 266 L236 332 L366 164" filter="url(#cf-soft)"
+  <!-- crisp dark separation so the check reads as cleanly cut over the arc -->
+  <path d="M172 266 L236 332 L366 164"
+        fill="none" stroke="#0b1327" stroke-width="70" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- the check: bold emerald hero mark, sharp edges (no blur) -->
+  <path d="M172 266 L236 332 L366 164"
         fill="none" stroke="url(#cf-check)" stroke-width="50" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

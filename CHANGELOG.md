@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.98.3
+
+- Desktop (fix logo): il mark aveva un glow gaussiano sul check che lo faceva leggere come una sagoma sfocata/non ritagliata; sostituito con un mark netto + una fascia scura di separazione (`#0b1327`) così il check risulta pulitamente scontornato sopra l'arco teal. Inoltre **rigenerato `desktop/build/appicon.png`** dall'SVG rifinito: era fermo allo scaffold iniziale (v0.26.0), quindi il dock mostrava ancora il logo pre-rifinitura. Solo asset frontend (`desktop/frontend/dist/assets/logo.svg` + sync `docs/assets/logo.svg` + `appicon.png`); l'icona dell'app si rigenera al `wails build`.
+
 ## 0.98.2
 
 - Desktop: **primo avvio senza config** ora crea uno starter valido invece di aprire una schermata vuota (che sembrava rotta). Se non c'è né `CHECKFLEET_CONFIG` né `./checkfleet.yml`, `StartupConfig` genera un `checkfleet.yml` starter (via `internal/scaffold`, moduli certs+http) nella cartella config utente (`os.UserConfigDir()/checkfleet/`) e apre quello; `Startup` ora riporta `created`/`note` così la GUI può segnalarlo. Non sovrascrive mai un file esistente. `ensureStarterConfig` testato (crea + valida + idempotente).
