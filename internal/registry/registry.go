@@ -31,6 +31,7 @@ import (
 	"github.com/Allan-Nava/checkfleet/internal/checks/stream"
 	"github.com/Allan-Nava/checkfleet/internal/checks/tcp"
 	"github.com/Allan-Nava/checkfleet/internal/checks/tlscheck"
+	"github.com/Allan-Nava/checkfleet/internal/checks/vault"
 	"github.com/Allan-Nava/checkfleet/internal/engine"
 )
 
@@ -71,6 +72,7 @@ func Modules(cfg *engine.Config) []Spec {
 		{"mysql", c.MySQL != nil, func() engine.Check { return mysql.New(*c.MySQL) }},
 		{"etcd", c.Etcd != nil, func() engine.Check { return etcd.New(*c.Etcd) }},
 		{"clickhouse", c.ClickHouse != nil, func() engine.Check { return clickhouse.New(*c.ClickHouse) }},
+		{"vault", c.Vault != nil, func() engine.Check { return vault.New(*c.Vault) }},
 	}
 }
 

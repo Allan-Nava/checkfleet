@@ -77,6 +77,7 @@ See [Installation](https://allan-nava.github.io/checkfleet/installation/) for al
 | `mysql` | MySQL/MariaDB via go-sql-driver: reachable, read-only role, connection saturation, replica IO/SQL threads + lag |
 | `etcd` | etcd v3 via the HTTP JSON gateway: /health, leader present (quorum), member count vs expected |
 | `clickhouse` | ClickHouse over HTTP: /ping, SELECT version(), replicated-table read-only state & replication delay |
+| `vault` | HashiCorp Vault over HTTP: seal status (sealed/uninitialized), active/standby role, version |
 
 The only module still on the roadmap (see [BACKLOG.md](BACKLOG.md)) is `mediamtx`.
 

@@ -31,6 +31,7 @@ var Docs = map[string]string{
 	"mysql":         "MySQL/MariaDB (go-sql-driver): reachable, read-only role, connection saturation (`conn_warn_pct`), and on a replica the IO/SQL threads + lag (`lag_warn_seconds`/`lag_crit_seconds`). Read-only.",
 	"etcd":          "etcd v3 via the HTTP JSON gateway: /health, leader present (BAD if no leader / lost quorum), etcd version and member count vs `expect_members`. Zero-dep.",
 	"clickhouse":    "ClickHouse over HTTP: /ping, SELECT version(), and per replicated table read-only state + replication delay (`delay_warn_seconds`/`delay_crit_seconds`) from system.replicas. Zero-dep.",
+	"vault":         "HashiCorp Vault via HTTP: seal status (BAD if sealed or uninitialized, with unseal progress) and node role (active/standby) with the Vault version. Zero-dep.",
 }
 
 // Doc returns the description for a module and whether it exists.

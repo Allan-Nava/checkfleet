@@ -58,6 +58,23 @@ type ChecksConfig struct {
 	MySQL         *MySQLConfig         `yaml:"mysql"`
 	Etcd          *EtcdConfig          `yaml:"etcd"`
 	ClickHouse    *ClickHouseConfig    `yaml:"clickhouse"`
+	Vault         *VaultConfig         `yaml:"vault"`
+}
+
+// VaultConfig configures the HashiCorp Vault check (HTTP API).
+type VaultConfig struct {
+	Targets []VaultTarget `yaml:"targets"`
+}
+
+// VaultTarget is one Vault endpoint.
+type VaultTarget struct {
+	Name string `yaml:"name"`
+	// API address including scheme, e.g. https://vault-01:8200.
+	URL string `yaml:"url"`
+	// Optional token (from env) for authenticated endpoints; seal-status and
+	// health need none.
+	TokenEnv string `yaml:"token_env"`
+	Insecure bool   `yaml:"insecure_skip_verify"`
 }
 
 // ClickHouseConfig configures the ClickHouse check (HTTP interface).

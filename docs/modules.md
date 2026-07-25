@@ -498,6 +498,25 @@ in-test fake HTTP server.
       - {name: ch-01, url: http://ch-01:8123, username: monitor, password_env: CLICKHOUSE_PASSWORD}
 ```
 
+## `vault` — HashiCorp Vault
+
+Checks a Vault node over its HTTP API (zero-dep):
+
+- **Seal status** (`/v1/sys/seal-status`) — `ERROR` if unreachable, `BAD` if the
+  node is sealed (with unseal progress `n/threshold`) or not initialized.
+- **Role** (`/v1/sys/health`) — reports `active` or `standby` (both `OK` — standby
+  is normal in an HA cluster) with the Vault version.
+
+Both endpoints are unauthenticated; an optional `token_env` sends `X-Vault-Token`
+for setups that restrict them. `insecure_skip_verify` for self-signed HTTPS.
+Tested against an in-test fake Vault.
+
+```yaml
+  vault:
+    targets:
+      - {name: vault-01, url: https://vault-01:8200}
+```
+
 ## Ansible inventory as a target source
 
 The `certs`, `nats`, `haproxy`, `patroni`, `consul`, `redis` and `tls` modules can read

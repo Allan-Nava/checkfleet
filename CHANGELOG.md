@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.77.0
+
+- Modulo `vault` (CF-77, M21): health check di HashiCorp Vault via HTTP (zero-dep). `/v1/sys/seal-status` → **ERROR** se irraggiungibile, **BAD** se il nodo è **sealed** (con progresso di unseal `n/soglia`) o non inizializzato; `/v1/sys/health` → ruolo **active/standby** (entrambi OK — lo standby è normale in HA) con la versione di Vault. Entrambi gli endpoint sono non autenticati; `token_env` opzionale invia `X-Vault-Token`, `insecure_skip_verify` per HTTPS self-signed. Il corpo JSON viene letto anche sugli status non-200 (Vault codifica lo stato nel body su 429/503). Testato contro un finto Vault (`httptest`). CLI `checkfleet check vault`.
+
 ## 0.76.1
 
 - Desktop (CF-90, M18): **rifinitura grafica del logo e della UI**. Il mark dell'app (plate slate scuro + arco "c" teal che culla il check smeraldo) prima si confondeva con la titlebar quasi dello stesso colore: ora ha un gradiente slate più chiaro, un glow smeraldo ambientale, un rim-light in alto e un anello hairline, così si stacca e legge come una vera app-icon. Più respiro attorno al brand (gap 8→11px, mark 22→24px con ring + ombra morbida), la pill di versione (`dev`/tag) diventa un chip brand-tinted, l'empty-state passa da logo sbiadito al 50% a mark a piena forza con alone brand, e micro-transizioni su bottoni/input/mark. Solo frontend statico (`desktop/frontend/dist/{index.html,style.css,assets/logo.svg}` + sync `docs/assets/logo.svg`), nessun binding Go nuovo.

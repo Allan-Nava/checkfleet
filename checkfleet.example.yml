@@ -254,3 +254,9 @@ checks:
     delay_crit_seconds: 300
     targets:
       - {name: ch-01, url: http://ch-01:8123, username: monitor, password_env: CLICKHOUSE_PASSWORD}
+
+  # HashiCorp Vault: seal status + active/standby role. Token optional (from env).
+  vault:
+    targets:
+      - {name: vault-01, url: https://vault-01:8200, insecure_skip_verify: true}
+      - {name: vault-02, url: https://vault-02:8200, insecure_skip_verify: true}

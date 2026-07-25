@@ -194,6 +194,18 @@ func Validate(cfg *Config) []string {
 		}
 	}
 
+	if x := c.Vault; x != nil {
+		configured++
+		if len(x.Targets) == 0 {
+			add("vault: no target")
+		}
+		for i, t := range x.Targets {
+			if strings.TrimSpace(t.URL) == "" {
+				add("vault: target #%d has no url", i+1)
+			}
+		}
+	}
+
 	if configured == 0 && !anyModuleConfigured(c) {
 		add("no module configured under `checks`")
 	}
