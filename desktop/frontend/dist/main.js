@@ -103,6 +103,7 @@
   let visibleFindings = [];
   let editorOn = false;
   let dashboardOn = false;
+  let view = "fleet";
   let moduleTrend = { modules: [], runs: [] };
   let metricSeries = [];
 
@@ -255,6 +256,7 @@
         auto: $("auto").checked,
         notify: $("notify").checked,
         groupBy: $("groupBy").checked,
+        view: view,
       }));
     } catch (_) {}
   }
@@ -295,28 +297,28 @@
     try { localStorage.setItem("cf-theme", next); } catch (_) {}
   }
 
-  /* ---------------- config editor ---------------- */
-  function setEditor(on) {
-    editorOn = on;
-    if (on && dashboardOn) setDashboard(false);
-    $("editor").hidden = !on;
-    $("findingsBar").hidden = on;
-    $("tableWrap").hidden = on;
-    $("summary").hidden = on || !report;
-    $("cfgToggle").classList.toggle("active", on);
-    if (on) loadConfigText();
-  }
-
-  /* ---------------- dashboard (CF-91) ---------------- */
-  function setDashboard(on) {
-    dashboardOn = on;
-    if (on && editorOn) setEditor(false);
-    $("dashboard").hidden = !on;
-    $("findingsBar").hidden = on;
-    $("tableWrap").hidden = on;
-    $("summary").hidden = on || !report;
-    $("dashToggle").classList.toggle("active", on);
-    if (on) renderDashboard();
+  /* ---------------- view navigation (CF-96) ---------------- */
+  // The app has three first-class views — fleet, dashboard, config — driven by
+  // one function so the titlebar tabs, shortcuts and command palette stay in sync.
+  function setView(name) {
+    if (name !== "fleet" && name !== "dashboard" && name !== "config") name = "fleet";
+    view = name;
+    editorOn = name === "config";
+    dashboardOn = name === "dashboard";
+    $("dashboard").hidden = !dashboardOn;
+    $("editor").hidden = !editorOn;
+    $("findingsBar").hidden = name !== "fleet";
+    $("tableWrap").hidden = name !== "fleet";
+    $("summary").hidden = name !== "fleet" || !report;
+    const tabs = document.querySelectorAll(".viewtab");
+    tabs.forEach((t) => {
+      const on = t.dataset.view === name;
+      t.classList.toggle("active", on);
+      t.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    if (dashboardOn) renderDashboard();
+    if (editorOn) loadConfigText();
+    saveSettings();
   }
 
   // renderDashboard pulls the persisted history (survives restarts) and draws the
@@ -518,6 +520,64 @@
     $("drawerScrim").hidden = true;
   }
 
+  /* ---------------- command palette (CF-96) ---------------- */
+  let palItems = [];
+  let palSel = 0;
+
+  // The command set — each entry reuses an existing action, so the palette,
+  // titlebar tabs and shortcuts all drive the same code.
+  function commandList() {
+    return [
+      { label: "Run checks", hint: "⌘↵", act: run },
+      { label: "Go to Fleet", hint: "1", act: () => setView("fleet") },
+      { label: "Go to Dashboard", hint: "2", act: () => setView("dashboard") },
+      { label: "Go to Config", hint: "3", act: () => setView("config") },
+      { label: "Focus filter", hint: "/", act: () => { setView("fleet"); $("filter").focus(); } },
+      { label: "Validate config", act: runValidate },
+      { label: "Show trend", act: showTrend },
+      { label: "Export as Markdown", act: () => save("markdown") },
+      { label: "Export as JSON", act: () => save("json") },
+      { label: "Export as HTML", act: () => save("html") },
+      { label: "Toggle theme", act: toggleTheme },
+    ];
+  }
+
+  function paletteOpen() { return !$("paletteBox").hidden; }
+  function openPalette() {
+    $("paletteScrim").hidden = false;
+    $("paletteBox").hidden = false;
+    $("paletteInput").value = "";
+    filterPalette("");
+    $("paletteInput").focus();
+  }
+  function closePalette() { $("paletteBox").hidden = true; $("paletteScrim").hidden = true; }
+
+  function filterPalette(q) {
+    q = q.trim().toLowerCase();
+    palItems = commandList().filter((c) => !q || c.label.toLowerCase().includes(q));
+    palSel = 0;
+    renderPalette();
+  }
+  function renderPalette() {
+    const ul = $("paletteList");
+    if (!palItems.length) { ul.innerHTML = `<li class="palette-empty">No matching command</li>`; return; }
+    ul.innerHTML = palItems.map((c, i) =>
+      `<li data-i="${i}" class="${i === palSel ? "sel" : ""}"><span class="pl-label">${escapeHtml(c.label)}</span>` +
+      `${c.hint ? `<span class="pl-hint">${escapeHtml(c.hint)}</span>` : ""}</li>`).join("");
+  }
+  function movePalette(d) {
+    if (!palItems.length) return;
+    palSel = (palSel + d + palItems.length) % palItems.length;
+    renderPalette();
+    const sel = $("paletteList").querySelector("li.sel");
+    if (sel) sel.scrollIntoView({ block: "nearest" });
+  }
+  function runPalette(i) {
+    const c = palItems[i];
+    closePalette();
+    if (c) { try { c.act(); } catch (_) {} }
+  }
+
   async function showFindingDetail(f) {
     const text = `${f.status} ${f.check} ${f.target} — ${f.message}`;
     const hasMetric = f.value != null;
@@ -623,14 +683,15 @@
     $("changes").addEventListener("click", showChanges);
     $("trend").addEventListener("click", showTrend);
     $("groupBy").addEventListener("change", () => { render(); saveSettings(); });
-    $("dashToggle").addEventListener("click", () => setDashboard(dashboardOn ? false : true));
+    document.querySelectorAll(".viewtab").forEach((t) =>
+      t.addEventListener("click", () => setView(t.dataset.view)));
+    $("palette").addEventListener("click", () => openPalette());
     $("dashRefresh").addEventListener("click", renderDashboard);
     $("metricSel").addEventListener("change", drawMetric);
     $("chartHeatmap").addEventListener("click", (e) => {
       const el = e.target.closest("[data-module]");
       if (el) showModuleDrill(el.getAttribute("data-module"));
     });
-    $("cfgToggle").addEventListener("click", () => setEditor(editorOn ? false : true));
     $("cfgReload").addEventListener("click", loadConfigText);
     $("cfgValidate").addEventListener("click", cfgValidate);
     $("cfgSave").addEventListener("click", cfgSave);
@@ -668,7 +729,36 @@
     });
     $("drawerClose").addEventListener("click", closeDrawer);
     $("drawerScrim").addEventListener("click", closeDrawer);
-    document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDrawer(); });
+
+    // command palette wiring
+    $("paletteInput").addEventListener("input", (e) => filterPalette(e.target.value));
+    $("paletteInput").addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown") { e.preventDefault(); movePalette(1); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); movePalette(-1); }
+      else if (e.key === "Enter") { e.preventDefault(); runPalette(palSel); }
+      else if (e.key === "Escape") { e.preventDefault(); closePalette(); }
+    });
+    $("paletteList").addEventListener("click", (e) => {
+      const li = e.target.closest("li[data-i]");
+      if (li) runPalette(+li.dataset.i);
+    });
+    $("paletteScrim").addEventListener("click", closePalette);
+
+    // global keyboard shortcuts
+    document.addEventListener("keydown", (e) => {
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && (e.key === "k" || e.key === "K")) { e.preventDefault(); paletteOpen() ? closePalette() : openPalette(); return; }
+      if (mod && e.key === "Enter") { e.preventDefault(); run(); return; }
+      if (e.key === "Escape") { closePalette(); closeDrawer(); return; }
+      // bare keys only when not typing and no modifier
+      const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName || "");
+      if (typing || mod || e.altKey) return;
+      if (e.key === "1") setView("fleet");
+      else if (e.key === "2") setView("dashboard");
+      else if (e.key === "3") setView("config");
+      else if (e.key === "/") { e.preventDefault(); setView("fleet"); $("filter").focus(); }
+      else if (e.key === "r" || e.key === "R") run();
+    });
   }
 
   function updateHint() {
@@ -702,6 +792,7 @@
     await refreshStacks();
     if (s.stack) $("stack").value = s.stack;
     if ($("auto").checked) setAutoRefresh(true);
+    setView(s.view || "fleet"); // reopen on the last-used view
 
     if (IS_MOCK) {
       // Preview: add fake window controls and auto-run with sample data.

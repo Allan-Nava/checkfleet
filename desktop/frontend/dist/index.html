@@ -15,13 +15,13 @@
         <span class="wordmark">check<b>fleet</b></span>
         <span class="pill-mini" id="version">dev</span>
       </div>
+      <nav class="viewnav" role="tablist" aria-label="Views" style="--wails-draggable:no-drag">
+        <button class="viewtab active" data-view="fleet" role="tab">Fleet</button>
+        <button class="viewtab" data-view="dashboard" role="tab">Dashboard</button>
+        <button class="viewtab" data-view="config" role="tab">Config</button>
+      </nav>
       <div class="tb-right" style="--wails-draggable:no-drag">
-        <button class="icon-btn" id="dashToggle" title="Dashboard" aria-label="Dashboard">
-          <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M3 3h8v10H3zm10 0h8v6h-8zM3 15h8v6H3zm10-4h8v10h-8z"/></svg>
-        </button>
-        <button class="icon-btn" id="cfgToggle" title="Edit config" aria-label="Edit config">
-          <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19.4 13a7.5 7.5 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.5 7.5 0 0 0-1.7-1l-.4-2.5H10.8l-.4 2.5a7.5 7.5 0 0 0-1.7 1l-2.4-1-2 3.4L4.3 11a7.5 7.5 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.5 7.5 0 0 0 1.7 1l.4 2.5h3.4l.4-2.5a7.5 7.5 0 0 0 1.7-1l2.4 1 2-3.4zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7"/></svg>
-        </button>
+        <button class="icon-btn palette-btn" id="palette" title="Command palette (⌘K)" aria-label="Command palette">⌘K</button>
         <button class="icon-btn" id="theme" title="Toggle light/dark theme" aria-label="Theme">
           <svg class="i-sun" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10m0-5 2 3h-4zm0 20-2-3h4zM2 12l3-2v4zm20 0-3 2v-4zM4.9 4.9l3.5 1.4-2.1 2.1zm14.2 14.2-3.5-1.4 2.1-2.1zM19.1 4.9l-1.4 3.5-2.1-2.1zM4.9 19.1l1.4-3.5 2.1 2.1z"/></svg>
           <svg class="i-moon" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9"/></svg>
@@ -217,6 +217,13 @@
       </div>
       <div class="drawer-body" id="drawerBody"></div>
     </aside>
+
+    <!-- command palette (⌘K) -->
+    <div class="palette-scrim" id="paletteScrim" hidden></div>
+    <div class="palette" id="paletteBox" hidden role="dialog" aria-label="Command palette">
+      <input type="text" id="paletteInput" placeholder="Type a command…" spellcheck="false" autocomplete="off">
+      <ul class="palette-list" id="paletteList"></ul>
+    </div>
   </div>
 
   <script src="charts.js"></script>

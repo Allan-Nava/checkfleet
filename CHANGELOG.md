@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.102.0
+
+- Desktop (CF-96, M25): **shell UX v3**. Le tre schermate (Fleet / Dashboard / Config) diventano **viste di prima classe** con tab nel titlebar, guidate da un unico `setView` (niente più toggle separati). Nuova **command-palette** (⌘K): campo di ricerca, navigazione con frecce + Enter, click, che invoca le stesse azioni del resto della UI (run, cambio vista, validate, trend, export, tema). **Keyboard shortcut**: ⌘K palette, ⌘↵ run, `1/2/3` per le viste, `/` per il filtro, `r` per run, Esc per chiudere. Layout responsive (la griglia della dashboard collassa su schermi stretti) e la vista corrente è persistita in localStorage. **Chiude M25 (Desktop GUI v3 — dashboard & grafici).** _(solo frontend statico)_
+
 ## 0.101.0
 
 - Desktop (CF-94, M25): grafici di **metrica nel tempo** nella Dashboard. Nuovo binding `App.Metrics` che, dallo storico persistente, estrae una serie temporale per ogni check/target che porta un `Value` numerico (CF-91). Il frontend mostra una card **Metric over time** con selettore della serie e un **line chart** SVG (`charts.js` → `svgLine`, zero-dep, con gridline/assi e scala y a ridosso dei dati); in più il **drawer di un finding** con metrica ne disegna la serie storica inline. Binding coperto da `TestMetrics`, geometria da smoke `svgLine`. Nessun cambio all'engine (usa il campo già introdotto in CF-91). _(solo frontend statico + binding desktop)_
