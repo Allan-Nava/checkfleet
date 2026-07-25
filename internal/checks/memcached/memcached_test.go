@@ -45,11 +45,33 @@ func fakeMemcached(t *testing.T, stats map[string]string) string {
 	return ln.Addr().String()
 }
 
+// run returns the reachability/memory finding, which is always first.
 func run(t *testing.T, cfg engine.MemcachedConfig, target string) engine.Finding {
+	t.Helper()
+	fs := runAll(t, cfg, target)
+	if len(fs) == 0 {
+		t.Fatal("no finding returned")
+	}
+	return fs[0]
+}
+
+func runAll(t *testing.T, cfg engine.MemcachedConfig, target string) []engine.Finding {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	return New(cfg).probe(ctx, target)
+}
+
+// findingFor returns the finding whose target carries the given suffix.
+func findingFor(t *testing.T, fs []engine.Finding, suffix string) engine.Finding {
+	t.Helper()
+	for _, f := range fs {
+		if strings.HasSuffix(f.Target, suffix) {
+			return f
+		}
+	}
+	t.Fatalf("no finding with target suffix %q in %v", suffix, fs)
+	return engine.Finding{}
 }
 
 func TestReachableOK(t *testing.T) {
@@ -79,6 +101,50 @@ func TestUnreachableIsError(t *testing.T) {
 	f := run(t, engine.MemcachedConfig{MemWarnPct: 90}, addr)
 	if f.Status != engine.ERROR {
 		t.Fatalf("unreachable should be ERROR, got %s: %s", f.Status, f.Message)
+	}
+}
+
+func TestMemoryPctIsAMetric(t *testing.T) {
+	addr := fakeMemcached(t, map[string]string{
+		"version": "1.6", "bytes": "2500", "limit_maxbytes": "10000",
+	})
+	f := run(t, engine.MemcachedConfig{MemWarnPct: 90}, addr)
+	if f.Value == nil || *f.Value != 25 || f.Unit != "%" {
+		t.Fatalf("want 25%% as a metric, got value=%v unit=%q", f.Value, f.Unit)
+	}
+}
+
+func TestEvictionsReportedAsMetric(t *testing.T) {
+	addr := fakeMemcached(t, map[string]string{
+		"version": "1.6", "bytes": "10", "limit_maxbytes": "10000", "evictions": "1234",
+	})
+	f := findingFor(t, runAll(t, engine.MemcachedConfig{MemWarnPct: 90}, addr), "[evictions]")
+	// No threshold configured: reported, never a warning.
+	if f.Status != engine.OK {
+		t.Errorf("without evictions_warn: want OK, got %s: %s", f.Status, f.Message)
+	}
+	if f.Value == nil || *f.Value != 1234 || f.Unit != "evictions" {
+		t.Errorf("want 1234 evictions as a metric, got value=%v unit=%q", f.Value, f.Unit)
+	}
+}
+
+func TestEvictionsOverThresholdWarns(t *testing.T) {
+	addr := fakeMemcached(t, map[string]string{
+		"version": "1.6", "bytes": "10", "limit_maxbytes": "10000", "evictions": "500",
+	})
+	f := findingFor(t, runAll(t, engine.MemcachedConfig{MemWarnPct: 90, EvictionsWarn: 100}, addr), "[evictions]")
+	if f.Status != engine.WARN || !strings.Contains(f.Message, "over 100") {
+		t.Fatalf("500 evictions over a 100 threshold should WARN, got %s: %s", f.Status, f.Message)
+	}
+}
+
+// A server that doesn't report the counter must not produce an empty finding.
+func TestEvictionsAbsentIsOmitted(t *testing.T) {
+	addr := fakeMemcached(t, map[string]string{"version": "1.6", "bytes": "10", "limit_maxbytes": "10000"})
+	for _, f := range runAll(t, engine.MemcachedConfig{MemWarnPct: 90}, addr) {
+		if strings.Contains(f.Target, "[evictions]") {
+			t.Fatalf("no evictions stat: want no eviction finding, got %s", f.Message)
+		}
 	}
 }
 

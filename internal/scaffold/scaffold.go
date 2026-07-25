@@ -108,6 +108,7 @@ var snippets = map[string]string{
       - {name: vault-01, url: https://vault-01:8200, insecure_skip_verify: true}`,
 	"memcached": `  memcached:
     mem_warn_pct: 90
+    evictions_warn: 0
     targets: [cache-01, cache-02:11212]`,
 	"cassandra": `  cassandra:
     targets:

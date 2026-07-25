@@ -98,6 +98,10 @@ type MemcachedConfig struct {
 	Targets    []string `yaml:"targets"`
 	Port       int      `yaml:"port"`         // default 11211
 	MemWarnPct int      `yaml:"mem_warn_pct"` // default 90
+	// EvictionsWarn is an absolute count of evictions since the server started
+	// (memcached exposes no rate), so it has no sensible default: 0 disables
+	// the threshold and the counter is only reported as a metric.
+	EvictionsWarn int64 `yaml:"evictions_warn"`
 }
 
 // VaultConfig configures the HashiCorp Vault check (HTTP API).

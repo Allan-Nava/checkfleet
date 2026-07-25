@@ -270,6 +270,9 @@ checks:
   memcached:
     port: 11211
     mem_warn_pct: 90
+    # Evictions are a total since startup, not a rate: 0 reports the counter as
+    # a metric without ever warning. Set an absolute count to make it a WARN.
+    evictions_warn: 0
     targets: [cache-01, cache-02:11212]
 
   # Cassandra/ScyllaDB reachability via the CQL native protocol handshake.

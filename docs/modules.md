@@ -524,7 +524,12 @@ Checks memcached over its text protocol (zero-dep):
 - **Reachability** — connects and runs `STATS`; `ERROR` if it can't.
 - **Memory** — `WARN` when `bytes` exceeds `mem_warn_pct` of `limit_maxbytes`
   (default 90); otherwise `OK` with version, memory percentage and connection
-  count.
+  count. The percentage is also the target's numeric metric (`%`).
+- **Evictions** — a `[evictions]` finding carrying the counter as a metric.
+  memcached only exposes a **total since startup**, not a rate, so there is no
+  useful default threshold: the count is published so the history can chart it
+  (a rising line is the real signal), and it only `WARN`s when you set an
+  explicit `evictions_warn`. Omitted when the server doesn't report the stat.
 
 Targets are `host[:port]` (default port `11211`). Tested against an in-test fake
 memcached.
@@ -532,6 +537,7 @@ memcached.
 ```yaml
   memcached:
     mem_warn_pct: 90
+    evictions_warn: 0   # 0 = report only, no threshold
     targets: [cache-01, cache-02:11212]
 ```
 

@@ -24,13 +24,13 @@ func New(cfg engine.MemcachedConfig) *Check { return &Check{cfg: cfg} }
 func (c *Check) Name() string { return "memcached" }
 
 func (c *Check) Run(ctx context.Context) []engine.Finding {
-	findings := make([]engine.Finding, len(c.cfg.Targets))
+	perTarget := make([][]engine.Finding, len(c.cfg.Targets))
 	sem := make(chan struct{}, 16)
 	done := make(chan int)
 	for i, t := range c.cfg.Targets {
 		go func(i int, t string) {
 			sem <- struct{}{}
-			findings[i] = c.probe(ctx, withDefaultPort(t, c.cfg.Port))
+			perTarget[i] = c.probe(ctx, withDefaultPort(t, c.cfg.Port))
 			<-sem
 			done <- i
 		}(i, t)
@@ -38,36 +38,69 @@ func (c *Check) Run(ctx context.Context) []engine.Finding {
 	for range c.cfg.Targets {
 		<-done
 	}
+	var findings []engine.Finding
+	for _, fs := range perTarget {
+		findings = append(findings, fs...)
+	}
 	return findings
 }
 
-func (c *Check) probe(ctx context.Context, target string) engine.Finding {
-	f := engine.Finding{Check: c.Name(), Target: target}
-
+func (c *Check) probe(ctx context.Context, target string) []engine.Finding {
 	stats, err := c.stats(ctx, target)
 	if err != nil {
-		f.Status, f.Message = engine.ERROR, fmt.Sprintf("stats failed: %v", err)
-		return f
+		return []engine.Finding{{Check: c.Name(), Target: target, Status: engine.ERROR,
+			Message: fmt.Sprintf("stats failed: %v", err)}}
 	}
+	findings := []engine.Finding{c.memoryFinding(target, stats)}
+	if f, ok := c.evictionsFinding(target, stats); ok {
+		findings = append(findings, f)
+	}
+	return findings
+}
 
+// memoryFinding reports reachability plus memory usage against limit_maxbytes;
+// the percentage doubles as the target's numeric metric.
+func (c *Check) memoryFinding(target string, stats map[string]string) engine.Finding {
+	f := engine.Finding{Check: c.Name(), Target: target}
 	version := stats["version"]
 	conns := stats["curr_connections"]
-	used, _ := strconv.ParseInt(stats["bytes"], 10, 64)
-	limit, _ := strconv.ParseInt(stats["limit_maxbytes"], 10, 64)
+	used := atoi(stats["bytes"])
+	limit := atoi(stats["limit_maxbytes"])
 
-	if limit > 0 {
-		pct := int(used * 100 / limit)
-		if c.cfg.MemWarnPct > 0 && pct >= c.cfg.MemWarnPct {
-			f.Status = engine.WARN
-			f.Message = fmt.Sprintf("memory %d%% of limit (%s of %s, over %d%%), memcached %s",
-				pct, humanBytes(used), humanBytes(limit), c.cfg.MemWarnPct, version)
-			return f
-		}
-		f.Status, f.Message = engine.OK, fmt.Sprintf("reachable, memcached %s, memory %d%%, %s conns", version, pct, conns)
+	if limit <= 0 {
+		f.Status, f.Message = engine.OK, fmt.Sprintf("reachable, memcached %s, %s conns", version, conns)
 		return f
 	}
-	f.Status, f.Message = engine.OK, fmt.Sprintf("reachable, memcached %s, %s conns", version, conns)
+	pct := int(used * 100 / limit)
+	f.Value, f.Unit = engine.Num(float64(pct)), "%"
+	if c.cfg.MemWarnPct > 0 && pct >= c.cfg.MemWarnPct {
+		f.Status = engine.WARN
+		f.Message = fmt.Sprintf("memory %d%% of limit (%s of %s, over %d%%), memcached %s",
+			pct, humanBytes(used), humanBytes(limit), c.cfg.MemWarnPct, version)
+		return f
+	}
+	f.Status, f.Message = engine.OK, fmt.Sprintf("reachable, memcached %s, memory %d%%, %s conns", version, pct, conns)
 	return f
+}
+
+// evictionsFinding reports the eviction counter, which memcached exposes only
+// as a total since startup. There is no rate to threshold on, so the count is
+// published as a metric (charted over time from the history) and only WARNs
+// against an explicit evictions_warn. Reported only when the server sends it.
+func (c *Check) evictionsFinding(target string, stats map[string]string) (engine.Finding, bool) {
+	raw, ok := stats["evictions"]
+	if !ok {
+		return engine.Finding{}, false
+	}
+	n := atoi(raw)
+	f := engine.Finding{Check: c.Name(), Target: target + " [evictions]",
+		Value: engine.Num(float64(n)), Unit: "evictions", Status: engine.OK,
+		Message: fmt.Sprintf("%d evictions since start", n)}
+	if c.cfg.EvictionsWarn > 0 && n >= c.cfg.EvictionsWarn {
+		f.Status = engine.WARN
+		f.Message = fmt.Sprintf("%d evictions since start (over %d)", n, c.cfg.EvictionsWarn)
+	}
+	return f, true
 }
 
 // stats opens a connection, runs STATS, and returns the name→value map.
@@ -107,6 +140,11 @@ func (c *Check) stats(ctx context.Context, target string) (map[string]string, er
 		return nil, fmt.Errorf("no stats returned")
 	}
 	return out, nil
+}
+
+func atoi(s string) int64 {
+	n, _ := strconv.ParseInt(strings.TrimSpace(s), 10, 64)
+	return n
 }
 
 func humanBytes(n int64) string {

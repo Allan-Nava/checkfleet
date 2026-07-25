@@ -214,6 +214,9 @@ func Validate(cfg *Config) []string {
 		if x.MemWarnPct < 0 || x.MemWarnPct > 100 {
 			add("memcached: mem_warn_pct (%d) out of range 0-100", x.MemWarnPct)
 		}
+		if x.EvictionsWarn < 0 {
+			add("memcached: evictions_warn (%d) must not be negative", x.EvictionsWarn)
+		}
 	}
 
 	if x := c.Cassandra; x != nil {

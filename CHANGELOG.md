@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.111.0
+
+- Modulo `memcached` (CF-78, M21 — completamento): il modulo consegnato in v0.78.0 copriva reachability, memoria e connessioni ma **non le evictions**, che la spec del backlog chiedeva. Aggiunto un finding `<target> [evictions]` con il contatore. Scelta di design: memcached espone solo il **totale dall'avvio**, non un rate, quindi non esiste una soglia di default sensata — il contatore è pubblicato come **metrica numerica** (`Finding.Value`, unit `evictions`) così lo storico lo grafica nella card "Metric over time" e la pendenza della linea diventa il segnale vero; il WARN scatta solo con `evictions_warn` esplicito (0 = solo report). Il finding è omesso se il server non riporta la stat.
+- Modulo `memcached`: la percentuale di memoria diventa anch'essa una **metrica** (`Value`+`Unit` `%`), allineando il modulo alla convenzione di CF-91/CF-97 che gli era sfuggita. Messaggi e status invariati.
+- Config: nuovo `checks.memcached.evictions_warn` (validato ≥ 0), presente in `checkfleet.example.yml`, nello scaffold (`internal/scaffold`) e in `internal/moduledoc`. Docs `docs/modules.md` aggiornate. Test: 4 nuovi casi (metrica memoria, evictions come metrica, WARN sopra soglia, stat assente → nessun finding) contro il finto memcached in-test.
+
 ## 0.110.0
 
 - Desktop (CF-104, M27 — history browser & confronto run): nuovo bottone **History** che apre un drawer con i run persistiti (`internal/history`), newest-first, ciascuno con badge del worst status, timestamp e conteggi OK/WARN/BAD/ERROR. Aprendo un run se ne vedono i finding (status + valore numerico; i messaggi non sono salvati nello storico) con un'azione **Compare with previous** che mostra il delta rispetto al run precedente (new/resolved/worsened/improved), riusando `engine.DiffStatus`. Tre binding nuovi — `App.HistoryRuns`, `App.RunAt`, `App.DiffRuns` — coperti da `TestHistoryBrowser`. Va oltre il diff in-sessione (CF-64) e la sparkline di trend (CF-70). Apre M27 (Desktop power & workflow).

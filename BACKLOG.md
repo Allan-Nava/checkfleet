@@ -164,7 +164,7 @@ Nuovi moduli di dominio per datastore diffusi.
 
 - [x] **CF-76 — Modulo `clickhouse`**: reachability via HTTP (`/ping` + `SELECT version()`), e per tabella replicata stato read-only + `absolute_delay` da `system.replicas` (`delay_warn_seconds`/`delay_crit_seconds`, default 30/300). Zero-dep HTTP, basic auth da env. Testato con server fake (`httptest`). _(v0.76.0)_
 - [x] **CF-77 — Modulo `vault`**: `/v1/sys/health` (active/standby), `/v1/sys/seal-status` (sealed → BAD con progresso unseal, uninitialized → BAD), versione. Zero-dep HTTP, `token_env` opzionale, `insecure_skip_verify`. Testato con Vault fake (`httptest`). _(v0.77.0)_
-- [ ] **CF-78 — Modulo `memcached`**: `stats` sul protocollo testuale TCP (zero-dep) — reachability, uso memoria vs `limit_maxbytes`, evictions, connessioni.
+- [x] **CF-78 — Modulo `memcached`**: `stats` sul protocollo testuale TCP (zero-dep) — reachability, uso memoria vs `limit_maxbytes` (`mem_warn_pct`, default 90), **evictions** e connessioni. La percentuale di memoria e il contatore evictions sono esposti come metriche numeriche (`Finding.Value`, CF-91) così finiscono nello storico e nella card "Metric over time". Le evictions sono un totale dall'avvio, non un rate: nessuna soglia di default, si WARN solo con `evictions_warn` esplicito. _(v0.78.0 il modulo; evictions + metriche in v0.111.0)_
 - [ ] **CF-79 — Modulo `cassandra`/`scylla`**: reachability + stato nodi. Valutare protocollo CQL nativo (handshake OPTIONS/STARTUP) vs driver `gocql`. **Chiude M21.**
 
 ## M22 — Alerting & sink (fase 3)
