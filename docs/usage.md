@@ -207,3 +207,14 @@ alerts that recovered since the previous run. The key is read from an env var.
 checkfleet alert --config checkfleet.yml --provider pagerduty --key-env PD_ROUTING_KEY --history runs.jsonl
 checkfleet alert --config checkfleet.yml --provider opsgenie  --key-env OPSGENIE_KEY --dry-run
 ```
+
+**AWS SNS** (`--provider sns`) publishes each BAD/ERROR finding to an SNS topic —
+a stateless sink, so it only publishes (no resolve). Requests are signed with
+**AWS Signature V4 written by hand** (no AWS SDK); the region is parsed from the
+topic ARN and credentials come from the environment.
+
+```bash
+export AWS_ACCESS_KEY_ID=… AWS_SECRET_ACCESS_KEY=…
+checkfleet alert --config checkfleet.yml --provider sns \
+  --sns-topic-arn arn:aws:sns:eu-west-1:123456789012:checkfleet-alerts
+```

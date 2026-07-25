@@ -7,8 +7,11 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/Allan-Nava/checkfleet/internal/alert"
+	"github.com/Allan-Nava/checkfleet/internal/awssig"
 	"github.com/Allan-Nava/checkfleet/internal/engine"
 	"github.com/Allan-Nava/checkfleet/internal/history"
 	"github.com/Allan-Nava/checkfleet/internal/registry"
@@ -23,8 +26,11 @@ func runAlert(args []string) error {
 	fs := flag.NewFlagSet("alert", flag.ExitOnError)
 	configPath := fs.String("config", "checkfleet.yml", "YAML config file")
 	stack := fs.String("stack", "", "stack profile: overlays checkfleet.<stack>.yml onto the base")
-	provider := fs.String("provider", "pagerduty", "on-call provider: pagerduty or opsgenie")
+	provider := fs.String("provider", "pagerduty", "on-call provider: pagerduty, opsgenie or sns")
 	keyEnv := fs.String("key-env", "", "env var with the PagerDuty routing key or Opsgenie API key")
+	snsTopic := fs.String("sns-topic-arn", "", "SNS topic ARN (sns provider)")
+	awsAccessEnv := fs.String("aws-access-key-env", "AWS_ACCESS_KEY_ID", "env var with the AWS access key id (sns provider)")
+	awsSecretEnv := fs.String("aws-secret-key-env", "AWS_SECRET_ACCESS_KEY", "env var with the AWS secret access key (sns provider)")
 	historyPath := fs.String("history", "", "JSONL history: resolve alerts that recovered since the previous run")
 	source := fs.String("source", "checkfleet", "alert source label (PagerDuty)")
 	dryRun := fs.Bool("dry-run", false, "print the events without sending")
@@ -46,13 +52,31 @@ func runAlert(args []string) error {
 	prevKeys := prevProblemKeys(*historyPath, res)
 	events := alert.Plan(res.Findings, prevKeys)
 
+	// SNS is a stateless pub/sub sink: it needs a topic ARN + AWS creds and only
+	// publishes triggers (there is nothing to "resolve").
+	var ak, sk string
 	key := os.Getenv(*keyEnv)
-	if key == "" && !*dryRun {
+	if *provider == "sns" {
+		ak, sk = os.Getenv(*awsAccessEnv), os.Getenv(*awsSecretEnv)
+		if !*dryRun && (*snsTopic == "" || ak == "" || sk == "") {
+			return fmt.Errorf("sns needs --sns-topic-arn and env %s/%s", *awsAccessEnv, *awsSecretEnv)
+		}
+	} else if key == "" && !*dryRun {
 		return fmt.Errorf("alert key not set: env %s is empty", *keyEnv)
 	}
+
 	for _, e := range events {
 		if *dryRun {
 			fmt.Printf("  %-7s %s\n", e.Action, e.DedupKey)
+			continue
+		}
+		if *provider == "sns" {
+			if e.Action != "trigger" {
+				continue // SNS has no resolve
+			}
+			if err := sendSNS(ctx, *snsTopic, ak, sk, e); err != nil {
+				return err
+			}
 			continue
 		}
 		if err := sendAlert(ctx, *provider, key, *source, e); err != nil {
@@ -100,6 +124,31 @@ func sendAlert(ctx context.Context, provider, key, source string, e alert.Event)
 	default:
 		return fmt.Errorf("unknown provider %q (pagerduty|opsgenie)", provider)
 	}
+}
+
+// sendSNS publishes one event to an SNS topic, signing the request with SigV4.
+func sendSNS(ctx context.Context, topicArn, accessKey, secretKey string, e alert.Event) error {
+	region := alert.RegionFromTopicARN(topicArn)
+	if region == "" {
+		return fmt.Errorf("cannot parse region from topic ARN %q", topicArn)
+	}
+	body := alert.SNSForm(topicArn, e.DedupKey, e.Summary)
+	url := "https://sns." + region + ".amazonaws.com/"
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, strings.NewReader(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	awssig.Sign(req, []byte(body), accessKey, secretKey, region, "sns", time.Now())
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("sns: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("sns responded HTTP %d", resp.StatusCode)
+	}
+	return nil
 }
 
 // sendOpsgenie creates or closes an Opsgenie alert (alias = dedup key).

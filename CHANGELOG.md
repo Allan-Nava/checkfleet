@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.91.0
+
+- Alert **AWS SNS** (CF-83, M22): `checkfleet alert --provider sns --sns-topic-arn <arn>` pubblica ogni finding BAD/ERROR su un topic SNS — sink stateless, quindi solo publish (nessun resolve). Le richieste sono firmate con **AWS Signature V4 scritta a mano** in un nuovo package condiviso `internal/awssig` (zero-dep, nessun SDK AWS, gestisce il body per le POST); la region è ricavata dal topic ARN e le credenziali arrivano **dall'ambiente** (`--aws-access-key-env`/`--aws-secret-key-env`, default `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`). Payload SNS `Publish` form-encoded (`internal/alert.SNSForm`, subject sanitizzato ≤100 char). Firma e form testati (deterministici, con body diversi → firme diverse). **Chiude M22 (Alerting & sink).**
+
 ## 0.90.0
 
 - Desktop (CF-92, M25): nuova vista **Dashboard** con grafici SVG disegnati a mano — **zero-dep, theme-aware** (ogni elemento è colorato via classe CSS, così il tema chiaro/scuro funziona da solo). Toggle nel titlebar, mutuamente esclusivo con l'editor di config. Tre grafici alimentati dallo storico persistente (binding `Trend` su `internal/history`) più il run corrente: **stacked-area** dei conteggi OK/WARN/BAD/ERROR per run (con gridline e assi), **donut** della distribuzione corrente (100% reso come anello, caso vuoto gestito) e **banda worst-status** nel tempo con asse temporale; refresh automatico dopo ogni Run. Il modulo grafici `desktop/frontend/dist/charts.js` espone funzioni pure coperte da uno smoke headless `desktop/frontend/charts.test.js` (`node --test`, 9 casi). Nessun binding Go nuovo, nessun cambio all'engine — solo frontend statico. **Apre M25 (Desktop GUI v3 — dashboard & grafici).** _(la numerazione salta a 0.90.0 per tenere la corsia GUI separata dalle release dei moduli)_
