@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.106.0
+
+- Desktop (CF-100, M26 — micro-interazioni & motion): la GUI ora ha transizioni curate, tutte in CSS (nessun refactor JS). Cambio vista con **fade-up**, drawer che **scivola** da destra, command-palette in **pop-in**, scrim in dissolvenza, grafici che compaiono in fade; feedback hover/press più vivo su tab, bottoni, righe della tabella e chip. Tutto rispetta `prefers-reduced-motion` (animazioni azzerate). Le transizioni sui selettori già esistenti sono fuse nelle regole base per non violare lo stylelint. Solo `dist/style.css`.
+
 ## 0.105.0
 
 - Desktop (CF-99, M26 — stati loading/vuoto/errore): la GUI non mostra più schermate "morte" durante le attese. Aggiunti: **barra di progresso indeterminata** in cima + **spinner** sul bottone Run mentre gira; **skeleton shimmer** nei grafici della dashboard durante i fetch dello storico; empty-state curati (loading, "press Run" con scorciatoie da tastiera, no-match con "Clear filters"); una **error card inline** quando la config non gira, con messaggio e azioni **Retry** / **Open config editor**; stati `disabled` coerenti. Reso via helper `emptyState()`/`setBusy()`, `prefers-reduced-motion` rispettato. Solo frontend statico; stylelint e smoke verdi.

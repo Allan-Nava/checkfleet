@@ -93,7 +93,7 @@ b { color: var(--heading); }
 .palette input { width: 100%; height: 46px; padding: 0 16px; border: none; border-bottom: 1px solid var(--border);
   background: transparent; color: var(--text); font-size: 15px; outline: none; }
 .palette-list { list-style: none; margin: 0; padding: 6px; max-height: 320px; overflow-y: auto; }
-.palette-list li { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 9px; cursor: pointer; font-size: 13px; color: var(--text); }
+.palette-list li { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 9px; cursor: pointer; font-size: 13px; color: var(--text); transition: background var(--dur) var(--ease); }
 .palette-list li .pl-hint { margin-left: auto; font-size: 11px; color: var(--muted); font-family: ui-monospace, Menlo, monospace; }
 .palette-list li.sel, .palette-list li:hover { background: color-mix(in srgb, var(--brand) 16%, transparent); }
 .palette-empty { padding: 16px; color: var(--muted); font-size: 13px; text-align: center; }
@@ -240,7 +240,7 @@ select { cursor: pointer; }
 .table-wrap::-webkit-scrollbar-thumb { background: var(--border-str); border-radius: 8px; border: 3px solid var(--bg); }
 
 /* clickable rows (chips carry their own cursor in the base rule) */
-.findings tbody tr { cursor: pointer; }
+.findings tbody tr { cursor: pointer; transition: background var(--dur) var(--ease); }
 
 /* detail / explain / validate drawer */
 .drawer[hidden], .drawer-scrim[hidden] { display: none; } /* [hidden] must win over display:flex */
@@ -515,3 +515,29 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 6px; border-radius
 
 /* disabled controls read consistently */
 .btn:disabled, .icon-btn:disabled, input:disabled, select:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ================= micro-interactions & motion (CF-100) ================= */
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fade-up { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+@keyframes slide-in-right { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes pop-in {
+  from { opacity: 0; transform: translate(-50%, -6px) scale(.98); }
+  to   { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+/* view switches: content fades up into place */
+.dashboard:not([hidden]), .editor:not([hidden]), .table-wrap:not([hidden]), .summary:not([hidden]) {
+  animation: fade-up .2s var(--ease);
+}
+
+/* drawer slides in from the right; scrims fade */
+.drawer:not([hidden]) { animation: slide-in-right var(--dur) var(--ease); }
+.drawer-scrim:not([hidden]), .palette-scrim:not([hidden]) { animation: fade-in var(--dur) var(--ease); }
+.palette:not([hidden]) { animation: pop-in var(--dur) var(--ease); }
+
+/* charts fade in as they're (re)drawn */
+.chart-host .chart { animation: fade-in .25s var(--ease); }
+
+/* livelier hover feedback (chip/rows/palette rows transition via their base
+   rules; row & palette-li transitions are added there to avoid duplicate selectors) */
+.chip:hover { color: var(--heading); border-color: color-mix(in srgb, var(--brand-2) 55%, transparent); }
