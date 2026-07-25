@@ -36,6 +36,45 @@ archives:
 checksum:
   name_template: "checksums.txt"
 
+# Multi-arch Docker image on GHCR (CF-55): the exporter is the default entrypoint.
+dockers:
+  - id: amd64
+    goos: linux
+    goarch: amd64
+    dockerfile: Dockerfile
+    use: buildx
+    image_templates:
+      - "ghcr.io/allan-nava/checkfleet:{{ .Version }}-amd64"
+      - "ghcr.io/allan-nava/checkfleet:latest-amd64"
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.source=https://github.com/Allan-Nava/checkfleet"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.licenses=PolyForm-Noncommercial-1.0.0"
+  - id: arm64
+    goos: linux
+    goarch: arm64
+    dockerfile: Dockerfile
+    use: buildx
+    image_templates:
+      - "ghcr.io/allan-nava/checkfleet:{{ .Version }}-arm64"
+      - "ghcr.io/allan-nava/checkfleet:latest-arm64"
+    build_flag_templates:
+      - "--platform=linux/arm64"
+      - "--label=org.opencontainers.image.source=https://github.com/Allan-Nava/checkfleet"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.licenses=PolyForm-Noncommercial-1.0.0"
+
+docker_manifests:
+  - name_template: "ghcr.io/allan-nava/checkfleet:{{ .Version }}"
+    image_templates:
+      - "ghcr.io/allan-nava/checkfleet:{{ .Version }}-amd64"
+      - "ghcr.io/allan-nava/checkfleet:{{ .Version }}-arm64"
+  - name_template: "ghcr.io/allan-nava/checkfleet:latest"
+    image_templates:
+      - "ghcr.io/allan-nava/checkfleet:latest-amd64"
+      - "ghcr.io/allan-nava/checkfleet:latest-arm64"
+
 changelog:
   use: github
   sort: asc

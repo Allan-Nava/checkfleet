@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.55.0
+
+- Immagine Docker (CF-55): immagine **multi-arch** (linux/amd64+arm64) pubblicata su GHCR (`ghcr.io/allan-nava/checkfleet`) a ogni release, via goreleaser (`dockers` + `docker_manifests`). Base **distroless static nonroot** (CA incluse), `Dockerfile` minimale con l'**exporter** come entrypoint di default (`serve` su :9876). `release.yml`: QEMU + buildx, login a GHCR con `GITHUB_TOKEN`, permesso `packages: write`. Config validata con `goreleaser check`.
+
 ## 0.54.0
 
 - Lint & vuln in CI (CF-57): nuovo job `lint` in `ci.yml`. **`govulncheck` come gate** (con Go `stable`: fallisce solo sulle vulnerabilità effettivamente raggiungibili dal codice; le vuln stdlib si risolvono tenendo Go aggiornato, quelle nelle dipendenze non-chiamate non bloccano). **`golangci-lint` advisory** (`continue-on-error`, non blocca) — si promuove a gate togliendo `continue-on-error` quando il tree è pulito. Docs in `development.md`.

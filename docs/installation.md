@@ -64,3 +64,18 @@ checkfleet version
 
 The version string is injected at build time on tagged releases; a local
 `go build` reports `dev`.
+
+## Docker
+
+Multi-arch images (linux/amd64+arm64) are published to GHCR on every release.
+The default entrypoint is the Prometheus exporter:
+
+```bash
+# exporter (metrics on :9876) — mount your config
+docker run -p 9876:9876 -v "$PWD/checkfleet.yml:/checkfleet.yml" \
+  ghcr.io/allan-nava/checkfleet:latest
+
+# one-shot check
+docker run -v "$PWD/checkfleet.yml:/checkfleet.yml" \
+  ghcr.io/allan-nava/checkfleet:latest check all --config /checkfleet.yml
+```
