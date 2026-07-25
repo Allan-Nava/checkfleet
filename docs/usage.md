@@ -90,6 +90,12 @@ Metrics exposed:
 | `checkfleet_worst_status` | Worst severity across the run. |
 | `checkfleet_run_duration_seconds` | Duration of the last run. |
 | `checkfleet_last_run_timestamp_seconds` | Unix time of the last run. |
+| `checkfleet_module_findings{module}` | Findings produced by each module in the last run. |
+| `checkfleet_module_errors{module}` | ERROR findings (measurement failures) per module. |
+
+The server also exposes **`/healthz`** (liveness — the process is up) and
+**`/readyz`** (readiness — returns `503` until the first run completes, then
+`200`), for Kubernetes/Nomad probes.
 
 This is the bridge to Grafana/alerting: checkfleet keeps the domain logic, and
 Prometheus does the graphing and alerting — it doesn't replace them.

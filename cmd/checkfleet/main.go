@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/Allan-Nava/checkfleet/internal/engine"
@@ -497,12 +498,14 @@ func runServe(args []string) error {
 
 	var mu sync.Mutex
 	var latest engine.Result
+	var ready atomic.Bool
 	runOnce := func() {
 		res := engine.RunWith(context.Background(), checks, opts)
 		res.Findings = engine.ApplyMaintenance(res.Findings, cfg.Maintenance, time.Now())
 		mu.Lock()
 		latest = res
 		mu.Unlock()
+		ready.Store(true)
 	}
 	runOnce()
 	go func() {
@@ -521,8 +524,20 @@ func runServe(args []string) error {
 		fmt.Fprint(w, output.Prometheus(res))
 		fmt.Fprint(w, output.SelfMetrics(res)) // metrics about checkfleet itself (CF-87)
 	})
+	// Liveness: the process is up. Readiness: the first run has completed, so
+	// /metrics has real data — for k8s/nomad probes (CF-88).
+	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "ok")
+	})
+	http.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
+		if !ready.Load() {
+			http.Error(w, "not ready: no run yet", http.StatusServiceUnavailable)
+			return
+		}
+		fmt.Fprintln(w, "ready")
+	})
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "checkfleet %s\n\nmetrics: /metrics\n%d modules, re-run every %s\n", version, len(checks), *interval)
+		fmt.Fprintf(w, "checkfleet %s\n\nmetrics: /metrics\nhealth: /healthz /readyz\n%d modules, re-run every %s\n", version, len(checks), *interval)
 	})
 	fmt.Fprintf(os.Stderr, "checkfleet serve: %d modules on %s (interval %s)\n", len(checks), *listen, *interval)
 	return http.ListenAndServe(*listen, nil)

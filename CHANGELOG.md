@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.93.0
+
+- Endpoint `/healthz` & `/readyz` su `serve` (CF-88, M24): **liveness** (`/healthz` → `ok`, il processo è su) e **readiness** (`/readyz` → `503` finché il primo run non è completato, poi `200`) per le probe di Kubernetes/Nomad. La readiness diventa vera quando il primo giro di check popola `/metrics`, così l'orchestratore non manda traffico/allarmi prima che ci siano dati. La root `/` elenca gli endpoint disponibili.
+
 ## 0.92.0
 
 - Self-metrics dell'exporter (CF-87, M24): l'endpoint `/metrics` di `serve` ora espone anche metriche **sul tool stesso**, non solo sui target — `checkfleet_run_duration_seconds` (durata dell'ultimo run), `checkfleet_last_run_timestamp_seconds` (quando è partito), e per modulo `checkfleet_module_findings{module}` e `checkfleet_module_errors{module}` (ERROR = misurazioni fallite). Così si può allertare sul checker stesso (run bloccati, modulo che va sempre in errore). Renderer `output.SelfMetrics` testato. Apre M24 (Osservabilità del tool).
