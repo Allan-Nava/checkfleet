@@ -68,4 +68,12 @@ func TestParseStatus(t *testing.T) {
 	if s, ok := ParseStatus(""); !ok || s != "" {
 		t.Errorf("empty = no filter: %v %v", s, ok)
 	}
+	// Every accepted spelling (lower + upper) maps to its status.
+	for in, want := range map[string]Status{
+		"ok": OK, "OK": OK, "WARN": WARN, "bad": BAD, "BAD": BAD, "error": ERROR, "ERROR": ERROR,
+	} {
+		if s, ok := ParseStatus(in); !ok || s != want {
+			t.Errorf("ParseStatus(%q) = %v,%v want %v", in, s, ok, want)
+		}
+	}
 }

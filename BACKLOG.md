@@ -149,7 +149,7 @@ Migliora l'esperienza d'uso di CLI e desktop, riusando `internal/*`. Ogni item �
 Alza la barra di qualità del codice e dei test senza aggiungere feature utente.
 
 - [x] **CF-72 — `golangci-lint` a gate**: sistemati gli 11 finding (9 errcheck, 1 unused, 1 staticcheck SA4004), aggiunto `.golangci.yml` (linter fissati), tolto `continue-on-error` in `ci.yml` e pinnata la versione. Tree pulito (root + desktop). Completa CF-57. _(v0.72.0)_
-- [ ] **CF-73 — Coverage in CI + buchi**: `go test -coverprofile` in CI con report riepilogativo; colmare i buchi principali (moduli/engine sotto una soglia ragionevole). Nessuna soglia hard che rompa la CI, ma visibilità.
+- [x] **CF-73 — Coverage in CI + buchi**: step `go test -coverprofile` in CI con totale nel job summary (nessuna soglia hard). Colmati i buchi core di `engine`: `Validate` 44%→88% (rami per-modulo + soglie), `ParseStatus` completo; engine 74.9%→83.9%. **Chiude M19.** _(v0.73.0)_
 
 ## M20 — Più datastore (fase 3)
 

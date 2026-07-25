@@ -135,6 +135,12 @@ releases won't install via brew.
 
 ## CI quality gates
 
+The `test` job runs `go test` with a coverage profile and prints the total to the
+job summary (`go tool cover -func=cover.out`). Coverage is reported for
+visibility — there is no hard threshold that fails the build. Run it locally with
+`go test -coverprofile=cover.out ./... && go tool cover -func=cover.out | tail -1`
+(or `-html=cover.out` for a browsable report).
+
 Beyond `go vet` + `go test`, CI runs a `lint` job:
 
 - **`govulncheck` (gate)** — fails the build on vulnerabilities your code
