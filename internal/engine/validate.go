@@ -206,6 +206,16 @@ func Validate(cfg *Config) []string {
 		}
 	}
 
+	if x := c.Memcached; x != nil {
+		configured++
+		if len(x.Targets) == 0 {
+			add("memcached: no target")
+		}
+		if x.MemWarnPct < 0 || x.MemWarnPct > 100 {
+			add("memcached: mem_warn_pct (%d) out of range 0-100", x.MemWarnPct)
+		}
+	}
+
 	if configured == 0 && !anyModuleConfigured(c) {
 		add("no module configured under `checks`")
 	}

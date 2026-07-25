@@ -32,6 +32,7 @@ var Docs = map[string]string{
 	"etcd":          "etcd v3 via the HTTP JSON gateway: /health, leader present (BAD if no leader / lost quorum), etcd version and member count vs `expect_members`. Zero-dep.",
 	"clickhouse":    "ClickHouse over HTTP: /ping, SELECT version(), and per replicated table read-only state + replication delay (`delay_warn_seconds`/`delay_crit_seconds`) from system.replicas. Zero-dep.",
 	"vault":         "HashiCorp Vault via HTTP: seal status (BAD if sealed or uninitialized, with unseal progress) and node role (active/standby) with the Vault version. Zero-dep.",
+	"memcached":     "memcached via the text protocol (STATS): reachability, memory used vs limit_maxbytes (`mem_warn_pct`), connections and version. Zero-dep.",
 }
 
 // Doc returns the description for a module and whether it exists.

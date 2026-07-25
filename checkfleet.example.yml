@@ -260,3 +260,9 @@ checks:
     targets:
       - {name: vault-01, url: https://vault-01:8200, insecure_skip_verify: true}
       - {name: vault-02, url: https://vault-02:8200, insecure_skip_verify: true}
+
+  # memcached over the text protocol (zero-dep).
+  memcached:
+    port: 11211
+    mem_warn_pct: 90
+    targets: [cache-01, cache-02:11212]

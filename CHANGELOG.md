@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.78.0
+
+- Modulo `memcached` (CF-78, M21): health check di memcached via il **protocollo testuale** (zero-dep). Apre la connessione, esegue `STATS` (ERROR se irraggiungibile), e segnala **WARN** quando `bytes` supera `mem_warn_pct` di `limit_maxbytes` (default 90); altrimenti OK con versione, percentuale di memoria e numero di connessioni. Target `host[:port]` (porta di default 11211). Testato contro un finto memcached in-test. CLI `checkfleet check memcached`.
+
 ## 0.77.0
 
 - Modulo `vault` (CF-77, M21): health check di HashiCorp Vault via HTTP (zero-dep). `/v1/sys/seal-status` → **ERROR** se irraggiungibile, **BAD** se il nodo è **sealed** (con progresso di unseal `n/soglia`) o non inizializzato; `/v1/sys/health` → ruolo **active/standby** (entrambi OK — lo standby è normale in HA) con la versione di Vault. Entrambi gli endpoint sono non autenticati; `token_env` opzionale invia `X-Vault-Token`, `insecure_skip_verify` per HTTPS self-signed. Il corpo JSON viene letto anche sugli status non-200 (Vault codifica lo stato nel body su 429/503). Testato contro un finto Vault (`httptest`). CLI `checkfleet check vault`.

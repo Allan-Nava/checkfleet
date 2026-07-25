@@ -517,6 +517,24 @@ Tested against an in-test fake Vault.
       - {name: vault-01, url: https://vault-01:8200}
 ```
 
+## `memcached` — memcached
+
+Checks memcached over its text protocol (zero-dep):
+
+- **Reachability** — connects and runs `STATS`; `ERROR` if it can't.
+- **Memory** — `WARN` when `bytes` exceeds `mem_warn_pct` of `limit_maxbytes`
+  (default 90); otherwise `OK` with version, memory percentage and connection
+  count.
+
+Targets are `host[:port]` (default port `11211`). Tested against an in-test fake
+memcached.
+
+```yaml
+  memcached:
+    mem_warn_pct: 90
+    targets: [cache-01, cache-02:11212]
+```
+
 ## Ansible inventory as a target source
 
 The `certs`, `nats`, `haproxy`, `patroni`, `consul`, `redis` and `tls` modules can read

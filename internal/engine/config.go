@@ -59,6 +59,15 @@ type ChecksConfig struct {
 	Etcd          *EtcdConfig          `yaml:"etcd"`
 	ClickHouse    *ClickHouseConfig    `yaml:"clickhouse"`
 	Vault         *VaultConfig         `yaml:"vault"`
+	Memcached     *MemcachedConfig     `yaml:"memcached"`
+}
+
+// MemcachedConfig configures the memcached check (text protocol).
+type MemcachedConfig struct {
+	// Endpoints as host[:port]; Port applies when a target has none.
+	Targets    []string `yaml:"targets"`
+	Port       int      `yaml:"port"`         // default 11211
+	MemWarnPct int      `yaml:"mem_warn_pct"` // default 90
 }
 
 // VaultConfig configures the HashiCorp Vault check (HTTP API).
@@ -814,6 +823,14 @@ func applyDefaults(cfg *Config) {
 		}
 		if ch.DelayCritSeconds <= 0 {
 			ch.DelayCritSeconds = 300
+		}
+	}
+	if mc := cfg.Checks.Memcached; mc != nil {
+		if mc.Port <= 0 {
+			mc.Port = 11211
+		}
+		if mc.MemWarnPct <= 0 {
+			mc.MemWarnPct = 90
 		}
 	}
 }

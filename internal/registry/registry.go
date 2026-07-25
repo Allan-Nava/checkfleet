@@ -18,6 +18,7 @@ import (
 	"github.com/Allan-Nava/checkfleet/internal/checks/kafka"
 	"github.com/Allan-Nava/checkfleet/internal/checks/keycloak"
 	"github.com/Allan-Nava/checkfleet/internal/checks/ldapcheck"
+	"github.com/Allan-Nava/checkfleet/internal/checks/memcached"
 	"github.com/Allan-Nava/checkfleet/internal/checks/mongodb"
 	"github.com/Allan-Nava/checkfleet/internal/checks/mysql"
 	"github.com/Allan-Nava/checkfleet/internal/checks/nats"
@@ -73,6 +74,7 @@ func Modules(cfg *engine.Config) []Spec {
 		{"etcd", c.Etcd != nil, func() engine.Check { return etcd.New(*c.Etcd) }},
 		{"clickhouse", c.ClickHouse != nil, func() engine.Check { return clickhouse.New(*c.ClickHouse) }},
 		{"vault", c.Vault != nil, func() engine.Check { return vault.New(*c.Vault) }},
+		{"memcached", c.Memcached != nil, func() engine.Check { return memcached.New(*c.Memcached) }},
 	}
 }
 
