@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.63.0
+
+- Desktop (CF-65, M17): **editor di configurazione** nella GUI. Il nuovo bottone ⚙ nella titlebar apre un editor YAML a tutto pannello con **Reload**, **Validate** e **Save**: si legge/scrive il file `checkfleet.yml` selezionato senza uscire dall'app. **Validate** controlla il testo *non salvato* (parse + regole di dominio) e mostra i problemi inline, riusando la validazione del CLI via il nuovo `engine.LoadBytes` (interpola `${...}`, applica i default, senza toccare il disco). Nuovi binding `ReadConfig`/`SaveConfig`/`ValidateText`; testati (engine + desktop). Apre **M17 (Config editor)**.
+
 ## 0.62.1
 
 - CI/release (CF-67): **serializzate le release** per eliminare una race che lasciava tag senza release. `release.yml` (goreleaser) pubblica i tag **mutabili** `ghcr.io/allan-nava/checkfleet:latest-amd64`/`-arm64` a ogni tag `v*`; con più tag pushati a raffica i run concorrenti si sovrascrivevano a vicenda quei tag e la creazione del manifest `:latest` non riusciva a verificare il digest (`manifest verification failed for digest …`) → goreleaser ritentava per ~25 min e falliva, così la release non veniva creata e il job desktop (che aspetta la release per allegarci gli asset) andava in timeout con `release not found`. Aggiunto un `concurrency` group (`group: release`, `cancel-in-progress: false`) che accoda i run invece di lanciarli in parallelo; `desktop.yml` a sua volta serializzato e con attesa della release più generosa (fino a ~30 min) dato che ora le release possono essere in coda.

@@ -166,3 +166,25 @@ func TestConfigInterpolationMissingFile(t *testing.T) {
 		t.Error("missing secret file: want error")
 	}
 }
+
+func TestLoadBytes(t *testing.T) {
+	// Interpolation, defaults and unmarshalling all happen without touching disk.
+	t.Setenv("CF_HOST", "example.com")
+	cfg, err := LoadBytes([]byte("checks:\n  certs:\n    targets: [\"${CF_HOST}:443\"]\n"))
+	if err != nil {
+		t.Fatalf("LoadBytes: %v", err)
+	}
+	if cfg.Checks.Certs == nil || len(cfg.Checks.Certs.Targets) != 1 ||
+		cfg.Checks.Certs.Targets[0] != "example.com:443" {
+		t.Fatalf("interpolation failed: %+v", cfg.Checks.Certs)
+	}
+	if cfg.Checks.Certs.WarnDays == 0 {
+		t.Error("defaults not applied (warn_days is zero)")
+	}
+}
+
+func TestLoadBytesBadYAML(t *testing.T) {
+	if _, err := LoadBytes([]byte("checks: [::not-a-map")); err == nil {
+		t.Error("want error for malformed YAML, got nil")
+	}
+}

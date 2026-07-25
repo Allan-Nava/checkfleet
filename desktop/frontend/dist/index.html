@@ -16,6 +16,9 @@
         <span class="pill-mini" id="version">dev</span>
       </div>
       <div class="tb-right" style="--wails-draggable:no-drag">
+        <button class="icon-btn" id="cfgToggle" title="Edit config" aria-label="Edit config">
+          <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19.4 13a7.5 7.5 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.5 7.5 0 0 0-1.7-1l-.4-2.5H10.8l-.4 2.5a7.5 7.5 0 0 0-1.7 1l-2.4-1-2 3.4L4.3 11a7.5 7.5 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.5 7.5 0 0 0 1.7 1l.4 2.5h3.4l.4-2.5a7.5 7.5 0 0 0 1.7-1l2.4 1 2-3.4zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7"/></svg>
+        </button>
         <button class="icon-btn" id="theme" title="Toggle light/dark theme" aria-label="Theme">
           <svg class="i-sun" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10m0-5 2 3h-4zm0 20-2-3h4zM2 12l3-2v4zm20 0-3 2v-4zM4.9 4.9l3.5 1.4-2.1 2.1zm14.2 14.2-3.5-1.4 2.1-2.1zM19.1 4.9l-1.4 3.5-2.1-2.1zM4.9 19.1l1.4-3.5 2.1 2.1z"/></svg>
           <svg class="i-moon" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9"/></svg>
@@ -65,7 +68,7 @@
     </section>
 
     <!-- findings toolbar -->
-    <div class="findings-bar">
+    <div class="findings-bar" id="findingsBar">
       <input type="search" id="filter" placeholder="Filter check / target / message…">
       <select id="minsev">
         <option value="ok">all</option>
@@ -88,7 +91,7 @@
     </div>
 
     <!-- findings table -->
-    <main class="table-wrap">
+    <main class="table-wrap" id="tableWrap">
       <table class="findings">
         <thead><tr><th class="c-status">Status</th><th class="c-check">Check</th><th class="c-target">Target</th><th class="c-msg">Message</th></tr></thead>
         <tbody id="rows"></tbody>
@@ -98,6 +101,20 @@
         <p id="emptyText">Press <b>Run</b> to run the checks.</p>
       </div>
     </main>
+
+    <!-- config editor (hidden until toggled) -->
+    <section class="editor" id="editor" hidden>
+      <div class="editor-bar">
+        <span class="field-label">Config</span>
+        <span class="mono" id="cfgPath"></span>
+        <span class="spacer"></span>
+        <button class="btn" id="cfgReload">Reload</button>
+        <button class="btn" id="cfgValidate">Validate</button>
+        <button class="btn btn-primary" id="cfgSave">Save</button>
+      </div>
+      <textarea id="cfgText" spellcheck="false" placeholder="# checkfleet.yml"></textarea>
+      <pre class="editor-msg" id="cfgMsg" hidden></pre>
+    </section>
 
     <!-- status bar -->
     <footer class="statusbar">

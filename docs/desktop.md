@@ -66,6 +66,22 @@ during an incident (in-session, no history file needed).
 
 ![checkfleet desktop — changes drawer](assets/desktop-changes.png)
 
+## Edit the config
+
+The gear button (⚙, top-right) opens a full-panel YAML editor on the selected
+`checkfleet.yml`:
+
+- **Reload** — re-read the file from disk, discarding unsaved edits.
+- **Validate** — check the *unsaved* text (YAML parse + domain rules) and list
+  any problems inline, without saving. This runs the same validation as the CLI.
+- **Save** — write the text back to the file.
+
+Once saved, run the fleet from the GUI, or point cron / `checkfleet serve
+--interval` at the same file — the config is the single source, and the app is
+just one way to edit and run it.
+
+![checkfleet desktop — config editor](assets/desktop-config.png)
+
 ## Light theme
 
 The theme toggle (top-right) switches light/dark and remembers your choice.

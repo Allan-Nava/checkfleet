@@ -213,3 +213,28 @@ select { cursor: pointer; }
 .change-transition { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .change-new .change-sym, .change-worsened .change-sym { color: var(--bad); }
 .change-resolved .change-sym, .change-improved .change-sym { color: var(--ok); }
+
+/* ---------------- config editor ---------------- */
+/* hidden must beat the display:flex/grid on these regions (attribute wins on specificity) */
+.summary[hidden], .findings-bar[hidden], .table-wrap[hidden], .editor[hidden] { display: none; }
+.icon-btn.active { color: var(--brand); background: var(--surface); border-color: color-mix(in srgb, var(--brand) 45%, transparent); }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--muted); }
+.editor {
+  flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
+  padding: 12px 16px 16px; gap: 10px;
+}
+.editor-bar { display: flex; align-items: center; gap: 10px; }
+#cfgText {
+  flex: 1 1 auto; min-height: 0; resize: none; tab-size: 2;
+  padding: 14px 16px; border-radius: 12px;
+  background: var(--bg-2); color: var(--text); border: 1px solid var(--border);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; line-height: 1.55;
+}
+#cfgText:focus { outline: none; border-color: color-mix(in srgb, var(--brand) 55%, transparent); }
+.editor-msg {
+  margin: 0; max-height: 34%; overflow: auto; white-space: pre-wrap;
+  padding: 10px 14px; border-radius: 10px; font-size: 12.5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.editor-msg.ok  { background: var(--ok-bg);  color: var(--ok);  border: 1px solid color-mix(in srgb, var(--ok) 32%, transparent); }
+.editor-msg.bad { background: var(--bad-bg); color: var(--bad); border: 1px solid color-mix(in srgb, var(--bad) 32%, transparent); }

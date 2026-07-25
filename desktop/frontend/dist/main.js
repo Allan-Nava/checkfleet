@@ -25,6 +25,9 @@
     Validate: async () => [],
     Explain: async (m) => "Sample explanation for the " + m + " module (preview).",
     Notify: async () => {},
+    ReadConfig: async () => "timeout_seconds: 30\nchecks:\n  http:\n    targets:\n      - url: https://example.com/health\n        expect_status: 200\n        max_latency_ms: 2000\n  certs:\n    warn_days: 30\n    crit_days: 7\n    targets: [example.com:443]\n",
+    SaveConfig: async () => {},
+    ValidateText: async () => [],
   };
 
   /* ---------------- state ---------------- */
@@ -183,6 +186,49 @@
     try { localStorage.setItem("cf-theme", next); } catch (_) {}
   }
 
+  /* ---------------- config editor ---------------- */
+  let editorOn = false;
+
+  function setEditor(on) {
+    editorOn = on;
+    $("editor").hidden = !on;
+    $("findingsBar").hidden = on;
+    $("tableWrap").hidden = on;
+    $("summary").hidden = on || !report;
+    $("cfgToggle").classList.toggle("active", on);
+    if (on) loadConfigText();
+  }
+
+  async function loadConfigText() {
+    $("cfgPath").textContent = $("configPath").value || "(no file)";
+    $("cfgMsg").hidden = true;
+    try { $("cfgText").value = await Backend.ReadConfig($("configPath").value); }
+    catch (e) { cfgMessage(String(e), true); }
+  }
+
+  function cfgMessage(text, bad) {
+    const el = $("cfgMsg");
+    el.textContent = text;
+    el.className = "editor-msg" + (bad ? " bad" : " ok");
+    el.hidden = false;
+  }
+
+  async function cfgValidate() {
+    let problems = [];
+    try { problems = (await Backend.ValidateText($("cfgText").value)) || []; }
+    catch (e) { problems = [String(e)]; }
+    if (problems.length === 0) cfgMessage("Config is valid ✅", false);
+    else cfgMessage("Problems:\n- " + problems.join("\n- "), true);
+  }
+
+  async function cfgSave() {
+    try {
+      await Backend.SaveConfig($("configPath").value, $("cfgText").value);
+      cfgMessage("Saved " + $("configPath").value, false);
+      await refreshStacks();
+    } catch (e) { cfgMessage("Save error: " + e, true); }
+  }
+
   /* ---------------- drawer (detail / explain / validate) ---------------- */
   function openDrawer(title, bodyHTML) {
     $("drawerTitle").textContent = title;
@@ -257,6 +303,10 @@
     $("theme").addEventListener("click", toggleTheme);
     $("validate").addEventListener("click", runValidate);
     $("changes").addEventListener("click", showChanges);
+    $("cfgToggle").addEventListener("click", () => setEditor(editorOn ? false : true));
+    $("cfgReload").addEventListener("click", loadConfigText);
+    $("cfgValidate").addEventListener("click", cfgValidate);
+    $("cfgSave").addEventListener("click", cfgSave);
 
     // Row click -> finding detail.
     $("rows").addEventListener("click", (e) => {

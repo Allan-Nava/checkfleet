@@ -389,6 +389,22 @@ func LoadConfig(path string) (*Config, error) {
 	return cfg, nil
 }
 
+// LoadBytes parses config from raw YAML bytes (with ${...} interpolation and
+// defaults applied), without touching disk. Used by the desktop config editor
+// to validate unsaved text.
+func LoadBytes(raw []byte) (*Config, error) {
+	raw, err := expandVars(raw)
+	if err != nil {
+		return nil, err
+	}
+	var cfg Config
+	if err := yaml.Unmarshal(raw, &cfg); err != nil {
+		return nil, err
+	}
+	applyDefaults(&cfg)
+	return &cfg, nil
+}
+
 // parseConfig reads and unmarshals a config file WITHOUT applying defaults, so
 // callers can overlay one config on another before defaults kick in.
 func parseConfig(path string) (*Config, error) {

@@ -214,6 +214,39 @@ func (a *App) Explain(module string) string {
 	return d
 }
 
+// ReadConfig returns the raw text of the config file (empty string if absent).
+func (a *App) ReadConfig(path string) (string, error) {
+	b, err := os.ReadFile(path)
+	if os.IsNotExist(err) {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
+// SaveConfig writes raw config text to the file (creating parent dirs).
+func (a *App) SaveConfig(path, content string) error {
+	if strings.TrimSpace(path) == "" {
+		return fmt.Errorf("no config path")
+	}
+	if dir := filepath.Dir(path); dir != "" {
+		_ = os.MkdirAll(dir, 0o755)
+	}
+	return os.WriteFile(path, []byte(content), 0o644)
+}
+
+// ValidateText validates unsaved config text and returns the problems (a parse
+// error becomes a single problem). Empty result means the config is usable.
+func (a *App) ValidateText(content string) []string {
+	cfg, err := engine.LoadBytes([]byte(content))
+	if err != nil {
+		return []string{err.Error()}
+	}
+	return engine.Validate(cfg)
+}
+
 // Notify fires a native OS desktop notification (best-effort). The frontend
 // calls it after a run whose worst status is BAD/ERROR when notifications are on.
 func (a *App) Notify(title, message string) {

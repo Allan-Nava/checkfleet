@@ -214,3 +214,38 @@ func TestRunChecksDiff(t *testing.T) {
 		t.Errorf("stable OK->OK run should have no changes, got %v", second.Changes)
 	}
 }
+
+func TestConfigEditorBindings(t *testing.T) {
+	app := NewApp("test")
+	dir := t.TempDir()
+	path := dir + "/checkfleet.yml"
+
+	// ReadConfig on a missing file returns empty, no error.
+	if s, err := app.ReadConfig(path); err != nil || s != "" {
+		t.Fatalf("ReadConfig(missing): got %q, %v", s, err)
+	}
+
+	body := "checks:\n  certs:\n    targets: [\"x:443\"]\n"
+	if err := app.SaveConfig(path, body); err != nil {
+		t.Fatalf("SaveConfig: %v", err)
+	}
+	if s, err := app.ReadConfig(path); err != nil || s != body {
+		t.Fatalf("ReadConfig after save: got %q, %v", s, err)
+	}
+
+	// SaveConfig with an empty path is rejected.
+	if err := app.SaveConfig("  ", body); err == nil {
+		t.Error("SaveConfig(empty path) should error")
+	}
+
+	// ValidateText: valid text has no problems, malformed text reports one.
+	if p := app.ValidateText(body); len(p) != 0 {
+		t.Errorf("ValidateText(valid): want none, got %v", p)
+	}
+	if p := app.ValidateText("checks: [::bad"); len(p) == 0 {
+		t.Error("ValidateText(malformed) should report a problem")
+	}
+	if p := app.ValidateText("checks: {}\n"); len(p) == 0 {
+		t.Error("ValidateText(no modules) should report a problem")
+	}
+}
