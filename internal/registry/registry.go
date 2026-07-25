@@ -6,6 +6,7 @@ package registry
 
 import (
 	"github.com/Allan-Nava/checkfleet/internal/checks/certs"
+	"github.com/Allan-Nava/checkfleet/internal/checks/cassandra"
 	"github.com/Allan-Nava/checkfleet/internal/checks/clickhouse"
 	"github.com/Allan-Nava/checkfleet/internal/checks/consul"
 	"github.com/Allan-Nava/checkfleet/internal/checks/dns"
@@ -75,6 +76,7 @@ func Modules(cfg *engine.Config) []Spec {
 		{"clickhouse", c.ClickHouse != nil, func() engine.Check { return clickhouse.New(*c.ClickHouse) }},
 		{"vault", c.Vault != nil, func() engine.Check { return vault.New(*c.Vault) }},
 		{"memcached", c.Memcached != nil, func() engine.Check { return memcached.New(*c.Memcached) }},
+		{"cassandra", c.Cassandra != nil, func() engine.Check { return cassandra.New(*c.Cassandra) }},
 	}
 }
 

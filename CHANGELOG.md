@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.79.0
+
+- Modulo `cassandra`/`scylla` (CF-79, M21): reachability parlando direttamente il **protocollo CQL nativo** (handshake `OPTIONS`→`SUPPORTED`, `STARTUP`) — **zero-dep, nessun driver, nessuna auth**. Una risposta `READY` o `AUTHENTICATE` significa che il nodo accetta connessioni CQL → OK (con nota `(auth required)` quando l'auth è attiva); **WARN** se l'handshake supera `max_latency_ms`, **BAD** su risposta `ERROR` di protocollo, **ERROR** se il nodo è irraggiungibile. Frame CQL v4 scritti a mano (header + string map/multimap). Target `host[:port]` (default 9042). Testato contro un finto server CQL in-test. CLI `checkfleet check cassandra`. **Chiude M21 (Più datastore/infra).**
+
 ## 0.78.0
 
 - Modulo `memcached` (CF-78, M21): health check di memcached via il **protocollo testuale** (zero-dep). Apre la connessione, esegue `STATS` (ERROR se irraggiungibile), e segnala **WARN** quando `bytes` supera `mem_warn_pct` di `limit_maxbytes` (default 90); altrimenti OK con versione, percentuale di memoria e numero di connessioni. Target `host[:port]` (porta di default 11211). Testato contro un finto memcached in-test. CLI `checkfleet check memcached`.

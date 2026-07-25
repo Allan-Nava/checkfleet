@@ -535,6 +535,26 @@ memcached.
     targets: [cache-01, cache-02:11212]
 ```
 
+## `cassandra` — Cassandra / ScyllaDB
+
+Reachability check that speaks the **CQL native protocol** handshake directly —
+no driver, no authentication:
+
+- Connects and performs `OPTIONS` → `SUPPORTED` (negotiating the CQL version),
+  then `STARTUP`. A `READY` or `AUTHENTICATE` reply means the node accepts CQL
+  connections → `OK` (with `(auth required)` noted when authentication is on).
+- `WARN` when the handshake is slower than `max_latency_ms`.
+- `BAD` on a protocol `ERROR` reply, `ERROR` if the node is unreachable.
+
+Targets are `host[:port]` (default CQL port `9042`). Zero-dep; tested against an
+in-test fake CQL server.
+
+```yaml
+  cassandra:
+    targets:
+      - {name: cass-01, address: cass-01:9042, max_latency_ms: 500}
+```
+
 ## Ansible inventory as a target source
 
 The `certs`, `nats`, `haproxy`, `patroni`, `consul`, `redis` and `tls` modules can read

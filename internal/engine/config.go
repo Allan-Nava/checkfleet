@@ -60,6 +60,20 @@ type ChecksConfig struct {
 	ClickHouse    *ClickHouseConfig    `yaml:"clickhouse"`
 	Vault         *VaultConfig         `yaml:"vault"`
 	Memcached     *MemcachedConfig     `yaml:"memcached"`
+	Cassandra     *CassandraConfig     `yaml:"cassandra"`
+}
+
+// CassandraConfig configures the Cassandra/ScyllaDB reachability check.
+type CassandraConfig struct {
+	Targets []CassandraTarget `yaml:"targets"`
+}
+
+// CassandraTarget is one node to probe over the CQL native protocol.
+type CassandraTarget struct {
+	Name string `yaml:"name"`
+	// host[:port]; default CQL port 9042.
+	Address      string `yaml:"address"`
+	MaxLatencyMS int    `yaml:"max_latency_ms"`
 }
 
 // MemcachedConfig configures the memcached check (text protocol).

@@ -216,6 +216,18 @@ func Validate(cfg *Config) []string {
 		}
 	}
 
+	if x := c.Cassandra; x != nil {
+		configured++
+		if len(x.Targets) == 0 {
+			add("cassandra: no target")
+		}
+		for i, t := range x.Targets {
+			if strings.TrimSpace(t.Address) == "" {
+				add("cassandra: target #%d has no address", i+1)
+			}
+		}
+	}
+
 	if configured == 0 && !anyModuleConfigured(c) {
 		add("no module configured under `checks`")
 	}

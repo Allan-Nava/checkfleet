@@ -266,3 +266,9 @@ checks:
     port: 11211
     mem_warn_pct: 90
     targets: [cache-01, cache-02:11212]
+
+  # Cassandra/ScyllaDB reachability via the CQL native protocol handshake.
+  cassandra:
+    targets:
+      - {name: cass-01, address: cass-01:9042, max_latency_ms: 500}
+      - {name: cass-02, address: cass-02:9042}
