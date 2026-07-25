@@ -108,7 +108,7 @@ func (c *Check) probe(ctx context.Context, target string) engine.Finding {
 	case days < c.cfg.WarnDays:
 		status = engine.WARN
 	}
-	return engine.Finding{Check: c.Name(), Target: target, Status: status, Message: msg}
+	return engine.Finding{Check: c.Name(), Target: target, Status: status, Message: msg, Value: engine.Num(float64(days)), Unit: "days"}
 }
 
 func withDefaultPort(target string, port int) string {

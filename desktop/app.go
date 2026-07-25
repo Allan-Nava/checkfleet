@@ -134,7 +134,7 @@ func (a *App) RunChecks(configPath, stack string) Report {
 	if p := historyPath(configPath); p != "" {
 		entries := make([]history.Entry, len(res.Findings))
 		for i, f := range res.Findings {
-			entries[i] = history.Entry{Check: f.Check, Target: f.Target, Status: string(f.Status)}
+			entries[i] = history.Entry{Check: f.Check, Target: f.Target, Status: string(f.Status), Value: f.Value, Unit: f.Unit}
 		}
 		_ = history.Open(p).Append(history.Record{Unix: res.Started.Unix(), Entries: entries})
 	}

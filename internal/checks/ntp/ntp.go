@@ -68,6 +68,7 @@ func (c *Check) probe(ctx context.Context, target string) engine.Finding {
 		absMS = -absMS
 	}
 	msg := fmt.Sprintf("offset %s, stratum %d", res.Offset.Round(time.Millisecond), res.Stratum)
+	f.Value, f.Unit = engine.Num(float64(res.Offset.Microseconds())/1000), "ms" // signed clock offset
 	switch {
 	case c.cfg.OffsetCritMS > 0 && absMS >= int64(c.cfg.OffsetCritMS):
 		f.Status, f.Message = engine.BAD, msg+fmt.Sprintf(" (over %dms)", c.cfg.OffsetCritMS)

@@ -24,12 +24,22 @@ const (
 var severity = map[Status]int{OK: 0, WARN: 1, BAD: 2, ERROR: 3}
 
 // Finding is one observation about one target.
+//
+// Value/Unit are optional: a module that measures a scalar (latency in ms,
+// days-to-expiry, replication lag in seconds) may attach it so the GUI can plot
+// the metric over time (CF-91). They stay nil/"" for modules that don't, and
+// the output renderers ignore them, so this is backward-compatible.
 type Finding struct {
-	Check   string `json:"check"`
-	Target  string `json:"target"`
-	Status  Status `json:"status"`
-	Message string `json:"message"`
+	Check   string   `json:"check"`
+	Target  string   `json:"target"`
+	Status  Status   `json:"status"`
+	Message string   `json:"message"`
+	Value   *float64 `json:"value,omitempty"`
+	Unit    string   `json:"unit,omitempty"`
 }
+
+// Num returns a pointer to v, for setting Finding.Value inline.
+func Num(v float64) *float64 { return &v }
 
 // Check is implemented by every module (certs, http, ...).
 type Check interface {

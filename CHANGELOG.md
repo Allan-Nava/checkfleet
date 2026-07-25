@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.100.0
+
+- Engine (CF-91, M25): `engine.Finding` guadagna due campi opzionali **`Value *float64` + `Unit string`** (JSON `omitempty`, helper `engine.Num`) per allegare la grandezza misurata da un check — **backward-compatible**: i renderer `internal/output` restano invariati e i finding senza metrica non cambiano output. `internal/history` persiste `v`/`u`, così la GUI può graficare la metrica nel tempo (base per CF-94). Popolato nei moduli con uno scalare chiaro per finding: latenza in ms (`http`, `tcp`), offset dell'orologio in ms (`ntp`), giorni-a-scadenza (`certs`). Test: engine (omitempty), http (Value sull'OK, assente sull'ERROR), certs (unit `days`). I restanti moduli (dns/tls/grpc + lag di patroni/postgres/mysql/clickhouse) si aggiungono in modo incrementale.
+
 ## 0.99.0
 
 - Desktop (CF-95, M25): card **Availability / SLO** nella Dashboard. Nuovo binding `App.Availability` che dallo storico persistente (`internal/history`) calcola l'**uptime** della flotta (quota di run col worst status OK) sulla finestra recente, la **streak** dello stato corrente (da quando dura) e l'**uptime per-target** ordinato dal meno disponibile. Il frontend mostra un hero con la percentuale + stato corrente e la lista dei target peggiori con una barra SVG (`charts.js` → `svgMeter`, zero-dep, colorata per soglia SLO). Binding e helper `pct` coperti da test (`TestAvailability`, `TestPct`, smoke `charts.test.js`). Nessun cambio all'engine. _(solo frontend statico + binding desktop)_

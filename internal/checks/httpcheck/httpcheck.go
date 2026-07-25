@@ -57,27 +57,28 @@ func (c *Check) probe(ctx context.Context, t engine.HTTPTarget) engine.Finding {
 	defer res.Body.Close()
 	body, _ := io.ReadAll(io.LimitReader(res.Body, 1<<20))
 	latency := time.Since(start)
+	ms := float64(latency.Microseconds()) / 1000 // latency in ms, for Finding.Value
 
 	if res.StatusCode != t.ExpectStatus {
 		return engine.Finding{
-			Check: c.Name(), Target: t.URL, Status: engine.BAD,
+			Check: c.Name(), Target: t.URL, Status: engine.BAD, Value: engine.Num(ms), Unit: "ms",
 			Message: fmt.Sprintf("HTTP %d (want %d), %dms", res.StatusCode, t.ExpectStatus, latency.Milliseconds()),
 		}
 	}
 	if t.ExpectBody != "" && !strings.Contains(string(body), t.ExpectBody) {
 		return engine.Finding{
-			Check: c.Name(), Target: t.URL, Status: engine.BAD,
+			Check: c.Name(), Target: t.URL, Status: engine.BAD, Value: engine.Num(ms), Unit: "ms",
 			Message: fmt.Sprintf("body missing %q (HTTP %d, %dms)", t.ExpectBody, res.StatusCode, latency.Milliseconds()),
 		}
 	}
 	if t.MaxLatencyMS > 0 && latency.Milliseconds() > int64(t.MaxLatencyMS) {
 		return engine.Finding{
-			Check: c.Name(), Target: t.URL, Status: engine.WARN,
+			Check: c.Name(), Target: t.URL, Status: engine.WARN, Value: engine.Num(ms), Unit: "ms",
 			Message: fmt.Sprintf("slow: %dms (threshold %dms), HTTP %d", latency.Milliseconds(), t.MaxLatencyMS, res.StatusCode),
 		}
 	}
 	return engine.Finding{
-		Check: c.Name(), Target: t.URL, Status: engine.OK,
+		Check: c.Name(), Target: t.URL, Status: engine.OK, Value: engine.Num(ms), Unit: "ms",
 		Message: fmt.Sprintf("HTTP %d, %dms", res.StatusCode, latency.Milliseconds()),
 	}
 }

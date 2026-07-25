@@ -74,6 +74,8 @@ func TestCertExpiryStatuses(t *testing.T) {
 
 	if f := findingFor(t, cfg, okAddr); f.Status != engine.OK {
 		t.Errorf("100 days: want OK, got %s (%s)", f.Status, f.Message)
+	} else if f.Unit != "days" || f.Value == nil || *f.Value < 95 || *f.Value > 100 {
+		t.Errorf("100 days: want a ~100 days Value/unit (CF-91), got value=%v unit=%q", f.Value, f.Unit)
 	}
 	if f := findingFor(t, cfg, warnAddr); f.Status != engine.WARN {
 		t.Errorf("10 days: want WARN, got %s (%s)", f.Status, f.Message)

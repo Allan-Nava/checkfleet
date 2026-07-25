@@ -56,6 +56,8 @@ func (c *Check) probe(ctx context.Context, t engine.TCPTarget) engine.Finding {
 	}
 	defer conn.Close()
 	latency := c.now().Sub(start)
+	// Attach the connect latency (ms) so every post-connect finding can be charted.
+	f.Value, f.Unit = engine.Num(float64(latency.Microseconds())/1000), "ms"
 
 	if t.ExpectBanner != "" {
 		if dl, ok := ctx.Deadline(); ok {

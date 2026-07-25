@@ -2,9 +2,24 @@ package engine
 
 import (
 	"context"
+	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 )
+
+// A Finding without a metric omits value/unit from JSON; with one, it includes
+// them (CF-91) — keeping old consumers unaffected.
+func TestFindingValueJSON(t *testing.T) {
+	plain, _ := json.Marshal(Finding{Check: "http", Target: "x", Status: OK, Message: "ok"})
+	if strings.Contains(string(plain), "value") || strings.Contains(string(plain), "unit") {
+		t.Errorf("metric-less finding should omit value/unit, got %s", plain)
+	}
+	withVal, _ := json.Marshal(Finding{Check: "http", Target: "x", Status: OK, Message: "ok", Value: Num(142), Unit: "ms"})
+	if !strings.Contains(string(withVal), `"value":142`) || !strings.Contains(string(withVal), `"unit":"ms"`) {
+		t.Errorf("finding with metric should include value/unit, got %s", withVal)
+	}
+}
 
 func TestWorstAndSummarize(t *testing.T) {
 	findings := []Finding{

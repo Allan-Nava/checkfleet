@@ -10,11 +10,14 @@ import (
 	"os"
 )
 
-// Entry is one finding's identity+status in a run.
+// Entry is one finding's identity+status in a run. Value/Unit are the optional
+// scalar metric (CF-91), persisted so the GUI can chart it over time.
 type Entry struct {
-	Check  string `json:"c"`
-	Target string `json:"g"`
-	Status string `json:"s"`
+	Check  string   `json:"c"`
+	Target string   `json:"g"`
+	Status string   `json:"s"`
+	Value  *float64 `json:"v,omitempty"`
+	Unit   string   `json:"u,omitempty"`
 }
 
 // Record is one run's snapshot.

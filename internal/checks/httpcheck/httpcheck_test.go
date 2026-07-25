@@ -46,4 +46,11 @@ func TestStatusLatencyAndBody(t *testing.T) {
 			t.Errorf("target %d: want %s, got %s (%s)", i, w, findings[i].Status, findings[i].Message)
 		}
 	}
+	// The OK finding carries the latency metric (CF-91); the network ERROR does not.
+	if findings[0].Value == nil || findings[0].Unit != "ms" {
+		t.Errorf("OK finding: want a ms latency Value, got value=%v unit=%q", findings[0].Value, findings[0].Unit)
+	}
+	if findings[4].Value != nil {
+		t.Errorf("ERROR finding: want no Value (nothing measured), got %v", *findings[4].Value)
+	}
 }
