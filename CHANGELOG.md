@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.108.0
+
+- Desktop (CF-102, M26 — rifinitura Fleet & Dashboard): la tabella dei finding ha una nuova colonna **Trend** con una **sparkline inline per target** (linea minimale senza assi, `charts.js` → `svgSparkline`), disegnata per i target che hanno una serie numerica nello storico (`App.Metrics`, caricato dopo ogni Run). I grafici della dashboard sono più leggibili: i punti del line-chart ora hanno un **tooltip nativo `<title>`** con valore e unità. Header sticky, hover e pill di status erano già a posto. Smoke esteso con un caso `svgSparkline`; stylelint verde. Solo frontend statico.
+
 ## 0.107.0
 
 - Desktop (CF-101, M26 — toast in-app): nuove notifiche non-bloccanti al posto (in aggiunta) del solo testo nella status bar. Helper `toast(msg, {kind, timeout, action})` + un container `aria-live="polite"`: card con dot per tipo (info/success/warn/error), auto-dismiss (in pausa se ci passi sopra col mouse), pulsante di chiusura e azione opzionale, stack limitato a 4. Agganciato alle azioni: export ("Exported … → path" / errore), salvataggio config, validate ("valid" / "N problems"), copy ("Copied to clipboard"). Enter/exit animati via classi, `prefers-reduced-motion` rispettato. Solo frontend statico.

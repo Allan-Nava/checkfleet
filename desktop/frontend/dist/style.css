@@ -391,7 +391,7 @@ select { cursor: pointer; }
   font-weight: 400; max-width: 320px;
 }
 .chart .line-path { stroke: var(--brand-2); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
-.chart .line-dot { fill: var(--brand-2); }
+.chart .line-dot { fill: var(--brand-2); cursor: help; }
 #chartLine .chart-empty, .chart-empty { color: var(--muted); font-size: 12.5px; padding: 8px 2px; }
 .finding-trend { margin: 14px 0; }
 
@@ -564,3 +564,11 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 6px; border-radius
 .toast-x { margin-left: 2px; padding: 2px 3px; background: transparent; border: none;
   color: var(--muted); cursor: pointer; font-size: 12px; line-height: 1; }
 .toast-x:hover { color: var(--heading); }
+
+/* ================= Fleet & Dashboard polish (CF-102) ================= */
+/* inline per-target trend sparkline in the findings table */
+.c-trend { width: 104px; }
+.cell-trend { vertical-align: middle; padding: 4px 12px; }
+.spark-wrap { display: inline-flex; align-items: center; height: 22px; opacity: .9; }
+.sparkline { display: block; }
+.sparkline .spark-line { stroke: var(--brand-2); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }

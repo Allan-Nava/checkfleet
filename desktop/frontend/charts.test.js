@@ -114,6 +114,15 @@ test("svgLine handles a flat/single series and empty input", () => {
   assert.equal(C.svgLine([], {}), "");
 });
 
+test("svgSparkline draws a bare polyline and needs >=2 points", () => {
+  const s = C.svgSparkline([{ unix: 1, value: 10 }, { unix: 2, value: 14 }, { unix: 3, value: 9 }], {});
+  assert.match(s, /class="chart sparkline"/);
+  assert.match(s, /class="spark-line"/);
+  assert.doesNotMatch(s, /NaN/);
+  assert.equal(C.svgSparkline([{ unix: 1, value: 5 }], {}), ""); // single point → nothing
+  assert.equal(C.svgSparkline([], {}), "");
+});
+
 test("svgMeter classes the fill by SLO thresholds and clamps", () => {
   assert.match(C.svgMeter(100, {}), /meter-ok/);
   assert.match(C.svgMeter(99, {}), /meter-ok/);

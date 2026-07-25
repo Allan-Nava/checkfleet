@@ -113,6 +113,15 @@
     return RANK[status] >= RANK[min.toUpperCase()];
   }
 
+  // sparkFor returns a tiny inline trend for a finding's target when history has
+  // a numeric series for it (from the last Metrics read); otherwise "".
+  function sparkFor(f) {
+    const s = metricSeries.find((x) => x.check === f.check && x.target === f.target);
+    if (!s || !s.points || s.points.length < 2) return "";
+    return `<span class="spark-wrap" title="${escapeHtml(f.check + " " + f.target + (s.unit ? " (" + s.unit + ")" : ""))}">` +
+      CFCharts.svgSparkline(s.points, {}) + `</span>`;
+  }
+
   // setBusy toggles the top progress bar + the Run button spinner during work.
   function setBusy(on) {
     $("progress").hidden = !on;
@@ -200,6 +209,7 @@
         <td><span class="badge ${f.status}">${f.status}</span></td>
         <td class="cell-check">${escapeHtml(f.check)}</td>
         <td class="cell-target">${escapeHtml(f.target)}</td>
+        <td class="cell-trend">${sparkFor(f)}</td>
         <td class="cell-msg">${escapeHtml(f.message)}</td>
       </tr>`;
 
@@ -215,7 +225,7 @@
         const worst = worstOf(items.map(([f]) => f.status));
         const header = `
           <tr class="group-row" data-group="${escapeHtml(mod)}">
-            <td colspan="4">
+            <td colspan="5">
               <span class="group-caret">▾</span>
               <span class="badge ${worst}">${worst}</span>
               <b>${escapeHtml(mod)}</b>
@@ -267,6 +277,10 @@
       report = await Backend.RunChecks($("configPath").value, $("stack").value);
     } catch (e) {
       report = { err: String(e) };
+    }
+    // pull the metric series so the table can draw inline per-target sparklines
+    if (report && !report.err) {
+      try { metricSeries = (await Backend.Metrics($("configPath").value, 60)) || []; } catch (_) {}
     }
     running = false;
     setBusy(false);
@@ -437,7 +451,7 @@
       return;
     }
     const idx = Math.min(metricSeries.length - 1, Math.max(0, parseInt($("metricSel").value, 10) || 0));
-    host.innerHTML = CFCharts.svgLine(metricSeries[idx].points, { w: 680, h: 180 });
+    host.innerHTML = CFCharts.svgLine(metricSeries[idx].points, { w: 680, h: 180, unit: metricSeries[idx].unit });
   }
 
   // renderAvailability paints the uptime hero + the least-available targets.
@@ -687,7 +701,7 @@
       if (el) {
         el.innerHTML = s && s.points && s.points.length
           ? `<div class="kv"><span>${escapeHtml(f.check)} trend</span><span>${escapeHtml(s.unit || "")}</span></div>` +
-            CFCharts.svgLine(s.points, { w: 340, h: 120 })
+            CFCharts.svgLine(s.points, { w: 340, h: 120, unit: s.unit })
           : `<p class="chart-empty">No history series yet for this target.</p>`;
       }
     }

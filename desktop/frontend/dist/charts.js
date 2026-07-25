@@ -239,11 +239,30 @@
         `<text class="axis" x="${pad - 6}" y="${fmt(y(t) + 3)}" text-anchor="end">${fmt(Math.round(t * 10) / 10)}</text>`;
     }).join("");
 
+    const unit = opts.unit ? " " + opts.unit : "";
     const pts = points.map((p, i) => [x(i), y(Number(p.value) || 0)]);
     const line = `<polyline class="line-path" fill="none" points="${pts.map(([a, b]) => fmt(a) + "," + fmt(b)).join(" ")}"/>`;
-    const dots = pts.map(([a, b]) => `<circle class="line-dot" cx="${fmt(a)}" cy="${fmt(b)}" r="2.5"/>`).join("");
+    // dots carry a native <title> tooltip (value + unit) for readability
+    const dots = pts.map(([a, b], i) =>
+      `<circle class="line-dot" cx="${fmt(a)}" cy="${fmt(b)}" r="2.5"><title>${fmt(points[i].value)}${unit}</title></circle>`).join("");
     return svgWrap(w, h, "Metric over time", grid + line + dots);
   }
 
-  return { LAYERS, total, niceMax, stackedPolys, donutArcs, svgArea, svgDonut, svgBand, svgHeatmap, svgMeter, svgLine };
+  // svgSparkline draws a bare inline trend line (no axes/dots) for a table cell.
+  function svgSparkline(points, opts) {
+    opts = opts || {};
+    const w = opts.w || 88, h = opts.h || 22, pad = opts.pad || 2;
+    if (!points || points.length < 2) return "";
+    const vals = points.map((p) => Number(p.value) || 0);
+    let lo = Math.min(...vals), hi = Math.max(...vals);
+    if (lo === hi) { lo -= 1; hi += 1; }
+    const range = hi - lo || 1, n = points.length;
+    const x = (i) => pad + (i * (w - 2 * pad)) / (n - 1);
+    const y = (v) => h - pad - ((v - lo) / range) * (h - 2 * pad);
+    const pts = points.map((p, i) => fmt(x(i)) + "," + fmt(y(Number(p.value) || 0))).join(" ");
+    return `<svg class="chart sparkline" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" ` +
+      `preserveAspectRatio="none" aria-hidden="true"><polyline class="spark-line" fill="none" points="${pts}"/></svg>`;
+  }
+
+  return { LAYERS, total, niceMax, stackedPolys, donutArcs, svgArea, svgDonut, svgBand, svgHeatmap, svgMeter, svgLine, svgSparkline };
 });
