@@ -16,6 +16,9 @@
         <span class="pill-mini" id="version">dev</span>
       </div>
       <div class="tb-right" style="--wails-draggable:no-drag">
+        <button class="icon-btn" id="dashToggle" title="Dashboard" aria-label="Dashboard">
+          <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M3 3h8v10H3zm10 0h8v6h-8zM3 15h8v6H3zm10-4h8v10h-8z"/></svg>
+        </button>
         <button class="icon-btn" id="cfgToggle" title="Edit config" aria-label="Edit config">
           <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19.4 13a7.5 7.5 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.5 7.5 0 0 0-1.7-1l-.4-2.5H10.8l-.4 2.5a7.5 7.5 0 0 0-1.7 1l-2.4-1-2 3.4L4.3 11a7.5 7.5 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.5 7.5 0 0 0 1.7 1l.4 2.5h3.4l.4-2.5a7.5 7.5 0 0 0 1.7-1l2.4 1 2-3.4zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7"/></svg>
         </button>
@@ -104,6 +107,36 @@
       </div>
     </main>
 
+    <!-- dashboard (hidden until toggled) -->
+    <section class="dashboard" id="dashboard" hidden>
+      <div class="dash-head">
+        <b>Dashboard</b>
+        <span class="mono" id="dashSub">history over the last runs</span>
+        <span class="spacer"></span>
+        <button class="btn" id="dashRefresh">Refresh</button>
+      </div>
+      <div class="dash-grid" id="dashGrid">
+        <figure class="card card-wide">
+          <figcaption>Findings per run <span>OK / WARN / BAD / ERROR, oldest → newest</span></figcaption>
+          <div class="chart-host" id="chartArea"></div>
+        </figure>
+        <figure class="card">
+          <figcaption>Current distribution</figcaption>
+          <div class="chart-host donut-host" id="chartDonut"></div>
+          <div class="legend" id="chartLegend"></div>
+        </figure>
+        <figure class="card card-wide">
+          <figcaption>Worst status per run</figcaption>
+          <div class="chart-host band-host" id="chartBand"></div>
+          <div class="band-axis" id="bandAxis"></div>
+        </figure>
+      </div>
+      <div class="dash-empty" id="dashEmpty" hidden>
+        <img src="assets/logo.svg" alt="" width="56" height="56">
+        <p>No history yet. Run the fleet a few times — every run is saved next to the config and charted here across restarts.</p>
+      </div>
+    </section>
+
     <!-- config editor (hidden until toggled) -->
     <section class="editor" id="editor" hidden>
       <div class="editor-bar">
@@ -170,6 +203,7 @@
     </aside>
   </div>
 
+  <script src="charts.js"></script>
   <script src="main.js"></script>
 </body>
 </html>

@@ -287,6 +287,58 @@ select { cursor: pointer; }
 .spark-bar.s-BAD   { height: 80%; background: var(--bad); }
 .spark-bar.s-ERROR { height: 100%; background: var(--err); }
 
+/* ---------------- dashboard (CF-91) ---------------- */
+.dashboard {
+  flex: 1 1 auto; min-height: 0; overflow: auto;
+  padding: 14px 16px 20px; display: flex; flex-direction: column; gap: 14px;
+}
+.dash-head { display: flex; align-items: center; gap: 10px; }
+.dash-head b { font-size: 15px; color: var(--heading); }
+.dash-grid { display: grid; grid-template-columns: 1fr 220px; gap: 14px; }
+.card {
+  margin: 0; padding: 14px 16px; border-radius: 14px;
+  background: var(--surface); border: 1px solid var(--border);
+}
+.card-wide { grid-column: 1 / -1; }
+.card figcaption {
+  display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px;
+  font-size: 12px; font-weight: 600; color: var(--heading);
+}
+.card figcaption span { font-weight: 400; font-size: 11px; color: var(--muted); }
+.chart-host { width: 100%; }
+.donut-host { display: grid; place-items: center; height: 168px; }
+.donut-host .chart { max-width: 168px; height: 168px; }
+.band-host { height: 26px; }
+
+/* svg chart primitives — colored via classes so themes just work */
+.chart { display: block; }
+.chart .grid { stroke: var(--border); stroke-width: 1; }
+.chart .axis { fill: var(--muted); font-size: 9px; font-family: ui-monospace, Menlo, monospace; }
+.chart .area-ok    { fill: var(--ok);   fill-opacity: .85; }
+.chart .area-warn  { fill: var(--warn); fill-opacity: .85; }
+.chart .area-bad   { fill: var(--bad);  fill-opacity: .85; }
+.chart .area-error { fill: var(--err);  fill-opacity: .85; }
+.chart .arc-ok    { fill: var(--ok); }   .chart .arc-warn  { fill: var(--warn); }
+.chart .arc-bad   { fill: var(--bad); }  .chart .arc-error { fill: var(--err); }
+.chart circle.arc-ok    { stroke: var(--ok); }   .chart circle.arc-warn  { stroke: var(--warn); }
+.chart circle.arc-bad   { stroke: var(--bad); }  .chart circle.arc-error { stroke: var(--err); }
+.chart .arc-empty { stroke: var(--border-str); }
+.chart .donut-total { fill: var(--heading); font-size: 30px; font-weight: 700; }
+.chart .donut-label { fill: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .06em; }
+.chart .band-OK    { fill: var(--ok); }   .chart .band-WARN  { fill: var(--warn); }
+.chart .band-BAD   { fill: var(--bad); }  .chart .band-ERROR { fill: var(--err); }
+
+.legend { display: flex; flex-direction: column; gap: 5px; margin-top: 12px; }
+.legend .lg { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted); }
+.legend .sw { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
+.legend .lg b { margin-left: auto; color: var(--heading); font-variant-numeric: tabular-nums; }
+.legend .sw.ok { background: var(--ok); } .legend .sw.warn { background: var(--warn); }
+.legend .sw.bad { background: var(--bad); } .legend .sw.error { background: var(--err); }
+.band-axis { display: flex; justify-content: space-between; margin-top: 6px; font-size: 10.5px; color: var(--muted); font-family: ui-monospace, Menlo, monospace; }
+.dash-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: var(--muted); text-align: center; }
+.dash-empty p { max-width: 380px; }
+.dash-empty img { opacity: .9; filter: drop-shadow(0 10px 26px color-mix(in srgb, var(--brand) 40%, transparent)); }
+
 /* group-by-module rows */
 .group-row td {
   padding: 9px 12px; cursor: pointer; user-select: none;

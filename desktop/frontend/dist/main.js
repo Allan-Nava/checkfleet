@@ -61,6 +61,8 @@
   let report = null;
   let timer = null;
   let visibleFindings = [];
+  let editorOn = false;
+  let dashboardOn = false;
 
   /* ---------------- rendering ---------------- */
   function severityAllowed(status, min) {
@@ -87,8 +89,8 @@
       return;
     }
 
-    // summary
-    summary.hidden = false;
+    // summary (kept hidden while the editor/dashboard views own the screen)
+    summary.hidden = editorOn || dashboardOn;
     const worst = report.worst || "OK";
     const worstEl = $("worst");
     worstEl.className = "worst s-" + worst;
@@ -189,6 +191,7 @@
     btn.disabled = false;
     render();
     maybeNotify();
+    if (dashboardOn) renderDashboard();
   }
 
   // maybeNotify fires a native notification when the run is bad and Notify is on.
@@ -251,16 +254,56 @@
   }
 
   /* ---------------- config editor ---------------- */
-  let editorOn = false;
-
   function setEditor(on) {
     editorOn = on;
+    if (on && dashboardOn) setDashboard(false);
     $("editor").hidden = !on;
     $("findingsBar").hidden = on;
     $("tableWrap").hidden = on;
     $("summary").hidden = on || !report;
     $("cfgToggle").classList.toggle("active", on);
     if (on) loadConfigText();
+  }
+
+  /* ---------------- dashboard (CF-91) ---------------- */
+  function setDashboard(on) {
+    dashboardOn = on;
+    if (on && editorOn) setEditor(false);
+    $("dashboard").hidden = !on;
+    $("findingsBar").hidden = on;
+    $("tableWrap").hidden = on;
+    $("summary").hidden = on || !report;
+    $("dashToggle").classList.toggle("active", on);
+    if (on) renderDashboard();
+  }
+
+  // renderDashboard pulls the persisted history (survives restarts) and draws the
+  // stacked-area, donut and worst-status band. The donut shows the live run when
+  // there is one, otherwise the newest history point.
+  async function renderDashboard() {
+    let points = [];
+    try { points = (await Backend.Trend($("configPath").value, 60)) || []; }
+    catch (_) { points = []; }
+
+    const has = points.length > 0;
+    $("dashGrid").hidden = !has;
+    $("dashEmpty").hidden = has;
+    $("dashSub").textContent = has ? points.length + " run(s) · saved beside the config" : "";
+    if (!has) return;
+
+    const last = points[points.length - 1];
+    const dist = report && !report.err
+      ? { ok: report.ok, warn: report.warn, bad: report.bad, error: report.error }
+      : { ok: last.ok, warn: last.warn, bad: last.bad, error: last.error };
+
+    $("chartArea").innerHTML = CFCharts.svgArea(points, { w: 680, h: 210 });
+    $("chartDonut").innerHTML = CFCharts.svgDonut(dist, { size: 168 });
+    $("chartBand").innerHTML = CFCharts.svgBand(points, { w: 680, h: 26 });
+    $("chartLegend").innerHTML = [["ok", "OK"], ["warn", "WARN"], ["bad", "BAD"], ["error", "ERROR"]]
+      .map(([k, label]) => `<div class="lg"><span class="sw ${k}"></span>${label}<b>${dist[k] || 0}</b></div>`).join("");
+    const when = (u) => new Date(u * 1000).toLocaleString();
+    $("bandAxis").innerHTML =
+      `<span>${escapeHtml(when(points[0].unix))}</span><span>${escapeHtml(when(last.unix))}</span>`;
   }
 
   async function loadConfigText() {
@@ -439,6 +482,8 @@
     $("changes").addEventListener("click", showChanges);
     $("trend").addEventListener("click", showTrend);
     $("groupBy").addEventListener("change", () => { render(); saveSettings(); });
+    $("dashToggle").addEventListener("click", () => setDashboard(dashboardOn ? false : true));
+    $("dashRefresh").addEventListener("click", renderDashboard);
     $("cfgToggle").addEventListener("click", () => setEditor(editorOn ? false : true));
     $("cfgReload").addEventListener("click", loadConfigText);
     $("cfgValidate").addEventListener("click", cfgValidate);

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.90.0
+
+- Desktop (CF-92, M25): nuova vista **Dashboard** con grafici SVG disegnati a mano — **zero-dep, theme-aware** (ogni elemento è colorato via classe CSS, così il tema chiaro/scuro funziona da solo). Toggle nel titlebar, mutuamente esclusivo con l'editor di config. Tre grafici alimentati dallo storico persistente (binding `Trend` su `internal/history`) più il run corrente: **stacked-area** dei conteggi OK/WARN/BAD/ERROR per run (con gridline e assi), **donut** della distribuzione corrente (100% reso come anello, caso vuoto gestito) e **banda worst-status** nel tempo con asse temporale; refresh automatico dopo ogni Run. Il modulo grafici `desktop/frontend/dist/charts.js` espone funzioni pure coperte da uno smoke headless `desktop/frontend/charts.test.js` (`node --test`, 9 casi). Nessun binding Go nuovo, nessun cambio all'engine — solo frontend statico. **Apre M25 (Desktop GUI v3 — dashboard & grafici).** _(la numerazione salta a 0.90.0 per tenere la corsia GUI separata dalle release dei moduli)_
+
 ## 0.82.0
 
 - Webhook con **template custom** (CF-82, M22): `--output webhook --template FILE` plasma il payload con un **Go text/template** invece del JSON di default. Il template viene eseguito su `{{.Title}}`, `{{.Worst}}`, `{{.Total}}`, `{{.OK}}`/`{{.WARN}}`/`{{.BAD}}`/`{{.ERROR}}` e `{{range .Findings}}` (con `.Check`/`.Target`/`.Status`/`.Message`). `missingkey=error` fa emergere i typo nel template invece di emettere silenziosamente `<no value>`. Renderer `output.RenderTemplate` testato. Senza `--template` il comportamento resta il JSON di prima.
