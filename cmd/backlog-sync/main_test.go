@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"errors"
+	"testing"
+)
 
 func TestIDFromTitle(t *testing.T) {
 	cases := map[string]string{
@@ -13,6 +16,22 @@ func TestIDFromTitle(t *testing.T) {
 		if got := idFromTitle(title); got != want {
 			t.Errorf("idFromTitle(%q): want %q, got %q", title, want, got)
 		}
+	}
+}
+
+func TestIsAlreadyExists(t *testing.T) {
+	// The real 422 body gh prints when a milestone title is taken.
+	dup := errors.New(`gh api -X POST repos/{owner}/{repo}/milestones -f title=M26: exit status 1: ` +
+		`gh: Validation Failed (HTTP 422) {"message":"Validation Failed","errors":` +
+		`[{"resource":"Milestone","code":"already_exists","field":"title"}],"status":"422"}`)
+	if !isAlreadyExists(dup) {
+		t.Error("duplicate-milestone 422: want true, got false")
+	}
+	if isAlreadyExists(errors.New("gh: Not Found (HTTP 404)")) {
+		t.Error("unrelated failure: want false, got true")
+	}
+	if isAlreadyExists(nil) {
+		t.Error("nil error: want false, got true")
 	}
 }
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.109.1
+
+- CI (fix workflow "Backlog sync"): `backlog-sync` moriva con `gh api -X POST … milestones -f title=M26 — Desktop UX/UI polish: exit status 1: gh: Validation Failed (HTTP 422)`. Causa: `ensureMilestones` leggeva le milestone **senza paginazione** e l'API GitHub ne restituisce **30 per pagina** — con 31 milestone sul repo, M26 (l'ultima) cadeva fuori dalla prima pagina, il tool la credeva mancante e provava a ricrearla ottenendo `already_exists`. Aggiunti `--paginate` + `per_page=100`. La rottura era latente e avrebbe colpito ogni milestone dalla 31ª in poi: non è un problema di M26 in sé.
+- `backlog-sync` (robustezza): un `already_exists` sulla creazione di una milestone non è più fatale — lo stato desiderato vale comunque (creazione concorrente o manuale), coerente con l'idempotenza dichiarata del tool. Per poterlo distinguere, gli errori di `gh` ora includono anche **stdout**: il body JSON dell'API finisce lì, mentre su stderr arriva solo `Validation Failed (HTTP 422)`, che da solo non dice quale validazione sia fallita. Test su `isAlreadyExists` con il body 422 reale.
+
 ## 0.109.0
 
 - Desktop (CF-103, M26 — accessibilità & tastiera): drawer e command-palette ora hanno **focus-trap** (Tab resta dentro il dialog) e **ripristino del focus** al controllo che li ha aperti alla chiusura. ARIA: `role="dialog" aria-modal` su drawer/palette, la palette è un `combobox` su una `listbox` con `role="option"`/`aria-selected`/`aria-activedescendant`, la barra di progresso è `role="progressbar"`, il filtro ha `aria-label`. I chip dei moduli sono attivabili da tastiera (`role="button"` + Enter/Space). Alzato il contrasto del testo secondario in tema chiaro ad AA. Il focus-ring unico (`:focus-visible`) e `prefers-reduced-motion` erano già in CF-98. **Chiude M26 (polish UX/UI desktop).** Solo frontend statico.

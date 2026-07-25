@@ -132,7 +132,10 @@ func (s *syncer) ensureLabel() {
 }
 
 func (s *syncer) ensureMilestones(items []backlog.Item) error {
-	out, err := gh("api", "repos/{owner}/{repo}/milestones?state=all", "--jq", ".[].title")
+	// --paginate is required: GitHub returns 30 milestones per page by default,
+	// so without it the newest ones fall off the list and we try to re-create
+	// them (HTTP 422 already_exists), failing the whole sync.
+	out, err := gh("api", "--paginate", "repos/{owner}/{repo}/milestones?state=all&per_page=100", "--jq", ".[].title")
 	if err != nil {
 		return err
 	}
@@ -152,7 +155,9 @@ func (s *syncer) ensureMilestones(items []backlog.Item) error {
 		if s.dryRun {
 			continue
 		}
-		if _, err := gh("api", "-X", "POST", "repos/{owner}/{repo}/milestones", "-f", "title="+it.Milestone); err != nil {
+		// Tolerate a milestone that appeared behind our back (concurrent run,
+		// manual creation): the desired state already holds, so it isn't an error.
+		if _, err := gh("api", "-X", "POST", "repos/{owner}/{repo}/milestones", "-f", "title="+it.Milestone); err != nil && !isAlreadyExists(err) {
 			return err
 		}
 	}
@@ -204,12 +209,24 @@ func lastPathInt(s string) int {
 	return 0
 }
 
+// isAlreadyExists reports whether err is the GitHub validation failure raised
+// when creating a resource whose unique field is taken (HTTP 422).
+func isAlreadyExists(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "already_exists")
+}
+
 func gh(args ...string) (string, error) {
 	cmd := exec.Command("gh", args...)
 	var out, errb bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &out, &errb
 	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("gh %s: %v: %s", strings.Join(args, " "), err, strings.TrimSpace(errb.String()))
+		// The API error body lands on stdout ("gh: Validation Failed (HTTP 422)"
+		// alone on stderr says nothing), so report both.
+		msg := strings.TrimSpace(errb.String())
+		if body := strings.TrimSpace(out.String()); body != "" {
+			msg = strings.TrimSpace(msg + " " + body)
+		}
+		return "", fmt.Errorf("gh %s: %v: %s", strings.Join(args, " "), err, msg)
 	}
 	return out.String(), nil
 }
