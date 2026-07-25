@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.109.0
+
+- Desktop (CF-103, M26 — accessibilità & tastiera): drawer e command-palette ora hanno **focus-trap** (Tab resta dentro il dialog) e **ripristino del focus** al controllo che li ha aperti alla chiusura. ARIA: `role="dialog" aria-modal` su drawer/palette, la palette è un `combobox` su una `listbox` con `role="option"`/`aria-selected`/`aria-activedescendant`, la barra di progresso è `role="progressbar"`, il filtro ha `aria-label`. I chip dei moduli sono attivabili da tastiera (`role="button"` + Enter/Space). Alzato il contrasto del testo secondario in tema chiaro ad AA. Il focus-ring unico (`:focus-visible`) e `prefers-reduced-motion` erano già in CF-98. **Chiude M26 (polish UX/UI desktop).** Solo frontend statico.
+
 ## 0.108.0
 
 - Desktop (CF-102, M26 — rifinitura Fleet & Dashboard): la tabella dei finding ha una nuova colonna **Trend** con una **sparkline inline per target** (linea minimale senza assi, `charts.js` → `svgSparkline`), disegnata per i target che hanno una serie numerica nello storico (`App.Metrics`, caricato dopo ogni Run). I grafici della dashboard sono più leggibili: i punti del line-chart ora hanno un **tooltip nativo `<title>`** con valore e unità. Header sticky, hover e pill di status erano già a posto. Smoke esteso con un caso `svgSparkline`; stylelint verde. Solo frontend statico.

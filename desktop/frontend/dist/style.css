@@ -14,7 +14,7 @@
 :root[data-theme="light"] {
   --bg: #f6f8fc; --bg-2: #ffffff; --surface: #ffffff; --surface-2: #0d1626;
   --border: rgba(15,23,42,.10); --border-str: rgba(15,23,42,.18);
-  --text: #33415c; --muted: #64748b; --heading: #0f172a;
+  --text: #33415c; --muted: #52607a; --heading: #0f172a;
   --brand: #059669; --brand-2: #0d9488;
   --ok: #059669; --warn: #b45309; --bad: #dc2626; --err: #7c3aed;
   --ok-bg: rgba(5,150,105,.10); --warn-bg: rgba(180,83,9,.10);

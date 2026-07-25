@@ -192,7 +192,7 @@
     $("mDur").textContent = report.durationMs != null ? report.durationMs + " ms" : "—";
     $("mStarted").textContent = report.started ? new Date(report.started).toLocaleTimeString() : "—";
     $("mModules").innerHTML = (report.modules || [])
-      .map((m) => `<span class="chip" data-mod="${escapeHtml(m)}" title="Explain ${escapeHtml(m)}">${escapeHtml(m)}</span>`).join("");
+      .map((m) => `<span class="chip" role="button" tabindex="0" data-mod="${escapeHtml(m)}" title="Explain ${escapeHtml(m)}">${escapeHtml(m)}</span>`).join("");
 
     // table (preserve backend worst-first order)
     const q = $("filter").value.trim().toLowerCase();
@@ -578,10 +578,13 @@
     $("drawerBody").innerHTML = bodyHTML;
     $("drawer").hidden = false;
     $("drawerScrim").hidden = false;
+    trapFocus($("drawer"));
   }
   function closeDrawer() {
+    if ($("drawer").hidden) return;
     $("drawer").hidden = true;
     $("drawerScrim").hidden = true;
+    releaseFocus();
   }
 
   /* ---------------- toasts (CF-101) ---------------- */
@@ -619,6 +622,32 @@
     setTimeout(() => el.remove(), 320); // fallback if transitionend doesn't fire
   }
 
+  /* ---------------- focus management (CF-103) ---------------- */
+  // Trap Tab within an open dialog and restore focus to the trigger on close.
+  let _trapOff = null, _lastFocus = null;
+  function trapFocus(container) {
+    _lastFocus = document.activeElement;
+    const q = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    const items = () => Array.from(container.querySelectorAll(q)).filter((el) => !el.disabled && el.offsetParent !== null);
+    const first = items()[0];
+    if (first) first.focus();
+    const onKey = (e) => {
+      if (e.key !== "Tab") return;
+      const f = items();
+      if (!f.length) return;
+      const a = f[0], b = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === a) { e.preventDefault(); b.focus(); }
+      else if (!e.shiftKey && document.activeElement === b) { e.preventDefault(); a.focus(); }
+    };
+    container.addEventListener("keydown", onKey);
+    _trapOff = () => container.removeEventListener("keydown", onKey);
+  }
+  function releaseFocus() {
+    if (_trapOff) { _trapOff(); _trapOff = null; }
+    if (_lastFocus && _lastFocus.focus) { try { _lastFocus.focus(); } catch (_) {} }
+    _lastFocus = null;
+  }
+
   /* ---------------- command palette (CF-96) ---------------- */
   let palItems = [];
   let palSel = 0;
@@ -647,9 +676,14 @@
     $("paletteBox").hidden = false;
     $("paletteInput").value = "";
     filterPalette("");
-    $("paletteInput").focus();
+    trapFocus($("paletteBox")); // captures the trigger, focuses the input (first focusable)
   }
-  function closePalette() { $("paletteBox").hidden = true; $("paletteScrim").hidden = true; }
+  function closePalette() {
+    if ($("paletteBox").hidden) return;
+    $("paletteBox").hidden = true;
+    $("paletteScrim").hidden = true;
+    releaseFocus();
+  }
 
   function filterPalette(q) {
     q = q.trim().toLowerCase();
@@ -659,10 +693,16 @@
   }
   function renderPalette() {
     const ul = $("paletteList");
-    if (!palItems.length) { ul.innerHTML = `<li class="palette-empty">No matching command</li>`; return; }
+    if (!palItems.length) {
+      ul.innerHTML = `<li class="palette-empty">No matching command</li>`;
+      $("paletteInput").removeAttribute("aria-activedescendant");
+      return;
+    }
     ul.innerHTML = palItems.map((c, i) =>
-      `<li data-i="${i}" class="${i === palSel ? "sel" : ""}"><span class="pl-label">${escapeHtml(c.label)}</span>` +
+      `<li id="pl-opt-${i}" role="option" aria-selected="${i === palSel}" data-i="${i}" class="${i === palSel ? "sel" : ""}">` +
+      `<span class="pl-label">${escapeHtml(c.label)}</span>` +
       `${c.hint ? `<span class="pl-hint">${escapeHtml(c.hint)}</span>` : ""}</li>`).join("");
+    $("paletteInput").setAttribute("aria-activedescendant", "pl-opt-" + palSel);
   }
   function movePalette(d) {
     if (!palItems.length) return;
@@ -828,6 +868,11 @@
     $("mModules").addEventListener("click", (e) => {
       const chip = e.target.closest("[data-mod]");
       if (chip) showExplain(chip.dataset.mod);
+    });
+    $("mModules").addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const chip = e.target.closest("[data-mod]");
+      if (chip) { e.preventDefault(); showExplain(chip.dataset.mod); }
     });
     // Copy button inside the drawer.
     $("drawerBody").addEventListener("click", (e) => {

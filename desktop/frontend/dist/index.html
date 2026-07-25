@@ -54,7 +54,7 @@
     </div>
 
     <!-- indeterminate progress bar (shown during a run / fetch) -->
-    <div class="progress" id="progress" hidden><i></i></div>
+    <div class="progress" id="progress" role="progressbar" aria-label="Running checks" hidden><i></i></div>
 
     <!-- summary -->
     <section class="summary" id="summary" hidden>
@@ -75,7 +75,7 @@
 
     <!-- findings toolbar -->
     <div class="findings-bar" id="findingsBar">
-      <input type="search" id="filter" placeholder="Filter check / target / message…">
+      <input type="search" id="filter" placeholder="Filter check / target / message…" aria-label="Filter findings">
       <select id="minsev">
         <option value="ok">all</option>
         <option value="warn">≥ WARN</option>
@@ -213,7 +213,7 @@
 
     <!-- detail / explain / validate drawer -->
     <div class="drawer-scrim" id="drawerScrim" hidden></div>
-    <aside class="drawer" id="drawer" hidden aria-label="Details">
+    <aside class="drawer" id="drawer" hidden role="dialog" aria-modal="true" aria-label="Details">
       <div class="drawer-head">
         <b id="drawerTitle">Details</b>
         <button class="icon-btn" id="drawerClose" aria-label="Close">✕</button>
@@ -223,9 +223,10 @@
 
     <!-- command palette (⌘K) -->
     <div class="palette-scrim" id="paletteScrim" hidden></div>
-    <div class="palette" id="paletteBox" hidden role="dialog" aria-label="Command palette">
-      <input type="text" id="paletteInput" placeholder="Type a command…" spellcheck="false" autocomplete="off">
-      <ul class="palette-list" id="paletteList"></ul>
+    <div class="palette" id="paletteBox" hidden role="dialog" aria-modal="true" aria-label="Command palette">
+      <input type="text" id="paletteInput" placeholder="Type a command…" spellcheck="false" autocomplete="off"
+             role="combobox" aria-expanded="true" aria-controls="paletteList" aria-autocomplete="list">
+      <ul class="palette-list" id="paletteList" role="listbox" aria-label="Commands"></ul>
     </div>
 
     <!-- toast notifications (non-blocking, aria-live) -->
