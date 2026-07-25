@@ -318,6 +318,20 @@ a fake — no real broker in tests.
 
 See [Configuration → checks.kafka](configuration.md#checkskafka).
 
+## `ingest` — RTMP/SRT ingest reachability
+
+Answers "can the streamer publish?" by speaking just enough of each protocol to
+prove a real server is listening, not just an open port:
+
+- **RTMP** (`protocol: rtmp`, default): the RTMP simple handshake over TCP
+  (C0/C1 → S0/S1/S2, version checked).
+- **SRT** (`protocol: srt`): the SRT **induction** handshake over UDP (a
+  best-effort reachability probe — it confirms an SRT listener answers).
+
+`OK` on a completed handshake, `WARN` over `max_latency_ms`, `ERROR` if the
+connection or handshake fails, `BAD` on an unknown protocol. Zero dependencies;
+tested against in-test fake RTMP/SRT servers.
+
 ## Ansible inventory as a target source
 
 The `certs`, `nats`, `haproxy`, `patroni`, `consul`, `redis` and `tls` modules can read

@@ -23,6 +23,7 @@ var Docs = map[string]string{
 	"grpc":     "gRPC Health Checking Protocol over HTTP/2+TLS: SERVING->OK, NOT_SERVING->BAD, UNKNOWN->WARN.",
 	"ldap":     "LDAP connect + bind (anonymous or creds from env), optional sanity search (at least `min_entries` under `base_dn`).",
 	"kafka":    "Kafka cluster: controller present, brokers vs `expect_brokers`, under-replicated partitions, consumer-group lag (`lag_warn`/`lag_crit`).",
+	"ingest":   "Streaming ingest reachability: RTMP handshake (TCP) or SRT induction handshake (UDP), with connect latency. Answers 'can the streamer publish?'.",
 }
 
 // Doc returns the description for a module and whether it exists.

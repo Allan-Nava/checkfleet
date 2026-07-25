@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.61.0
+
+- Modulo `ingest` (CF-22): reachability degli endpoint di ingest streaming — "lo streamer riesce a pubblicare?". `protocol: rtmp` fa l'handshake RTMP semplice su TCP (C0/C1→S0/S1/S2, versione verificata); `protocol: srt` fa l'induction handshake SRT su UDP (reachability best-effort). OK/WARN(`max_latency_ms`)/ERROR(handshake fallito)/BAD(protocollo ignoto). **Zero dipendenze** (protocolli scritti a mano); testato contro finti server RTMP/SRT in-test. CLI `checkfleet check ingest`.
+
 ## 0.60.0
 
 - Desktop (CF-64, M16): **vista storico/diff**. Il bottone **Changes (N)** apre un drawer col delta rispetto al run precedente della sessione — finding new/resolved/worsened/improved, color-coded — riusando `engine.DiffStatus`. `RunChecks` popola `Report.Changes` confrontando col run precedente in memoria; wiring testato. **Chiude M16 (Desktop GUI v2).**

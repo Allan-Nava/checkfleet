@@ -50,6 +50,44 @@ type ChecksConfig struct {
 	GRPC     *GRPCConfig     `yaml:"grpc"`
 	LDAP     *LDAPConfig     `yaml:"ldap"`
 	Kafka    *KafkaConfig    `yaml:"kafka"`
+	Ingest   *IngestConfig   `yaml:"ingest"`
+	S3       *S3Config       `yaml:"s3"`
+}
+
+// IngestConfig configures the ingest (RTMP/SRT) reachability check.
+type IngestConfig struct {
+	Targets []IngestTarget `yaml:"targets"`
+}
+
+// IngestTarget is one streaming ingest endpoint.
+type IngestTarget struct {
+	Name         string `yaml:"name"`
+	Address      string `yaml:"address"`  // host:port
+	Protocol     string `yaml:"protocol"` // "rtmp" (default) or "srt"
+	MaxLatencyMS int    `yaml:"max_latency_ms"`
+}
+
+// S3Config configures the S3/object-storage check. Credentials come from env.
+type S3Config struct {
+	Targets []S3Target `yaml:"targets"`
+}
+
+// S3Target is one bucket (optionally with a sentinel object to check freshness).
+type S3Target struct {
+	Name string `yaml:"name"`
+	// Endpoint base URL, e.g. https://s3.example.com or https://minio:9000.
+	Endpoint string `yaml:"endpoint"`
+	Bucket   string `yaml:"bucket"`
+	Region   string `yaml:"region"`
+	// Optional sentinel object key; if set, it must exist and be fresh.
+	Object string `yaml:"object"`
+	// Object considered stale (WARN) when older than this many seconds.
+	MaxAgeWarnSeconds int `yaml:"max_age_warn_seconds"`
+	// Env vars holding the access key id / secret. Never in config.
+	AccessKeyEnv string `yaml:"access_key_env"`
+	SecretKeyEnv string `yaml:"secret_key_env"`
+	// Use path-style addressing (MinIO/Ceph); default virtual-hosted.
+	PathStyle bool `yaml:"path_style"`
 }
 
 // CertsConfig configures the TLS certificate expiry check.

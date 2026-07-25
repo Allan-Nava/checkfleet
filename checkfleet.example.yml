@@ -177,3 +177,9 @@ checks:
       - {name: ssh-bastion, address: 10.20.30.9:22, expect_banner: "SSH-2.0", max_latency_ms: 500}
       - {name: smtp-relay, address: mail.example.com:25}
       - {name: rtmp-ingest, address: ingest.example.com:1935}
+
+  # Streaming ingest reachability (RTMP handshake / SRT induction).
+  ingest:
+    targets:
+      - {name: rtmp-ingest, address: ingest.example.com:1935, protocol: rtmp, max_latency_ms: 2000}
+      - {name: srt-ingest, address: ingest.example.com:8890, protocol: srt}
