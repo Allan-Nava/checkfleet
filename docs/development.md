@@ -150,4 +150,7 @@ Beyond `go vet` + `go test`, CI runs a `lint` job:
 - **`golangci-lint` (gate)** — fails the build on any lint finding. The enabled
   linters are pinned in `.golangci.yml` (errcheck, govet, ineffassign,
   staticcheck, unused). Run it locally with
-  `go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8 run ./...`.
+  `go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2 run ./...`.
+  Keep the pinned version on a release built with Go >= the `go.mod` version:
+  an older binary refuses to load the config ("the Go language version … is
+  lower than the targeted Go version").

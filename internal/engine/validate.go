@@ -246,7 +246,7 @@ func requireTargets(add func(string, ...any), module string, nTargets int, inven
 func anyModuleConfigured(c ChecksConfig) bool {
 	v := reflect.ValueOf(c)
 	for i := 0; i < v.NumField(); i++ {
-		if f := v.Field(i); f.Kind() == reflect.Ptr && !f.IsNil() {
+		if f := v.Field(i); f.Kind() == reflect.Pointer && !f.IsNil() {
 			return true
 		}
 	}

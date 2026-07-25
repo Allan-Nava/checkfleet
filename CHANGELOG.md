@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.104.3
+
+- CI (fix, due workflow rossi):
+  - **`lint` — golangci-lint v2**. Sostituito il workaround di 0.104.2 (`run.go: "1.24"`, che abbassava il target di analisi per accontentare un binario vecchio) con la soluzione vera: **golangci-lint v2.12.2** + `golangci-lint-action@v9`. v1 è EOL e i suoi ultimi binari ufficiali sono buildati con go1.24, quindi rifiutano il target go1.25 di `go.mod`. `.golangci.yml` migrato allo **schema v2**: l'`issues.exclude-use-default` di v1 non esiste più, quindi le stesse esclusioni built-in sono ora esplicite in `linters.exclusions.presets` (senza, sarebbero comparsi 69 errcheck su `defer Close` mai considerati prima). Sistemati i 5 finding **nuovi** degli analizzatori più recenti: `reflect.Ptr` → `reflect.Pointer` (`internal/engine/validate.go`), 3 stringhe d'errore maiuscole in `cmd/checkfleet/main.go` (ST1005) e una dichiarazione ridondante in `ntp_test.go` (ST1023). Nessun cambio di comportamento; `golangci-lint run` verde in locale con v2.12.2.
+  - **`frontend-lint` — xmllint mancante**. Lo step "SVG well-formed" falliva con `xmllint: command not found` (exit 127): il binario non è più preinstallato sulle immagini Ubuntu hosted di GitHub. Aggiunto uno step che installa `libxml2-utils` prima del controllo.
+- Docs: `docs/development.md` aggiornato con la nuova versione pinnata e il vincolo "il binario di golangci-lint deve essere buildato con Go >= quello di `go.mod`".
+
 ## 0.104.2
 
 - CI (fix gate golangci-lint): il job `lint` falliva da diverse commit con _"the Go language version (go1.24) used to build golangci-lint is lower than the targeted Go version (1.25.0)"_ — `go.mod` targetta go1.25 ma la `golangci-lint-action` scarica il binario ufficiale v1.64.8 **buildato con go1.24**, che rifiuta un target più recente. Aggiunto `run.go: "1.24"` in `.golangci.yml` così l'analisi targetta 1.24 (i linter abilitati — errcheck/govet/ineffassign/staticcheck/unused — non dipendono dalla semantica 1.25). Nessun finding reale nel codice (verificato in locale). Da rivedere quando si passa a golangci-lint v2.

@@ -207,7 +207,7 @@ func runCheck(args []string) error {
 		}
 		url := os.Getenv(*webhookEnv)
 		if url == "" {
-			return fmt.Errorf("Slack webhook not set: env %s is empty", *webhookEnv)
+			return fmt.Errorf("slack webhook not set: env %s is empty", *webhookEnv)
 		}
 		if err := postJSON(context.Background(), url, payload); err != nil {
 			return err
@@ -228,7 +228,7 @@ func runCheck(args []string) error {
 		}
 		token, chat := os.Getenv(*tgTokenEnv), os.Getenv(*tgChatEnv)
 		if token == "" || chat == "" {
-			return fmt.Errorf("Telegram not set: env %s and/or %s are empty", *tgTokenEnv, *tgChatEnv)
+			return fmt.Errorf("telegram not set: env %s and/or %s are empty", *tgTokenEnv, *tgChatEnv)
 		}
 		if err := postTelegram(context.Background(), token, chat, text); err != nil {
 			return err
@@ -598,7 +598,7 @@ func postTelegram(ctx context.Context, token, chatID, text string) error {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("Telegram responded HTTP %d", resp.StatusCode)
+		return fmt.Errorf("telegram responded HTTP %d", resp.StatusCode)
 	}
 	return nil
 }

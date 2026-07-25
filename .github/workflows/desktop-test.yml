@@ -57,6 +57,9 @@ jobs:
         run: npx html-validate --config desktop/frontend/.htmlvalidate.json desktop/frontend/dist/index.html
       - name: JS syntax (node --check)
         run: node --check desktop/frontend/dist/main.js
+      # xmllint is no longer preinstalled on the GitHub-hosted Ubuntu images.
+      - name: Install xmllint
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libxml2-utils
       - name: SVG well-formed (xmllint)
         run: |
           for f in desktop/frontend/dist/assets/*.svg; do

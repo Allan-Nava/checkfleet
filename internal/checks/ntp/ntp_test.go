@@ -59,7 +59,7 @@ func TestQueryErrorIsError(t *testing.T) {
 func TestNTPTimestampConversion(t *testing.T) {
 	// Encode a known Unix time as an NTP timestamp and round-trip it.
 	want := time.Unix(1_700_000_000, 0).UTC()
-	var ts uint64 = uint64(want.Unix()+ntpEpochOffset) << 32
+	ts := uint64(want.Unix()+ntpEpochOffset) << 32
 	got := ntpToTime(ts).UTC()
 	if got.Unix() != want.Unix() {
 		t.Errorf("NTP conversion: want %v, got %v", want, got)
