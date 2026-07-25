@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.104.0
+
+- Desktop (CF-98, M26 — design system pass): introdotto un layer di **design token** nel CSS della GUI (zero-dep, nessun build) — scala di spaziatura, raggi, scala tipografica, elevazioni ombra (`--shadow-sm/md`), motion (`--ease`/`--dur`) e un **focus-ring** unico. Bottoni/input/badge/chip/card ora condividono raggi e stati coerenti: `:focus-visible` uniforme su tutti i controlli, feedback "press" sui bottoni, elevazione + lift in hover sulle card, gerarchia più forte nel summary (worst-status come numero hero, cifre tabulari) e rispetto di `prefers-reduced-motion`. Parità light/dark verificata. Solo `desktop/frontend/dist/style.css`; nessun cambio a JS/binding/engine. Apre M26 (polish UX/UI desktop).
+
 ## 0.103.0
 
 - Engine/moduli (CF-97, M25): esteso il campo numerico opzionale `Finding.Value`+`Unit` (CF-91) ad altri **7 moduli**, così le loro grandezze finiscono nello storico e sono graficabili nella card "Metric over time" della GUI: **latenza ms** (`grpc`, aggiunto il timing della richiesta), **giorni-a-scadenza** (`tls`), **replica lag** (`mysql` in s, `clickhouse` in s, `postgres` in bytes, `patroni` in bytes) e **min-TTL** (`dns`, in s). Backward-compatible: i renderer `internal/output` e i messaggi restano invariati. Asserzioni `Value` aggiunte a `tls`/`grpc`; gli altri test esistenti restano verdi (nessuna regressione). Completa il follow-up lasciato aperto da CF-91.

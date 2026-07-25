@@ -7,6 +7,8 @@
   --ok: #34d399; --warn: #fbbf24; --bad: #f87171; --err: #c084fc;
   --ok-bg: rgba(52,211,153,.14); --warn-bg: rgba(251,191,36,.15);
   --bad-bg: rgba(248,113,113,.15); --err-bg: rgba(192,132,252,.15);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.35), 0 1px 1px rgba(0,0,0,.2);
+  --shadow-md: 0 6px 20px -8px rgba(0,0,0,.55);
   --shadow: 0 10px 34px -14px rgba(0,0,0,.65);
 }
 :root[data-theme="light"] {
@@ -17,7 +19,21 @@
   --ok: #059669; --warn: #b45309; --bad: #dc2626; --err: #7c3aed;
   --ok-bg: rgba(5,150,105,.10); --warn-bg: rgba(180,83,9,.10);
   --bad-bg: rgba(220,38,38,.10); --err-bg: rgba(124,58,237,.10);
+  --shadow-sm: 0 1px 2px rgba(15,23,42,.10), 0 1px 1px rgba(15,23,42,.06);
+  --shadow-md: 0 6px 18px -8px rgba(15,23,42,.20);
   --shadow: 0 10px 26px -16px rgba(15,23,42,.28);
+}
+
+/* --- design tokens: spacing / radii / type / motion / focus (CF-98) --- */
+:root {
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px; --sp-5: 20px; --sp-6: 28px;
+  --r-xs: 6px;  --r-sm: 8px;  --r-md: 10px; --r-lg: 14px; --r-full: 999px;
+  --fs-2xs: 10.5px; --fs-xs: 11.5px; --fs-sm: 12.5px; --fs-md: 13.5px;
+  --fs-lg: 15px; --fs-xl: 20px; --fs-2xl: 30px;
+  --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --ease: cubic-bezier(.4, 0, .2, 1);
+  --dur: .16s;
+  --ring: 0 0 0 3px color-mix(in srgb, var(--brand) 32%, transparent);
 }
 
 * { box-sizing: border-box; }
@@ -29,9 +45,14 @@ body {
 }
 b { color: var(--heading); }
 .spacer { flex: 1; }
-.btn, .icon-btn, .chip, .brand .logo, input, select {
-  transition: background .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease, filter .15s ease;
+.btn, .icon-btn, .chip, .viewtab, .brand .logo, input, select {
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease),
+    color var(--dur) var(--ease), box-shadow var(--dur) var(--ease),
+    filter var(--dur) var(--ease), transform var(--dur) var(--ease);
 }
+/* one consistent keyboard focus ring across every interactive control */
+:focus-visible { outline: none; box-shadow: var(--ring); border-radius: var(--r-sm); }
+.btn:active:not(:disabled), .icon-btn:active, .viewtab:active { transform: translateY(1px); }
 
 .app { display: flex; flex-direction: column; height: 100vh; }
 
@@ -109,7 +130,7 @@ input[type="text"], input[type="search"], select {
   outline: none;
 }
 input[type="text"] { flex: 1; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
-input:focus, select:focus { border-color: var(--brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 20%, transparent); }
+input:focus, select:focus { border-color: var(--brand); box-shadow: var(--ring); }
 select { cursor: pointer; }
 
 .btn {
@@ -415,4 +436,34 @@ select { cursor: pointer; }
 .group-row .group-count {
   margin-left: 6px; padding: 0 7px; border-radius: 999px; font-size: 11px;
   color: var(--muted); background: var(--surface); border: 1px solid var(--border);
+}
+
+/* ================= design system polish (CF-98) ================= */
+/* subtle elevation + a gentle lift on hover for every card surface */
+.worst, .tile, .meta, .card, .add-form {
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--dur) var(--ease), border-color var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+.card:hover { box-shadow: var(--shadow-md); border-color: var(--border-str); }
+
+/* stronger hierarchy in the summary: the worst-status number is the hero */
+.worst b { font-size: var(--fs-2xl); font-weight: 700; }
+.tile b { font-weight: 700; font-variant-numeric: tabular-nums; }
+.worst span, .tile span, .field-label, .meta-row span { letter-spacing: .06em; }
+
+/* consistent radii from the scale (buttons/inputs/badges read as one family) */
+.btn, input[type="text"], input[type="search"], select { border-radius: var(--r-sm); }
+.badge, .pill-mini, .chip, .group-count { border-radius: var(--r-full); }
+.card, .palette, .drawer { border-radius: var(--r-lg); }
+
+/* primary button: crisper resting shadow + livelier hover */
+.btn-primary { box-shadow: 0 6px 18px -8px color-mix(in srgb, var(--brand) 65%, transparent); }
+.btn-primary:hover:not(:disabled) { filter: brightness(1.07); transform: translateY(-1px); }
+
+/* mono surfaces share one font token */
+.mono, .cell-check, .cell-target, #configHint, .change-transition, .pl-hint { font-family: var(--mono); }
+
+/* respect reduced-motion (also revisited in CF-103) */
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: .001ms !important; animation-duration: .001ms !important; }
 }
