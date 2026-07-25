@@ -58,6 +58,14 @@ running anything (the same problems as `checkfleet validate`).
 
 ![checkfleet desktop — finding detail drawer](assets/desktop-detail.png)
 
+## Changes since the last run
+
+After a second run, **Changes (N)** opens a drawer with only what moved — new,
+resolved, worsened or improved findings — so you see the delta at a glance
+during an incident (in-session, no history file needed).
+
+![checkfleet desktop — changes drawer](assets/desktop-changes.png)
+
 ## Light theme
 
 The theme toggle (top-right) switches light/dark and remembers your choice.

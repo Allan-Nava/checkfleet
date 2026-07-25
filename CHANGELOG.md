@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.60.0
+
+- Desktop (CF-64, M16): **vista storico/diff**. Il bottone **Changes (N)** apre un drawer col delta rispetto al run precedente della sessione — finding new/resolved/worsened/improved, color-coded — riusando `engine.DiffStatus`. `RunChecks` popola `Report.Changes` confrontando col run precedente in memoria; wiring testato. **Chiude M16 (Desktop GUI v2).**
+
 ## 0.59.0
 
 - Desktop (CF-63, M16): **notifiche native & settings persistiti**. Nuovo toggle **Notify**: dopo un run con worst BAD/ERROR l'app fa una notifica desktop nativa (via `beeep`, binding `App.Notify`). Config path, stack, intervallo, Auto e Notify sono ora **ricordati tra i riavvii** (localStorage). Nuova dip del modulo desktop: `github.com/gen2brain/beeep` (solo GUI, il modulo CLI resta invariato).

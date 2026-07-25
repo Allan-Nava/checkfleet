@@ -198,3 +198,19 @@ func TestExplainAndValidate(t *testing.T) {
 		t.Error("config with no modules should report problems")
 	}
 }
+
+func TestRunChecksDiff(t *testing.T) {
+	addr := startTCP(t)
+	cfg := writeConfig(t, "checkfleet.yml",
+		"timeout_seconds: 5\nchecks:\n  tcp:\n    targets:\n      - address: \""+addr+"\"\n")
+	app := NewApp("test")
+
+	first := app.RunChecks(cfg, "")
+	if len(first.Changes) != 0 {
+		t.Errorf("first run should have no changes, got %v", first.Changes)
+	}
+	second := app.RunChecks(cfg, "")
+	if len(second.Changes) != 0 {
+		t.Errorf("stable OK->OK run should have no changes, got %v", second.Changes)
+	}
+}

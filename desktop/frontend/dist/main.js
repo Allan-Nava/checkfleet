@@ -97,6 +97,9 @@
 
     const can = findings.length > 0;
     $("export").disabled = !can;
+    const changes = report.changes || [];
+    $("changes").disabled = changes.length === 0;
+    $("changes").textContent = changes.length ? `Changes (${changes.length})` : "Changes";
     setStatus(`${findings.length} findings · ${report.ok} OK / ${report.warn} WARN / ${report.bad} BAD / ${report.error} ERROR`);
   }
 
@@ -220,6 +223,20 @@
     openDrawer("Validate", body);
   }
 
+  const CHANGE_SYMBOL = { new: "+", resolved: "-", worsened: "!", improved: "~" };
+  function showChanges() {
+    const changes = (report && report.changes) || [];
+    if (!changes.length) return;
+    const rows = changes.map((c) => `
+      <div class="change change-${c.kind}">
+        <span class="change-sym">${CHANGE_SYMBOL[c.kind] || "•"}</span>
+        <span class="change-kind">${c.kind}</span>
+        <span class="mono">${escapeHtml(c.check)} ${escapeHtml(c.target)}</span>
+        <span class="change-transition">${c.from}→${c.to}</span>
+      </div>`).join("");
+    openDrawer("Changes since last run", rows);
+  }
+
   /* ---------------- wiring ---------------- */
   function bind() {
     $("run").addEventListener("click", run);
@@ -239,6 +256,7 @@
     $("export").addEventListener("click", () => save($("expfmt").value));
     $("theme").addEventListener("click", toggleTheme);
     $("validate").addEventListener("click", runValidate);
+    $("changes").addEventListener("click", showChanges);
 
     // Row click -> finding detail.
     $("rows").addEventListener("click", (e) => {
@@ -335,6 +353,11 @@
       worst: "ERROR",
       durationMs: 486,
       started: new Date().toISOString(),
+      changes: [
+        { check: "postgres", target: "pg-01:5432", from: "OK", to: "ERROR", kind: "new" },
+        { check: "redis", target: "redis-cache-01:6379", from: "OK", to: "WARN", kind: "new" },
+        { check: "certs", target: "old.example.com:443", from: "BAD", to: "OK", kind: "resolved" },
+      ],
     };
   }
 

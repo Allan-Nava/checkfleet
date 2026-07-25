@@ -205,3 +205,11 @@ select { cursor: pointer; }
 .drawer-msg { margin: 14px 0; color: var(--text); user-select: text; line-height: 1.6; }
 .drawer-body .problems { margin: 0; padding-left: 18px; color: var(--bad); }
 .drawer-body .problems li { margin: 6px 0; }
+
+/* changes drawer */
+.change { display: grid; grid-template-columns: 16px 70px 1fr auto; gap: 8px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 12.5px; }
+.change-sym { font-weight: 700; text-align: center; }
+.change-kind { color: var(--muted); text-transform: uppercase; font-size: 10.5px; letter-spacing: .05em; }
+.change-transition { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.change-new .change-sym, .change-worsened .change-sym { color: var(--bad); }
+.change-resolved .change-sym, .change-improved .change-sym { color: var(--ok); }

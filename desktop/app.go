@@ -27,6 +27,16 @@ type App struct {
 	mu    sync.Mutex
 	last  engine.Result
 	title string
+	prev  map[string]engine.Status // previous run's statuses, for the diff view
+}
+
+// Change is one status transition between the previous run and this one.
+type Change struct {
+	Check  string `json:"check"`
+	Target string `json:"target"`
+	From   string `json:"from"`
+	To     string `json:"to"`
+	Kind   string `json:"kind"` // new | resolved | worsened | improved
 }
 
 // NewApp returns an App tagged with the build version.
@@ -48,8 +58,13 @@ type Report struct {
 	Worst      string           `json:"worst"`
 	DurationMs int64            `json:"durationMs"`
 	Started    string           `json:"started"`
+	Changes    []Change         `json:"changes"`
 	Err        string           `json:"err,omitempty"`
 }
+
+// diffSep separates check and target in the diff key (a byte that can't appear
+// in either), so a target containing "/" is handled correctly.
+const diffSep = "\x1f"
 
 // Version returns the build version (shown in the UI footer).
 func (a *App) Version() string { return a.version }
@@ -95,6 +110,22 @@ func (a *App) RunChecks(configPath, stack string) Report {
 	rep.Worst = string(engine.Worst(res.Findings))
 	rep.DurationMs = res.Duration.Milliseconds()
 	rep.Started = res.Started.Format(time.RFC3339)
+
+	// Diff vs the previous run in this session (skipped on the first run).
+	curr := make(map[string]engine.Status, len(res.Findings))
+	for _, f := range res.Findings {
+		curr[f.Check+diffSep+f.Target] = f.Status
+	}
+	if a.prev != nil {
+		for _, c := range engine.DiffStatus(a.prev, curr) {
+			check, target, _ := strings.Cut(c.Key, diffSep)
+			rep.Changes = append(rep.Changes, Change{
+				Check: check, Target: target,
+				From: string(c.From), To: string(c.To), Kind: string(c.Kind),
+			})
+		}
+	}
+	a.prev = curr
 	return rep
 }
 
