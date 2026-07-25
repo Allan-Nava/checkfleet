@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.98.1
+
+- Desktop DX: `wails dev` non partiva (`frontend:dev:serverUrl: "auto"` senza watcher, con frontend statico → errore "unable to auto discover"). Impostato `frontend:dev:serverUrl: ""` così Wails serve direttamente `frontend/dist/` con hot-reload; ora `wails dev` funziona (finestra nativa + DevTools su http://localhost:34115 con i binding Go reali → dati veri, non il mock). README desktop aggiornato.
+
 ## 0.98.0
 
 - Timeout/retry **per-modulo** (CF-84, M23): nuova sezione `module_overrides` nel config — per ogni modulo si possono sovrascrivere `timeout_seconds`/`retries`/`retry_backoff_ms` (un campo a zero eredita il globale). Utile quando un modulo è più lento o più flaky degli altri (es. `postgres: {timeout_seconds: 10, retries: 2}`) senza cambiare i default globali. Nuovo `engine.Job` (check + Options) e `engine.RunJobs` (esegue ogni job con le sue Options); `RunWith` ora è un wrapper a Options uniforme sopra `RunJobs`, quindi il desktop resta invariato. `registry.OptionsFor`/`Jobs` applicano il merge; usati da `check`/`serve`/`--watch`. Testati (merge override + ordine dei job). **Chiude M23 (Engine & robustezza) e le milestone M21–M24.**

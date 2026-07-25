@@ -5,7 +5,7 @@
   "frontend:install": "",
   "frontend:build": "",
   "frontend:dev:watcher": "",
-  "frontend:dev:serverUrl": "auto",
+  "frontend:dev:serverUrl": "",
   "wailsjsdir": "./frontend/wailsjs",
   "author": {
     "name": "Allan Nava"

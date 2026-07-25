@@ -31,8 +31,15 @@ wails dev            # hot-reload dev app
 ```
 
 The frontend is plain HTML/CSS/JS under `frontend/dist/` — no bundler, no build
-step. `wails.json` has empty `frontend:install`/`frontend:build`. Edit those
-files directly.
+step. `wails.json` has empty `frontend:install`/`frontend:build`, and an **empty
+`frontend:dev:serverUrl`** so `wails dev` serves `frontend/dist/` directly and
+hot-reloads on save (there is no dev server to auto-discover). Edit the files
+directly.
+
+`wails dev` also serves the app in a browser at **http://localhost:34115** with
+full DevTools *and* the real Go bindings (`window.go.main.App`), so you get real
+data (not the preview mock) and a console to debug from. Set `CHECKFLEET_CONFIG`
+(and `CHECKFLEET_AUTORUN=1`) before `wails dev` to open straight into a fleet.
 
 ## Build & package (CF-18)
 
