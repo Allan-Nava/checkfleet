@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.102.4
+
+- Desktop (fix icona — via il bianco intorno): `appicon.png` aveva gli **angoli bianchi** invece che trasparenti, quindi nel Dock/Finder l'icona mostrava un brutto quadrato bianco attorno al plate arrotondato. Causa: `qlmanage` cuoce uno sfondo bianco quando rende l'SVG. `gen-icon.sh` ora rende con **Chrome headless** (`--default-background-color=00000000`), che preserva il canale alpha → angoli trasparenti; `appicon.png` rigenerato di conseguenza. L'SVG era già corretto (angoli trasparenti), il baco era solo nel rasterizzatore. Verificato: pixel d'angolo `(0,0,0,0)`.
+
 ## 0.102.3
 
 - Desktop (logo ridisegnato): il check e l'arco "c" si sovrapponevano in modo confuso (e il tentativo di separarli con una fascia scura si leggeva come una linea nera/glitch a dimensione dock). Ridisegnata la geometria: il check verde ora è **annidato dentro la "c"** e il suo braccio lungo esce pulito dall'apertura a destra **senza incrociare il teal** — i due segni restano distinti, niente sovrapposizioni né knockout. `appicon.png` + iconset completo rigenerati. Solo asset frontend.
