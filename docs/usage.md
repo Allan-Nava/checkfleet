@@ -80,6 +80,7 @@ checkfleet serve --config checkfleet.yml --listen :9876 --interval 60s
 | `--config` | `checkfleet.yml` | Path to the YAML config. |
 | `--listen` | `:9876` | Address to listen on. |
 | `--interval` | `60s` | How often to re-run the checks. |
+| `--log-format` | `text` | `text` (human) or `json` (structured) logs for run start/end and errors. |
 
 Metrics exposed:
 

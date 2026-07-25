@@ -20,8 +20,6 @@ func TestSelfMetrics(t *testing.T) {
 	}
 	out := SelfMetrics(res)
 	for _, want := range []string{
-		"checkfleet_run_duration_seconds 1.5",
-		"checkfleet_last_run_timestamp_seconds 1700000000",
 		`checkfleet_module_findings{module="http"} 2`,
 		`checkfleet_module_errors{module="http"} 1`,
 		`checkfleet_module_errors{module="certs"} 0`,
@@ -29,5 +27,11 @@ func TestSelfMetrics(t *testing.T) {
 		if !strings.Contains(out, want) {
 			t.Errorf("missing %q in:\n%s", want, out)
 		}
+	}
+	// run_duration / last_run_timestamp are emitted by Prometheus(), not here —
+	// avoid duplicate metric families on the scrape.
+	if strings.Contains(out, "checkfleet_run_duration_seconds") ||
+		strings.Contains(out, "checkfleet_last_run_timestamp_seconds") {
+		t.Errorf("SelfMetrics must not duplicate Prometheus() metrics:\n%s", out)
 	}
 }

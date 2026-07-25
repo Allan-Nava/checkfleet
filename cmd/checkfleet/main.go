@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -483,9 +484,11 @@ func runServe(args []string) error {
 	stack := fs.String("stack", "", "stack profile: overlays checkfleet.<stack>.yml onto the base")
 	listen := fs.String("listen", ":9876", "listen address")
 	interval := fs.Duration("interval", 60*time.Second, "interval between check re-runs")
+	logFormat := fs.String("log-format", "text", "log format: text or json (structured)")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
+	logger := newLogger(*logFormat)
 	cfg, err := loadConfig(*configPath, *stack)
 	if err != nil {
 		return err
@@ -506,7 +509,14 @@ func runServe(args []string) error {
 		latest = res
 		mu.Unlock()
 		ready.Store(true)
+		sum := engine.Summarize(res.Findings)
+		logger.Info("run complete",
+			"duration_ms", res.Duration.Milliseconds(),
+			"worst", string(engine.Worst(res.Findings)),
+			"ok", sum[engine.OK], "warn", sum[engine.WARN],
+			"bad", sum[engine.BAD], "error", sum[engine.ERROR])
 	}
+	logger.Info("serve start", "modules", len(checks), "listen", *listen, "interval", interval.String())
 	runOnce()
 	go func() {
 		t := time.NewTicker(*interval)
@@ -539,8 +549,16 @@ func runServe(args []string) error {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "checkfleet %s\n\nmetrics: /metrics\nhealth: /healthz /readyz\n%d modules, re-run every %s\n", version, len(checks), *interval)
 	})
-	fmt.Fprintf(os.Stderr, "checkfleet serve: %d modules on %s (interval %s)\n", len(checks), *listen, *interval)
 	return http.ListenAndServe(*listen, nil)
+}
+
+// newLogger returns a structured logger writing to stderr: JSON when format is
+// "json" (for log pipelines), otherwise the human-readable text handler.
+func newLogger(format string) *slog.Logger {
+	if format == "json" {
+		return slog.New(slog.NewJSONHandler(os.Stderr, nil))
+	}
+	return slog.New(slog.NewTextHandler(os.Stderr, nil))
 }
 
 // postRendered renders a chat payload and POSTs it to the webhook URL taken

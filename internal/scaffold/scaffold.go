@@ -90,6 +90,28 @@ var snippets = map[string]string{
 	"s3": `  s3:
     targets:
       - {name: backups, endpoint: https://s3.example.com, bucket: backups, region: us-east-1, access_key_env: S3_ACCESS_KEY, secret_key_env: S3_SECRET_KEY}`,
+	"mysql": `  mysql:
+    conn_warn_pct: 80
+    targets:
+      - {name: primary, dsn: "monitor:${MYSQL_PASSWORD}@tcp(db.example.com:3306)/"}`,
+	"etcd": `  etcd:
+    expect_members: 3
+    targets:
+      - {name: etcd-01, url: https://etcd-01:2379, insecure_skip_verify: true}`,
+	"clickhouse": `  clickhouse:
+    delay_warn_seconds: 30
+    delay_crit_seconds: 300
+    targets:
+      - {name: ch-01, url: http://ch-01:8123, username: monitor, password_env: CLICKHOUSE_PASSWORD}`,
+	"vault": `  vault:
+    targets:
+      - {name: vault-01, url: https://vault-01:8200, insecure_skip_verify: true}`,
+	"memcached": `  memcached:
+    mem_warn_pct: 90
+    targets: [cache-01, cache-02:11212]`,
+	"cassandra": `  cassandra:
+    targets:
+      - {name: cass-01, address: cass-01:9042, max_latency_ms: 500}`,
 }
 
 // defaultModules is the starter set used when the user names none.

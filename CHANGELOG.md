@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.95.0
+
+- Logging strutturato opzionale su `serve` (CF-89, M24): nuovo flag `--log-format text|json` (default `text`) via `log/slog` — logga `serve start` (moduli, listen, interval) e ogni `run complete` (durata_ms, worst, conteggi ok/warn/bad/error) in testo leggibile o **JSON** per le pipeline di log. **Chiude M24 (Osservabilità del tool).**
+- Fix: `output.SelfMetrics` (CF-87) duplicava `checkfleet_run_duration_seconds` e `checkfleet_last_run_timestamp_seconds`, già emesse da `output.Prometheus` → **metric family duplicata** sullo scrape `/metrics`. Ora `SelfMetrics` emette solo le metriche per-modulo (`checkfleet_module_findings`/`checkfleet_module_errors`); un test lo verifica.
+- Fix: `checkfleet init` non copriva i moduli aggiunti in M20/M21 (mysql, etcd, clickhouse, vault, memcached, cassandra) — la guard `TestSupportedCoversRegistry` era rossa. Aggiunti gli snippet mancanti in `internal/scaffold` (ognuno carica e valida); ora `init --list` e `init --modules` li includono e la guard è verde.
+
 ## 0.94.0
 
 - Desktop (CF-93, M25): **heatmap per modulo** nella Dashboard. Nuovo binding `App.TrendByModule` che collassa lo storico persistente (`internal/history`) nel worst status di ogni modulo per run; il frontend lo disegna come griglia modulo×run color-coded (`charts.js` → `svgHeatmap`, zero-dep, theme-aware): una riga per modulo, una colonna per run, cella colorata per status (assenza del modulo = cella vuota), con scroll orizzontale quando i run sono tanti. Click su una riga/cella → drawer con la **banda worst-status** di quel modulo nel tempo. Binding e geometria coperti da test (`TestTrendByModule`, `TestWorseOf`, smoke `charts.test.js`). Nessun cambio all'engine. _(solo frontend statico + binding desktop)_
