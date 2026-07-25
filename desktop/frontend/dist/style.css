@@ -160,7 +160,7 @@ select { cursor: pointer; }
   border-radius: 12px; background: var(--surface); border: 1px solid var(--border);
 }
 .worst .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--muted); box-shadow: 0 0 0 4px color-mix(in srgb, var(--muted) 22%, transparent); }
-.worst b { font-size: 20px; letter-spacing: -.01em; display: block; }
+.worst b { font-size: var(--fs-2xl); font-weight: 700; letter-spacing: -.01em; display: block; }
 .worst span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
 .worst.s-OK    .dot { background: var(--ok); box-shadow: 0 0 0 4px var(--ok-bg); }
 .worst.s-WARN  .dot { background: var(--warn); box-shadow: 0 0 0 4px var(--warn-bg); }
@@ -174,7 +174,7 @@ select { cursor: pointer; }
   display: flex; flex-direction: column; justify-content: center; padding: 10px 14px;
   border-radius: 12px; background: var(--surface); border: 1px solid var(--border);
 }
-.tile b { font-size: 24px; line-height: 1; }
+.tile b { font-size: 24px; line-height: 1; font-weight: 700; font-variant-numeric: tabular-nums; }
 .tile span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 4px; }
 .tile.ok   { background: var(--ok-bg);   border-color: color-mix(in srgb, var(--ok) 32%, transparent); }
 .tile.warn { background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn) 32%, transparent); }
@@ -446,9 +446,8 @@ select { cursor: pointer; }
 }
 .card:hover { box-shadow: var(--shadow-md); border-color: var(--border-str); }
 
-/* stronger hierarchy in the summary: the worst-status number is the hero */
-.worst b { font-size: var(--fs-2xl); font-weight: 700; }
-.tile b { font-weight: 700; font-variant-numeric: tabular-nums; }
+/* stronger hierarchy in the summary (worst-status hero + tabular figures are
+   set on the base .worst b / .tile b rules above) */
 .worst span, .tile span, .field-label, .meta-row span { letter-spacing: .06em; }
 
 /* consistent radii from the scale (buttons/inputs/badges read as one family) */
@@ -456,8 +455,7 @@ select { cursor: pointer; }
 .badge, .pill-mini, .chip, .group-count { border-radius: var(--r-full); }
 .card, .palette, .drawer { border-radius: var(--r-lg); }
 
-/* primary button: crisper resting shadow + livelier hover */
-.btn-primary { box-shadow: 0 6px 18px -8px color-mix(in srgb, var(--brand) 65%, transparent); }
+/* primary button: livelier hover lift (resting shadow set on .btn-primary above) */
 .btn-primary:hover:not(:disabled) { filter: brightness(1.07); transform: translateY(-1px); }
 
 /* mono surfaces share one font token */

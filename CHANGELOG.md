@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.104.1
+
+- Desktop (fix CI): il design-system pass di CF-98 ri-dichiarava `.worst b`, `.tile b` e `.btn-primary` in coda, facendo fallire lo stylelint del workflow "Desktop tests" (`no-duplicate-selectors`). Fuse quelle proprietà nelle regole originali; stylelint di nuovo verde (verificato in locale con `stylelint-config-recommended`). Nessun cambiamento visivo.
+
 ## 0.104.0
 
 - Desktop (CF-98, M26 — design system pass): introdotto un layer di **design token** nel CSS della GUI (zero-dep, nessun build) — scala di spaziatura, raggi, scala tipografica, elevazioni ombra (`--shadow-sm/md`), motion (`--ease`/`--dur`) e un **focus-ring** unico. Bottoni/input/badge/chip/card ora condividono raggi e stati coerenti: `:focus-visible` uniforme su tutti i controlli, feedback "press" sui bottoni, elevazione + lift in hover sulle card, gerarchia più forte nel summary (worst-status come numero hero, cifre tabulari) e rispetto di `prefers-reduced-motion`. Parità light/dark verificata. Solo `desktop/frontend/dist/style.css`; nessun cambio a JS/binding/engine. Apre M26 (polish UX/UI desktop).
