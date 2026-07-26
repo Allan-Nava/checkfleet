@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.112.2
+
+- Docs (desktop, dettaglio): aggiunti gli **screenshot** delle sezioni nuove — `docs/assets/desktop-dashboard.png` (tutti i grafici) e `desktop-history.png` (drawer del history browser), generati dal frontend statico via Chrome headless. Arricchita `docs/desktop.md` con una **tabella delle scorciatoie da tastiera**, l'elenco dei comandi della **command palette** e una nota sugli stati (progress bar, spinner, toast, error card, `prefers-reduced-motion`, accessibilità).
+
 ## 0.112.1
 
 - Docs (sync desktop): aggiornate `docs/desktop.md` (sito) e `desktop/README.md` alle feature spedite in M25/M26/M27, che erano rimaste indietro. Aggiunte le sezioni **Dashboard** (stacked-area, donut, banda worst-status, heatmap modulo×run, availability/SLO, metric-over-time), **History browser** (sfoglia/confronta run passati) e "**Views, command palette & shortcuts**". Corretti riferimenti stale: l'editor si apre dalla **tab Config** (non più dal bottone ⚙), e la tabella dei finding ora ha la colonna **Trend** con sparkline inline. Nessun cambio di codice.

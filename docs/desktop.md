@@ -19,12 +19,29 @@ The titlebar switches between three views:
 - **Dashboard** — charts over the persisted history (see [Dashboard](#dashboard)).
 - **Config** — the YAML editor for the selected file (see [Edit the config](#edit-the-config)).
 
-Press **⌘K** (Ctrl-K) for a **command palette** — a searchable list of every
-action (run, switch view, validate, export, toggle theme…). Keyboard shortcuts:
-`⌘↵` run, `1`/`2`/`3` switch view, `/` focus the filter, `r` run, `Esc` closes
-any drawer or the palette. Long actions (a run, a history read) show a top
-progress bar and a spinner on **Run**, and outcomes (exported, saved, validated)
-pop a non-blocking **toast**.
+The **command palette** (`⌘K` / `Ctrl-K`) is a searchable list of every action —
+Run, Go to Fleet / Dashboard / Config, Focus filter, Validate, Show trend,
+Export as Markdown / JSON / HTML, Toggle theme — navigable with the arrow keys
+and **Enter**.
+
+### Keyboard shortcuts
+
+| Key | Action |
+|-----|--------|
+| `⌘K` / `Ctrl-K` | Open the command palette |
+| `⌘↵` / `Ctrl-↵` | Run the checks |
+| `1` / `2` / `3` | Switch to Fleet / Dashboard / Config |
+| `/` | Focus the filter box |
+| `r` | Run the checks |
+| `Esc` | Close the palette or any open drawer |
+
+Long actions (a run, a history read) show a thin **progress bar** under the
+toolbar and a spinner on **Run**; the outcome of an action (exported, config
+saved, validated) pops a non-blocking **toast** in the corner. Empty and error
+states are explicit — a first run shows a loading state, a config that can't run
+shows an inline error card with **Retry** and **Open config editor**. The whole
+app respects `prefers-reduced-motion` and is keyboard-navigable (focus rings,
+focus-trapped dialogs, ARIA roles).
 
 ## The fleet view
 
@@ -97,6 +114,8 @@ to the config), so you see how the fleet behaves over time rather than just now:
 Every chart is hand-drawn inline SVG — no chart library, no CDN — and follows
 the light/dark theme. The Dashboard refreshes after each Run.
 
+![checkfleet desktop — dashboard](assets/desktop-dashboard.png)
+
 ## Changes since the last run
 
 After a second run, **Changes (N)** opens a drawer with only what moved — new,
@@ -124,6 +143,8 @@ its findings (status and numeric value — the compact history file doesn't stor
 messages), and **Compare with previous** shows exactly what changed versus the
 run before it (new / resolved / worsened / improved) — the same delta as
 **Changes**, but between historical runs.
+
+![checkfleet desktop — history browser](assets/desktop-history.png)
 
 ## Group by module
 
