@@ -1,6 +1,22 @@
 package main
 
-import "testing"
+import (
+	"net"
+	"testing"
+)
+
+// closedTCP returns an address that nothing is listening on (a port opened then
+// immediately released), so a dial is refused fast — a deterministic non-OK.
+func closedTCP(t *testing.T) string {
+	t.Helper()
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	addr := ln.Addr().String()
+	ln.Close()
+	return addr
+}
 
 // The alert dedup is the heart of CF-109 — it decides when the background
 // monitor is allowed to interrupt you. Pure function, exhaustive table.
@@ -61,6 +77,50 @@ func TestMonitorSampleBaseline(t *testing.T) {
 	}
 	if !changed {
 		t.Fatal("OK → ERROR must raise an alert")
+	}
+}
+
+// Muting every finding must drop the effective worst to OK, so the monitor
+// neither alerts nor raises the badge (CF-111).
+func TestMonitorMuteAware(t *testing.T) {
+	addr := closedTCP(t)
+	cfg := writeConfig(t, "checkfleet.yml",
+		"timeout_seconds: 5\nchecks:\n  tcp:\n    targets:\n      - address: \""+addr+"\"\n")
+
+	app := NewApp("test")
+	rep := app.RunChecks(cfg, "")
+	if rep.Worst == "OK" {
+		t.Fatalf("expected a non-OK finding for a refused port, got worst=OK")
+	}
+
+	// With no mutes, the effective worst matches the raw worst.
+	if got := app.effectiveWorst(cfg, rep.Findings); got != rep.Worst {
+		t.Fatalf("effectiveWorst with no mutes = %q, want raw %q", got, rep.Worst)
+	}
+
+	// Mute every finding → effective worst collapses to OK.
+	var keys []string
+	for _, f := range rep.Findings {
+		keys = append(keys, cfg+diffSep+f.Check+diffSep+f.Target)
+	}
+	app.SetMutedKeys(keys)
+	if got := app.effectiveWorst(cfg, rep.Findings); got != "OK" {
+		t.Fatalf("effectiveWorst with all muted = %q, want OK", got)
+	}
+
+	// A sample now reports OK and, coming from the (empty) baseline, no alert.
+	worst, changed := app.sample(cfg, "")
+	if worst != "OK" {
+		t.Fatalf("sample worst with all muted = %q, want OK", worst)
+	}
+	if changed {
+		t.Fatal("all-muted OK sample must not alert")
+	}
+
+	// Lifting the mutes brings the problem back.
+	app.SetMutedKeys(nil)
+	if got := app.effectiveWorst(cfg, rep.Findings); got != rep.Worst {
+		t.Fatalf("effectiveWorst after unmute = %q, want %q", got, rep.Worst)
 	}
 }
 

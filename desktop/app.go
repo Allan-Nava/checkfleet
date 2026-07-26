@@ -40,6 +40,13 @@ type App struct {
 	monMu     sync.Mutex
 	monCancel context.CancelFunc
 	monLast   string // last observed worst status ("" = no sample yet)
+
+	// Muted finding keys (CF-111), pushed from the frontend which owns the mute
+	// store. The monitor excludes these when computing the worst status for its
+	// alert decision, so a snoozed finding neither re-notifies nor raises the
+	// badge. Key = configPath \x1f check \x1f target (same as diffSep / the JS key).
+	mutedMu   sync.Mutex
+	mutedKeys map[string]bool
 }
 
 // Change is one status transition between the previous run and this one.

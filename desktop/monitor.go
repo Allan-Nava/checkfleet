@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/Allan-Nava/checkfleet/internal/engine"
 	"github.com/gen2brain/beeep"
 	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -53,6 +54,39 @@ func monitorAlert(prev, cur string) (notify bool, title, msg string) {
 	default:
 		return true, "checkfleet — improved", "Fleet improved: " + prev + " → " + cur
 	}
+}
+
+// SetMutedKeys replaces the set of muted finding keys (CF-111). The frontend
+// owns the mute store (localStorage) and pushes the currently-active keys here
+// whenever they change, so the Go monitor can honour them. Key format is
+// configPath \x1f check \x1f target — the same key the JS side builds.
+func (a *App) SetMutedKeys(keys []string) {
+	set := make(map[string]bool, len(keys))
+	for _, k := range keys {
+		set[k] = true
+	}
+	a.mutedMu.Lock()
+	a.mutedKeys = set
+	a.mutedMu.Unlock()
+}
+
+// effectiveWorst is the worst status over the findings that are NOT muted — the
+// status the monitor actually alerts on. With no mutes it equals the raw worst.
+func (a *App) effectiveWorst(configPath string, findings []engine.Finding) string {
+	a.mutedMu.Lock()
+	muted := a.mutedKeys
+	a.mutedMu.Unlock()
+
+	worst := "OK"
+	for _, f := range findings {
+		if len(muted) > 0 && muted[configPath+diffSep+f.Check+diffSep+f.Target] {
+			continue
+		}
+		if statusRank[string(f.Status)] > statusRank[worst] {
+			worst = string(f.Status)
+		}
+	}
+	return worst
 }
 
 // StartMonitor begins polling configPath every everySeconds (floored at
@@ -117,7 +151,8 @@ func (a *App) monitorLoop(ctx context.Context, configPath, stack string, every t
 // skipped when there is no GUI context, keeping tests silent).
 func (a *App) sample(configPath, stack string) (string, bool) {
 	rep := a.RunChecks(configPath, stack)
-	worst := rep.Worst
+	// Alert on the mute-aware worst: a snoozed finding must not re-notify (CF-111).
+	worst := a.effectiveWorst(configPath, rep.Findings)
 	if rep.Err != "" {
 		worst = "ERROR" // a config that won't load is an ERROR for the badge
 	}

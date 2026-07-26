@@ -216,9 +216,23 @@
       setStatus("configuration error"); return;
     }
 
+    const findings = report.findings || [];
+
+    // Auto-clear "until recovery" mutes whose target is green again (CF-111):
+    // the snooze has served its purpose, so the finding counts once more.
+    let cleared = false;
+    findings.forEach((f) => {
+      if (f.status !== "OK") return;
+      const rec = acks[ackKey(f)];
+      if (rec && rec.until === CFAcks.UNTIL_RECOVERY) { acks = CFAcks.unmute(acks, ackKey(f)); cleared = true; }
+    });
+    if (cleared) { saveAcks(); syncMutedKeys(); }
+
     // summary (kept hidden while the editor/dashboard views own the screen)
     summary.hidden = editorOn || dashboardOn;
-    const worst = report.worst || "OK";
+    // The worst pill respects mutes: a snoozed problem doesn't dominate the
+    // headline. Raw counts below stay raw; the status bar carries "N muted".
+    const worst = worstOf(findings.filter((f) => !findingMuted(f)).map((f) => f.status));
     const worstEl = $("worst");
     worstEl.className = "worst s-" + worst;
     $("worstLabel").textContent = worst;
@@ -226,7 +240,6 @@
     $("cWARN").textContent = report.warn;
     $("cBAD").textContent = report.bad;
     $("cERROR").textContent = report.error;
-    const findings = report.findings || [];
     $("mTotal").textContent = findings.length;
     $("mDur").textContent = report.durationMs != null ? report.durationMs + " ms" : "—";
     $("mStarted").textContent = report.started ? new Date(report.started).toLocaleTimeString() : "—";
@@ -478,16 +491,27 @@
   function saveAcks() { try { localStorage.setItem("cf-acks", JSON.stringify(acks)); } catch (_) {} }
   function ackKey(f) { return CFAcks.key($("configPath").value, f.check, f.target); }
   function findingMuted(f) { return CFAcks.isMuted(acks, ackKey(f), Date.now()); }
+  // syncMutedKeys pushes the currently-active mute keys to Go so the background
+  // monitor honours them (CF-111). No-op in the browser preview.
+  function activeMutedKeys() {
+    const now = Date.now();
+    return Object.keys(acks).filter((k) => CFAcks.isMuted(acks, k, now));
+  }
+  function syncMutedKeys() {
+    try { if (Backend.SetMutedKeys && !IS_MOCK) Backend.SetMutedKeys(activeMutedKeys()); } catch (_) {}
+  }
   function muteFinding(f, choice) {
     const now = Date.now();
     acks = CFAcks.mute(acks, { key: ackKey(f), until: CFAcks.durationUntil(choice, now), at: now });
     saveAcks();
+    syncMutedKeys();
     render();
     toast("Muted " + f.check + " · " + f.target, { timeout: 2200 });
   }
   function unmuteFinding(f) {
     acks = CFAcks.unmute(acks, ackKey(f));
     saveAcks();
+    syncMutedKeys();
     render();
     toast("Unmuted " + f.check + " · " + f.target, { timeout: 2000 });
   }
@@ -1403,6 +1427,7 @@
     loadWorkspace();
     loadPresets();
     loadAcks();
+    syncMutedKeys();
     $("configPath").value = s.config || startup.path || "";
     if ($("configPath").value) addToWorkspace($("configPath").value);
     if (s.interval) $("interval").value = s.interval;

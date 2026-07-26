@@ -36,6 +36,12 @@ command palette** and keyboard shortcuts (CF-96).
   them, and **Hide muted** filters them out. Keyed by config+check+target with
   **absolute** expiries pruned on load; local-only (no YAML change, no secrets).
   Logic in the testable `acks.js` UMD module (`acks.test.js`, `node --test`).
+- **Mute-aware worst & monitor** (CF-111): the worst-status pill and the
+  background monitor's change-notifications are computed over **un-muted**
+  findings, so a snoozed problem stops dominating the headline and won't
+  re-notify; *until recovery* mutes auto-clear when the target goes green. The
+  mute set is pushed to Go (`SetMutedKeys`) so the off-thread monitor honours it
+  (`effectiveWorst`, tested in `TestMonitorMuteAware`).
 - **Background monitor** (CF-109): **Auto** starts a **Go-driven** periodic run
   (not just a JS timer) that emits samples the UI renders off-thread, with a
   **● monitoring** status chip colored by worst status. A native notification

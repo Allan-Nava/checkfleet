@@ -128,9 +128,23 @@ count; **Hide muted** in the toolbar takes them off-screen entirely.
 Mutes are keyed by **config + check + target**, so they follow the exact target
 across runs and don't leak between fleets. Timed snoozes store an **absolute**
 expiry and are pruned on load, so a mute you set at 6pm for 1h is gone by 7pm
-even if you reopened the app in between; *until recovery* mutes stay until you
-lift them. Everything is **local** (browser storage): a mute is an operator
-note, never a change to your YAML, and holds no secrets.
+even if you reopened the app in between; *until recovery* mutes are cleared
+automatically the moment the target goes green again. Everything is **local**
+(browser storage): a mute is an operator note, never a change to your YAML, and
+holds no secrets.
+
+**Muting is more than cosmetic** — it feeds the headline and the monitor. The
+**worst-status** pill is computed over *un-muted* findings, so a fleet whose only
+red items are snoozed reads as its next-worst level, not ERROR:
+
+![checkfleet desktop — worst status respects mutes](assets/desktop-mute-aware.png)
+
+The raw count tiles stay raw (you still see *2 ERROR*), and the status bar keeps
+the honest *“N muted”* tally — nothing is hidden, it just stops shouting. The
+[background monitor](#background-monitoring) uses the same mute-aware worst:
+a snoozed finding won't fire a native notification or raise the ● monitoring
+badge until its mute lifts. (The mute set is pushed to the Go side so the
+off-thread monitor honours it too.)
 
 ## Dashboard
 
@@ -248,7 +262,9 @@ colored by the latest worst status.
 The point of a monitor is to tell you when something *changes*, not to nag: a
 native OS notification fires **only when the worst status crosses a boundary** —
 *degraded* (e.g. WARN → ERROR), *improved*, or *recovered to OK*. A fleet that
-stays BAD for an hour notifies once, not sixty times. Starting the monitor on an
+stays BAD for an hour notifies once, not sixty times. The crossing is computed
+over **un-muted** findings ([mutes](#mute-a-finding) are pushed to the monitor),
+so a problem you've snoozed won't wake you. Starting the monitor on an
 already-broken fleet tells you straight away; starting it on a healthy one is
 silent until something breaks. Changing the config, stack or interval re-points
 the monitor automatically.
