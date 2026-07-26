@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.122.4
+
+- Docs (backlog, planning): aggiunta la milestone **M31 — Ergonomia & onboarding (fase 4)**: rendere checkfleet più usabile e utile, dal primo avvio al valore in pochi minuti, con meno attrito nel diagnosticare e nel capire la copertura. Item pianificati (CF-129..133): **`checkfleet doctor`** (preflight “perché non funziona”: env non settate, target malformati, probe di raggiungibilità), **`checkfleet targets`** (coverage + diff contro inventory Ansible), **config recipes** (`init --recipe web|db|edge|media`), **validate con suggerimenti** (typo modulo → match più vicino, env mancante, fix azionabili), **scaffold da inventory** (`init --from-inventory hosts.ini` — chiude M31). Tutto zero-dep, riusa `internal/*`, testabile in-test. Nessun cambiamento al software — solo pianificazione; ogni item sarà una release a sé.
+
 ## 0.122.3
 
 - Docs (backlog, planning): ampliata **M30 — Insight & intelligence** con altri quattro item (CF-125..128), sempre funzioni pure su history in `internal/insight`, zero-dep, riusati da CLI + desktop: **SLO error-budget & burn rate** (fast/slow burn stile SRE, “budget finito tra ~X”), **MTTR & durata outage corrente** (recovery time + “down da 47m, di solito ~8m”), **fleet health score** (indice 0–100 pesato per severità+stabilità, con trend), **“what changed” digest** (riassunto narrativo new/resolved/degrading/flapping, `--digest since=…` + drawer, inoltrabile ai sink M22 — chiude M30). Nessun cambiamento al software — solo pianificazione; ogni item sarà una release a sé.
