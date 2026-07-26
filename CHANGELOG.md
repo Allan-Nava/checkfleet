@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.114.0
+
+- Desktop (CF-106, M27 — "Send to…"): nuovo controllo **Send…** nella barra dei finding che inoltra il run corrente a **Slack / Discord / Teams / webhook** riusando i renderer di `internal/output` — nessuna logica duplicata. L'URL di destinazione arriva **solo da una variabile d'ambiente** (`SLACK_WEBHOOK`, `DISCORD_WEBHOOK`, `TEAMS_WEBHOOK`, `CHECKFLEET_WEBHOOK`): non si inserisce mai nella UI, quindi nessun segreto vive nell'app. L'esito torna via toast (inviato / non configurato con il nome dell'env da settare / errore). Binding `App.Send(target)` + `App.SendTargets`, con TDD via `httptest` (`TestSend`: nessun run, env vuoto, target ignoto, invio ok con payload ricevuto). Docs (`docs/desktop.md`, `desktop/README.md`) aggiornate nello stesso commit. Il report/chiusura di issue GitHub/GitLab dalla GUI resta un follow-up (serve forge client + token).
+
 ## 0.113.0
 
 - Desktop (CF-105, M27 — config editor v2): il form **Add endpoint** copre ora 10 check comuni — oltre a http/certs/tcp/dns sono stati aggiunti **tls, redis, nats, smtp, grpc, postgres**. `engine.AddEndpoint` è stato esteso di conseguenza (target scalari per tls/redis/nats; mappa per smtp/grpc/postgres, con un campo `Extra` che diventa `service` per grpc e `password_env` per postgres), sempre preservando commenti e formattazione dello YAML. Aggiunta la **validazione live**: mentre scrivi nell'editor un badge mostra `✓ valid` o `✕ N problems` (dettagli in tooltip), la stessa `engine.Validate` del pulsante Validate ma sul testo non salvato. Nessun segreto nella UI — per postgres si indica il *nome* della variabile d'ambiente della password, non la password. TDD: `TestAddEndpointMoreKinds` nell'engine + firma del binding `App.AddEndpoint` aggiornata; docs (`docs/desktop.md`, `desktop/README.md`) aggiornate con screenshot.

@@ -31,6 +31,10 @@ command palette** and keyboard shortcuts (CF-96).
 - **History & diff**: in-session **Changes** (CF-64), a persistent worst-status
   **Trend** sparkline (CF-70), and a **History browser** to open and compare any
   two past runs (CF-104) — all from the `.<name>.history.jsonl` beside the config.
+- **Send to a chat/webhook** (CF-106): a **Send…** control posts the current run
+  to Slack / Discord / Teams / a generic webhook, reusing the `internal/output`
+  renderers. The URL comes only from an env var (`SLACK_WEBHOOK`,
+  `DISCORD_WEBHOOK`, `TEAMS_WEBHOOK`, `CHECKFLEET_WEBHOOK`) — never the UI.
 - **Details, explain, validate, notify** (CF-62/63): a detail drawer with Copy,
   module **Explain**, config **Validate**, and native desktop **Notify** on a
   bad run.

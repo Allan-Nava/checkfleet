@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
@@ -718,6 +720,86 @@ func (a *App) AddEndpoint(yamlText, kind, value, recordType, extra string, expec
 	return engine.AddEndpoint(yamlText, engine.EndpointSpec{
 		Kind: kind, Value: value, RecordType: recordType, Extra: extra, ExpectStatus: expectStatus,
 	})
+}
+
+// SendResult is the outcome of a "Send to…" action (CF-106). It never carries
+// the webhook URL — only whether it went and a human message.
+type SendResult struct {
+	OK      bool   `json:"ok"`
+	Target  string `json:"target"`
+	Message string `json:"message"`
+}
+
+// sendTarget describes where a run can be sent: the env var holding the webhook
+// URL (never entered in the UI) and the renderer that builds the payload.
+type sendTarget struct {
+	env    string
+	render func(engine.Result, string) (string, error)
+}
+
+// sendTargets maps a "Send to…" target to its webhook env var + renderer,
+// reusing the same renderers as the CLI's --output.
+var sendTargets = map[string]sendTarget{
+	"slack":   {"SLACK_WEBHOOK", output.Slack},
+	"discord": {"DISCORD_WEBHOOK", output.Discord},
+	"teams":   {"TEAMS_WEBHOOK", output.Teams},
+	"webhook": {"CHECKFLEET_WEBHOOK", func(r engine.Result, _ string) (string, error) { return output.JSON(r) }},
+}
+
+// Send posts the last run to a chat/webhook target. The URL comes only from the
+// target's env var — the app never asks for or stores it.
+func (a *App) Send(target string) SendResult {
+	a.mu.Lock()
+	res, title := a.last, a.title
+	a.mu.Unlock()
+
+	if len(res.Findings) == 0 {
+		return SendResult{Target: target, Message: "nothing to send yet — press Run first"}
+	}
+	spec, ok := sendTargets[target]
+	if !ok {
+		return SendResult{Target: target, Message: "unknown target " + target}
+	}
+	url := os.Getenv(spec.env)
+	if url == "" {
+		return SendResult{Target: target, Message: "not configured: set the " + spec.env + " env var (URLs are never entered in the app)"}
+	}
+	payload, err := spec.render(res, title)
+	if err != nil {
+		return SendResult{Target: target, Message: "render failed: " + err.Error()}
+	}
+	if err := postJSON(a.context(), url, payload); err != nil {
+		return SendResult{Target: target, Message: err.Error()}
+	}
+	return SendResult{OK: true, Target: target, Message: "sent to " + target}
+}
+
+// SendTargets lists the targets and whether each is configured (its env var is
+// set), so the GUI can label the menu without ever revealing the URL.
+func (a *App) SendTargets() map[string]bool {
+	out := make(map[string]bool, len(sendTargets))
+	for name, spec := range sendTargets {
+		out[name] = os.Getenv(spec.env) != ""
+	}
+	return out
+}
+
+// postJSON POSTs a JSON payload to a webhook URL, accepting any 2xx.
+func postJSON(ctx context.Context, url, payload string) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBufferString(payload))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("sending to the webhook: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("the webhook responded HTTP %d", resp.StatusCode)
+	}
+	return nil
 }
 
 // ScheduleSnippet returns copy-paste cron and serve commands that run the given

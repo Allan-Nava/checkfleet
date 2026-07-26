@@ -84,6 +84,26 @@ launches.
   save the current run via a native save dialog. Same renderers as the CLI's
   `--output`.
 
+## Send to a chat or webhook
+
+Beyond saving a file, **Send…** posts the current run straight to a chat or
+webhook, reusing the same renderers as the CLI's `--output`. Pick a target —
+**Slack**, **Discord**, **Teams** or a generic **Webhook** (JSON) — and click
+**Send…**; a toast reports whether it went.
+
+The destination URL is **never entered in the app** — it comes only from an
+environment variable, so no secret lives in the GUI or its settings:
+
+| Target | Env var |
+|--------|---------|
+| Slack | `SLACK_WEBHOOK` |
+| Discord | `DISCORD_WEBHOOK` |
+| Teams | `TEAMS_WEBHOOK` |
+| Webhook (generic JSON) | `CHECKFLEET_WEBHOOK` |
+
+If the target's env var isn't set, the toast tells you which one to set instead
+of sending anything.
+
 ## Details, validate & explain
 
 Click a finding row to open a **detail drawer** with the full message and a

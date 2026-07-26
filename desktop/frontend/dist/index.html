@@ -54,6 +54,9 @@
     </div>
 
     <!-- indeterminate progress bar (shown during a run / fetch) -->
+    <!-- [html-validate-disable-next prefer-native-element -- an indeterminate <progress> can't carry
+         the custom sliding sliver: with appearance:none there is no inner box to animate
+         (::-webkit-progress-value doesn't apply while indeterminate), so the role stays on a div] -->
     <div class="progress" id="progress" role="progressbar" aria-label="Running checks" hidden><i></i></div>
 
     <!-- summary -->
@@ -97,6 +100,13 @@
         <option value="otlp">OTLP</option>
       </select>
       <button class="btn" id="export" disabled>Export</button>
+      <select id="sendfmt" title="Send the current run to a chat/webhook (URL from an env var)">
+        <option value="slack">Slack</option>
+        <option value="discord">Discord</option>
+        <option value="teams">Teams</option>
+        <option value="webhook">Webhook</option>
+      </select>
+      <button class="btn" id="send" disabled>Send…</button>
     </div>
 
     <!-- findings table -->
@@ -238,6 +248,9 @@
     <div class="palette" id="paletteBox" hidden role="dialog" aria-modal="true" aria-label="Command palette">
       <input type="text" id="paletteInput" placeholder="Type a command…" spellcheck="false" autocomplete="off"
              role="combobox" aria-expanded="true" aria-controls="paletteList" aria-autocomplete="list">
+      <!-- [html-validate-disable-next prefer-native-element -- this is the ARIA combobox popup for the
+           command palette: the list is filtered as you type and focus stays in the input via
+           aria-activedescendant. A native <select> can do neither] -->
       <ul class="palette-list" id="paletteList" role="listbox" aria-label="Commands"></ul>
     </div>
 

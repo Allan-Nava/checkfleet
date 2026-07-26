@@ -112,6 +112,7 @@
       { check: "postgres", target: "pg-01:5432", from: "OK", to: "ERROR", kind: "new" },
       { check: "redis", target: "redis-cache-01:6379", from: "WARN", to: "OK", kind: "resolved" },
     ]),
+    Send: async (target) => ({ ok: true, target, message: "sent to " + target }),
     ScheduleSnippet: async (path, interval) =>
       "# cron — run every 5 min:\n*/5 * * * * checkfleet check all --config " +
       (path || "checkfleet.yml") + " --exit-on-bad\n\n" +
@@ -266,6 +267,7 @@
 
     const can = findings.length > 0;
     $("export").disabled = !can;
+    $("send").disabled = !can;
     const changes = report.changes || [];
     $("changes").disabled = changes.length === 0;
     $("changes").textContent = changes.length ? `Changes (${changes.length})` : "Changes";
@@ -363,6 +365,19 @@
       const path = await Backend.SaveReport(fmt);
       if (path) { setStatus("saved: " + path); toast("Exported " + fmt.toUpperCase() + " → " + path, { kind: "success" }); }
     } catch (e) { setStatus("export error: " + e); toast("Export failed: " + e, { kind: "error" }); }
+  }
+
+  // sendReport posts the current run to a chat/webhook target (CF-106). The URL
+  // lives only in an env var — the app never asks for it; the toast reports back.
+  async function sendReport() {
+    const target = $("sendfmt").value;
+    setStatus("sending to " + target + "…");
+    try {
+      const r = await Backend.Send(target);
+      const kind = r.ok ? "success" : (/not configured/.test(r.message) ? "warn" : "error");
+      toast(r.message, { kind });
+      setStatus(r.message);
+    } catch (e) { toast("Send failed: " + e, { kind: "error" }); }
   }
 
   function toggleTheme() {
@@ -938,6 +953,7 @@
     $("auto").addEventListener("change", (e) => { setAutoRefresh(e.target.checked); saveSettings(); });
     $("interval").addEventListener("change", () => { if ($("auto").checked) setAutoRefresh(true); saveSettings(); });
     $("export").addEventListener("click", () => save($("expfmt").value));
+    $("send").addEventListener("click", sendReport);
     $("theme").addEventListener("click", toggleTheme);
     $("validate").addEventListener("click", runValidate);
     $("changes").addEventListener("click", showChanges);

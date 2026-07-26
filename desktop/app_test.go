@@ -2,7 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"io"
 	"net"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -513,5 +516,49 @@ func TestHistoryBrowser(t *testing.T) {
 	// Empty config path is a no-op, not an error.
 	if r, err := app.HistoryRuns("", 0); err != nil || r != nil {
 		t.Errorf("empty path HistoryRuns: want nil,nil got %v,%v", r, err)
+	}
+}
+
+func TestSend(t *testing.T) {
+	app := NewApp("test")
+
+	// No run yet → not sent.
+	if r := app.Send("slack"); r.OK {
+		t.Error("Send with no cached run should not be OK")
+	}
+
+	// Cache a run to send.
+	app.last = engine.Result{Findings: []engine.Finding{
+		{Check: "http", Target: "x", Status: engine.BAD, Message: "500"},
+	}}
+	app.title = "all"
+
+	// Env var unset → not sent, message names the env var (no HTTP attempted).
+	t.Setenv("SLACK_WEBHOOK", "")
+	if r := app.Send("slack"); r.OK || !strings.Contains(r.Message, "SLACK_WEBHOOK") {
+		t.Errorf("unset env: %+v", r)
+	}
+	// Unknown target.
+	if r := app.Send("nope"); r.OK {
+		t.Error("unknown target should not be OK")
+	}
+
+	// Configured → posts to the in-test server and delivers a JSON payload.
+	var got string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		b, _ := io.ReadAll(r.Body)
+		got = string(b)
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+	t.Setenv("SLACK_WEBHOOK", srv.URL)
+	if r := app.Send("slack"); !r.OK {
+		t.Fatalf("configured send should be OK: %+v", r)
+	}
+	if !strings.Contains(got, "\"") {
+		t.Errorf("server received an empty/odd payload: %q", got)
+	}
+	if !app.SendTargets()["slack"] {
+		t.Error("SendTargets should report slack as configured")
 	}
 }
