@@ -21,6 +21,9 @@
         <button class="viewtab" data-view="config" role="tab">Config</button>
       </nav>
       <div class="tb-right" style="--wails-draggable:no-drag">
+        <button class="icon-btn" id="workspaceBtn" title="Workspace — your fleets" aria-label="Workspace">
+          <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M4 5h7v6H4zm0 8h7v6H4zm9-8h7v6h-7zm0 8h7v6h-7z"/></svg>
+        </button>
         <button class="icon-btn palette-btn" id="palette" title="Command palette (⌘K)" aria-label="Command palette">⌘K</button>
         <button class="icon-btn" id="theme" title="Toggle light/dark theme" aria-label="Theme">
           <svg class="i-sun" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10m0-5 2 3h-4zm0 20-2-3h4zM2 12l3-2v4zm20 0-3 2v-4zM4.9 4.9l3.5 1.4-2.1 2.1zm14.2 14.2-3.5-1.4 2.1-2.1zM19.1 4.9l-1.4 3.5-2.1-2.1zM4.9 19.1l1.4-3.5 2.1 2.1z"/></svg>
@@ -54,9 +57,7 @@
     </div>
 
     <!-- indeterminate progress bar (shown during a run / fetch) -->
-    <!-- [html-validate-disable-next prefer-native-element -- an indeterminate <progress> can't carry
-         the custom sliding sliver: with appearance:none there is no inner box to animate
-         (::-webkit-progress-value doesn't apply while indeterminate), so the role stays on a div] -->
+    <!-- [html-validate-disable-next prefer-native-element -- an indeterminate progress element can't carry the custom sliding sliver: with appearance:none there is no inner box to animate, so the role stays on a div] -->
     <div class="progress" id="progress" role="progressbar" aria-label="Running checks" hidden><i></i></div>
 
     <!-- summary -->
@@ -233,6 +234,22 @@
       <span id="configHint"></span>
     </footer>
 
+    <!-- workspace: your fleets (left panel) -->
+    <div class="ws-scrim" id="wsScrim" hidden></div>
+    <aside class="workspace" id="workspace" hidden role="dialog" aria-modal="true" aria-label="Workspace">
+      <div class="ws-head">
+        <b>Workspace</b>
+        <span class="badge" id="wsWorst" hidden></span>
+        <span class="spacer"></span>
+        <button class="btn" id="wsRunAll">Run all</button>
+        <button class="icon-btn" id="wsClose" aria-label="Close">✕</button>
+      </div>
+      <div class="ws-list" id="wsList"></div>
+      <div class="ws-foot">
+        <button class="btn" id="wsAdd">+ Add config</button>
+      </div>
+    </aside>
+
     <!-- detail / explain / validate drawer -->
     <div class="drawer-scrim" id="drawerScrim" hidden></div>
     <aside class="drawer" id="drawer" hidden role="dialog" aria-modal="true" aria-label="Details">
@@ -248,9 +265,7 @@
     <div class="palette" id="paletteBox" hidden role="dialog" aria-modal="true" aria-label="Command palette">
       <input type="text" id="paletteInput" placeholder="Type a command…" spellcheck="false" autocomplete="off"
              role="combobox" aria-expanded="true" aria-controls="paletteList" aria-autocomplete="list">
-      <!-- [html-validate-disable-next prefer-native-element -- this is the ARIA combobox popup for the
-           command palette: the list is filtered as you type and focus stays in the input via
-           aria-activedescendant. A native <select> can do neither] -->
+      <!-- [html-validate-disable-next prefer-native-element -- ARIA combobox popup: the list is filtered as you type and focus stays in the input via aria-activedescendant; a native select can do neither] -->
       <ul class="palette-list" id="paletteList" role="listbox" aria-label="Commands"></ul>
     </div>
 

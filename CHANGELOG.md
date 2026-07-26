@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.114.1
+
+- Desktop (fix CI): il job `frontend-lint` falliva su `html-validate` con due `prefer-native-element` introdotti dal lavoro di accessibilità (CF-103) — `role="progressbar"` sulla barra di caricamento e `role="listbox"` sulla lista della command-palette. Aggiunte due **direttive inline** `html-validate-disable-next`, ognuna con la sua motivazione sul posto: un `<progress>` indeterminato non può ospitare lo sliver animato custom (con `appearance:none` non resta un box interno da animare), e la palette è un **combobox ARIA** con lista filtrata mentre digiti e focus che resta nell'input via `aria-activedescendant` — cose che un `<select>` nativo non sa fare. Nessun cambiamento visivo né di comportamento.
+- Nota tecnica: la prima strada tentata era configurare `prefer-native-element` con un `mapping` nel `.htmlvalidate.json`, ma quell'opzione **sostituisce** la mappa di default invece di estenderla — avrebbe silenziosamente spento la regola anche per tutti gli altri ruoli (verificato: con il mapping, un `role="checkbox"` di prova smetteva di essere segnalato). Le direttive inline lasciano la regola pienamente attiva ovunque.
+
 ## 0.114.0
 
 - Desktop (CF-106, M27 — "Send to…"): nuovo controllo **Send…** nella barra dei finding che inoltra il run corrente a **Slack / Discord / Teams / webhook** riusando i renderer di `internal/output` — nessuna logica duplicata. L'URL di destinazione arriva **solo da una variabile d'ambiente** (`SLACK_WEBHOOK`, `DISCORD_WEBHOOK`, `TEAMS_WEBHOOK`, `CHECKFLEET_WEBHOOK`): non si inserisce mai nella UI, quindi nessun segreto vive nell'app. L'esito torna via toast (inviato / non configurato con il nome dell'env da settare / errore). Binding `App.Send(target)` + `App.SendTargets`, con TDD via `httptest` (`TestSend`: nessun run, env vuoto, target ignoto, invio ok con payload ricevuto). Docs (`docs/desktop.md`, `desktop/README.md`) aggiornate nello stesso commit. Il report/chiusura di issue GitHub/GitLab dalla GUI resta un follow-up (serve forge client + token).
