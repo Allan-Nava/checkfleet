@@ -108,11 +108,11 @@ func (a *App) RunChecks(configPath, stack string) Report {
 		return rep
 	}
 
-	res := engine.RunWith(a.context(), checks, engine.Options{
+	res := engine.RunWithLimit(a.context(), checks, engine.Options{
 		Timeout: time.Duration(cfg.TimeoutSeconds) * time.Second,
 		Retries: cfg.Retries,
 		Backoff: time.Duration(cfg.RetryBackoffMS) * time.Millisecond,
-	})
+	}, cfg.MaxConcurrency)
 
 	a.mu.Lock()
 	a.last = res
@@ -818,11 +818,11 @@ func (a *App) WorkspaceStatus(paths []string) []ConfigStatus {
 			out = append(out, cs)
 			continue
 		}
-		res := engine.RunWith(a.context(), checks, engine.Options{
+		res := engine.RunWithLimit(a.context(), checks, engine.Options{
 			Timeout: time.Duration(cfg.TimeoutSeconds) * time.Second,
 			Retries: cfg.Retries,
 			Backoff: time.Duration(cfg.RetryBackoffMS) * time.Millisecond,
-		})
+		}, cfg.MaxConcurrency)
 		sum := engine.Summarize(res.Findings)
 		cs.OK, cs.WARN, cs.BAD, cs.ERROR = sum[engine.OK], sum[engine.WARN], sum[engine.BAD], sum[engine.ERROR]
 		cs.Worst = string(engine.Worst(res.Findings))

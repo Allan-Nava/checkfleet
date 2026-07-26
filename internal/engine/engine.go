@@ -79,26 +79,50 @@ type Job struct {
 // uniform-options entry point (used by the desktop app); RunJobs is the
 // per-check-options variant.
 func RunWith(ctx context.Context, checks []Check, opts Options) Result {
+	return RunWithLimit(ctx, checks, opts, 0)
+}
+
+// RunWithLimit is RunWith with a global concurrency cap (CF-116): at most
+// maxConcurrency checks run at once (0 = unbounded).
+func RunWithLimit(ctx context.Context, checks []Check, opts Options, maxConcurrency int) Result {
 	jobs := make([]Job, len(checks))
 	for i, c := range checks {
 		jobs[i] = Job{Check: c, Opts: opts}
 	}
-	return RunJobs(ctx, jobs)
+	return RunJobsLimited(ctx, jobs, maxConcurrency)
 }
 
-// RunJobs executes each job concurrently under its own Options. Results are
-// collected per-job by index and flattened in job order, so the output is
-// deterministic regardless of completion order (the stable sort below then
-// orders by severity). A job whose result contains an ERROR finding is retried
-// up to its Opts.Retries times with exponential backoff.
+// RunJobs executes each job concurrently under its own Options, with no global
+// concurrency cap.
 func RunJobs(ctx context.Context, jobs []Job) Result {
+	return RunJobsLimited(ctx, jobs, 0)
+}
+
+// RunJobsLimited executes each job concurrently under its own Options, capping
+// the number running at once to maxConcurrency (CF-116). With maxConcurrency <= 0
+// there is no cap (every job starts immediately, the historical behaviour); the
+// cap sits ABOVE any per-module concurrency a check applies internally, so a
+// fleet of hundreds of targets won't open hundreds of connections at once.
+// Results are collected per-job by index and flattened in job order, so the
+// output is deterministic regardless of completion order (the stable sort below
+// then orders by severity). A job whose result contains an ERROR finding is
+// retried up to its Opts.Retries times with exponential backoff.
+func RunJobsLimited(ctx context.Context, jobs []Job, maxConcurrency int) Result {
 	started := time.Now()
 	perCheck := make([][]Finding, len(jobs))
+	var sem chan struct{}
+	if maxConcurrency > 0 {
+		sem = make(chan struct{}, maxConcurrency)
+	}
 	var wg sync.WaitGroup
 	for i, j := range jobs {
 		wg.Add(1)
 		go func(i int, j Job) {
 			defer wg.Done()
+			if sem != nil {
+				sem <- struct{}{}        // acquire a slot (blocks when the cap is reached)
+				defer func() { <-sem }() // release it
+			}
 			perCheck[i] = runWithRetry(ctx, j.Check, j.Opts)
 		}(i, j)
 	}

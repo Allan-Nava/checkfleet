@@ -16,6 +16,7 @@ type Config struct {
 	TimeoutSeconds int          `yaml:"timeout_seconds"`
 	Retries        int          `yaml:"retries"`          // retry checks with ERROR findings
 	RetryBackoffMS int          `yaml:"retry_backoff_ms"` // base backoff (default 500 when retries>0)
+	MaxConcurrency int          `yaml:"max_concurrency"`  // cap on checks running at once (0 = unbounded, CF-116)
 	Checks         ChecksConfig `yaml:"checks"`
 
 	// Maintenance windows: findings matching an active window are muted or

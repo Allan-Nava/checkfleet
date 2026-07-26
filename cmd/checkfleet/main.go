@@ -90,8 +90,8 @@ func main() {
 func usage() {
 	fmt.Fprintln(os.Stderr, `usage:
   checkfleet init [--modules certs,http] [--config checkfleet.yml] [--force]     # scaffold a starter config
-  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka|ingest|s3|smtp|elasticsearch|mongodb|mysql|etcd|clickhouse|vault|memcached|cassandra> --config checkfleet.yml [--output text|markdown|json|junit|html|prometheus|otlp|csv|slack|discord|teams|telegram|webhook] [--out-file PATH] [--no-color] [--only ...] [--min-severity warn] [--target glob] [--watch 5s] [--history F --diff] [--exit-on-bad]
-  checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s]   # export Prometheus metrics
+  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka|ingest|s3|smtp|elasticsearch|mongodb|mysql|etcd|clickhouse|vault|memcached|cassandra> --config checkfleet.yml [--output text|markdown|json|junit|html|prometheus|otlp|csv|slack|discord|teams|telegram|webhook] [--out-file PATH] [--no-color] [--only ...] [--min-severity warn] [--target glob] [--watch 5s] [--history F --diff] [--max-concurrency N] [--exit-on-bad]
+  checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s] [--max-concurrency N]   # export Prometheus metrics
   checkfleet report-issues --config checkfleet.yml [--forge github|gitlab]     # open/close tracker issues from BAD findings
   checkfleet alert --config checkfleet.yml --provider pagerduty --key-env K    # create/resolve on-call alerts from BAD/ERROR
   checkfleet validate --config checkfleet.yml                                  # validate the config without running the checks
@@ -127,6 +127,7 @@ func runCheck(args []string) error {
 	watch := fs.Duration("watch", 0, "re-run on this interval with a live terminal view (e.g. 5s); Ctrl-C to stop")
 	diff := fs.Bool("diff", false, "show only what changed vs the previous run (requires --history)")
 	exitOnBad := fs.Bool("exit-on-bad", false, "exit code 2 if any BAD/ERROR finding is present")
+	maxConc := fs.Int("max-concurrency", -1, "cap on checks running at once (0 = unbounded); overrides max_concurrency in the config")
 	if err := fs.Parse(args[1:]); err != nil {
 		return err
 	}
@@ -166,12 +167,14 @@ func runCheck(args []string) error {
 		return fmt.Errorf("no module selected (nothing configured for %q)", module)
 	}
 
+	limit := effectiveConcurrency(*maxConc, cfg)
+
 	if *watch > 0 {
 		watchColor := !*noColor && os.Getenv("NO_COLOR") == "" && isTerminal(os.Stdout)
-		return runWatch(selected, cfg, filter, *watch, watchColor)
+		return runWatch(selected, cfg, filter, *watch, watchColor, limit)
 	}
 
-	res := engine.RunJobs(context.Background(), selected)
+	res := engine.RunJobsLimited(context.Background(), selected, limit)
 	if *historyPath != "" {
 		flaps, err := recordHistory(*historyPath, res, *flapChanges, *flapWindow)
 		if err != nil {
@@ -292,9 +295,9 @@ func runCheck(args []string) error {
 
 // runWatch re-runs the selected checks on an interval, redrawing a live text
 // view until interrupted (Ctrl-C). Maintenance and filters apply each tick.
-func runWatch(jobs []engine.Job, cfg *engine.Config, filter engine.FilterOptions, interval time.Duration, color bool) error {
+func runWatch(jobs []engine.Job, cfg *engine.Config, filter engine.FilterOptions, interval time.Duration, color bool, limit int) error {
 	for {
-		res := engine.RunJobs(context.Background(), jobs)
+		res := engine.RunJobsLimited(context.Background(), jobs, limit)
 		res.Findings = engine.ApplyMaintenance(res.Findings, cfg.Maintenance, time.Now())
 		res.Findings = engine.Filter(res.Findings, filter)
 		fmt.Print(watchFrame(res, time.Now(), interval, color))
@@ -469,6 +472,16 @@ func runOptions(cfg *engine.Config) engine.Options {
 	}
 }
 
+// effectiveConcurrency resolves the global concurrency cap: a --max-concurrency
+// flag (>= 0) wins over the config's max_concurrency (CF-116). -1 means the flag
+// was not set. 0 = unbounded.
+func effectiveConcurrency(flag int, cfg *engine.Config) int {
+	if flag >= 0 {
+		return flag
+	}
+	return cfg.MaxConcurrency
+}
+
 // loadConfig loads the base config, overlaying a stack profile when set.
 func loadConfig(path, stack string) (*engine.Config, error) {
 	if stack != "" {
@@ -486,6 +499,7 @@ func runServe(args []string) error {
 	listen := fs.String("listen", ":9876", "listen address")
 	interval := fs.Duration("interval", 60*time.Second, "interval between check re-runs")
 	logFormat := fs.String("log-format", "text", "log format: text or json (structured)")
+	maxConc := fs.Int("max-concurrency", -1, "cap on checks running at once (0 = unbounded); overrides max_concurrency in the config")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -494,6 +508,7 @@ func runServe(args []string) error {
 	if err != nil {
 		return err
 	}
+	limit := effectiveConcurrency(*maxConc, cfg)
 	jobs := registry.Jobs(cfg, runOptions(cfg))
 	if len(jobs) == 0 {
 		return fmt.Errorf("no module configured in %s", *configPath)
@@ -503,7 +518,7 @@ func runServe(args []string) error {
 	var latest engine.Result
 	var ready atomic.Bool
 	runOnce := func() {
-		res := engine.RunJobs(context.Background(), jobs)
+		res := engine.RunJobsLimited(context.Background(), jobs, limit)
 		res.Findings = engine.ApplyMaintenance(res.Findings, cfg.Maintenance, time.Now())
 		mu.Lock()
 		latest = res
