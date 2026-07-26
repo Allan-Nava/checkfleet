@@ -512,6 +512,7 @@
     acks = CFAcks.mute(acks, { key: ackKey(f), until: CFAcks.durationUntil(choice, now), at: now });
     saveAcks();
     syncMutedKeys();
+    logAction("mute", f, choice === "recovery" ? "until recovery" : choice);
     render();
     toast("Muted " + f.check + " · " + f.target, { timeout: 2200 });
   }
@@ -519,6 +520,7 @@
     acks = CFAcks.unmute(acks, ackKey(f));
     saveAcks();
     syncMutedKeys();
+    logAction("unmute", f, "");
     render();
     toast("Unmuted " + f.check + " · " + f.target, { timeout: 2000 });
   }
@@ -533,6 +535,49 @@
   function saveNotes() { try { localStorage.setItem("cf-notes", JSON.stringify(notes)); } catch (_) {} }
   function findingNote(f) { return CFNotes.get(notes, ackKey(f)); }
 
+  /* ---------------- action log / audit (CF-114) ---------------- */
+  // Every workflow action (mute/unmote/note/issue) drops a line here, so there's
+  // a timeline you can review or export for a handover.
+  let actions = [];
+  function loadActions() {
+    try { actions = CFAudit.sanitize(JSON.parse(localStorage.getItem("cf-actions") || "[]")); }
+    catch (_) { actions = []; }
+  }
+  function saveActions() { try { localStorage.setItem("cf-actions", CFAudit.toJSON(actions)); } catch (_) {} }
+  function logAction(kind, f, detail) {
+    actions = CFAudit.add(actions, kind, f.check + " · " + f.target, detail || "", Date.now());
+    saveActions();
+  }
+  function showActions() {
+    const rows = actions.length
+      ? actions.map((e) => `<tr>
+          <td class="mono act-time">${escapeHtml(CFAudit.iso(e.at).replace("T", " ").replace(".000Z", "Z"))}</td>
+          <td><span class="chip act-${escapeHtml(e.kind)}">${escapeHtml(e.kind)}</span></td>
+          <td class="mono">${escapeHtml(e.target)}</td>
+          <td>${escapeHtml(e.detail)}</td></tr>`).join("")
+      : `<tr><td colspan="4"><p class="drawer-msg">No actions yet — mute, annotate or open an issue and they'll show here.</p></td></tr>`;
+    openDrawer("Action log", `
+      <div class="act-tools">
+        <button class="btn" data-act-export="json">Copy JSON</button>
+        <button class="btn" data-act-export="md">Copy Markdown</button>
+        <button class="btn" data-act-clear="1"${actions.length ? "" : " disabled"}>Clear</button>
+      </div>
+      <table class="act-table"><thead><tr><th>Time (UTC)</th><th>Action</th><th>Target</th><th>Detail</th></tr></thead>
+      <tbody>${rows}</tbody></table>`);
+  }
+  async function exportActions(fmt) {
+    if (!actions.length) { toast("No actions to export", { kind: "warn" }); return; }
+    const text = fmt === "md" ? CFAudit.toMarkdown(actions) : CFAudit.toJSON(actions);
+    try { await navigator.clipboard.writeText(text); toast("Copied " + actions.length + " action" + (actions.length === 1 ? "" : "s") + " as " + (fmt === "md" ? "Markdown" : "JSON"), { kind: "success" }); }
+    catch (_) { toast("Copy failed", { kind: "error" }); }
+  }
+  function clearActions() {
+    actions = [];
+    saveActions();
+    showActions();
+    toast("Action log cleared", { timeout: 2000 });
+  }
+
   /* ---------------- open tracker issue (CF-113) ---------------- */
   // Which forges are configured (env set) — fetched once; the drawer shows a
   // button per configured forge for BAD/ERROR findings only.
@@ -545,6 +590,7 @@
     try {
       const r = await Backend.OpenIssue(forge, f.check, f.target, f.status, f.message);
       if (r && r.ok) {
+        logAction("issue", f, forge + (r.url ? " → " + r.url : ""));
         toast("Opened " + forge + " issue", { kind: "success", action: r.url ? { label: "Open", fn: () => Backend.OpenURL(r.url) } : null });
         setStatus(r.message);
       } else {
@@ -557,8 +603,10 @@
     const before = CFNotes.has(notes, ackKey(f));
     notes = CFNotes.set(notes, { key: ackKey(f), owner, text, at: Date.now() });
     saveNotes();
-    render();
     const after = CFNotes.has(notes, ackKey(f));
+    if (after) logAction("note", f, CFNotes.describe(CFNotes.get(notes, ackKey(f))));
+    else if (before) logAction("unnote", f, "");
+    render();
     toast(after ? "Note saved" : (before ? "Note cleared" : "Note empty"), { timeout: 2000, kind: after || before ? "success" : "warn" });
   }
 
@@ -1329,6 +1377,7 @@
     $("changes").addEventListener("click", showChanges);
     $("trend").addEventListener("click", showTrend);
     $("history").addEventListener("click", showHistory);
+    $("actionsBtn").addEventListener("click", showActions);
     $("groupBy").addEventListener("change", () => { render(); saveSettings(); renderViewChips(); });
     $("hideMuted").addEventListener("change", () => { render(); saveSettings(); });
     document.querySelectorAll(".viewtab").forEach((t) =>
@@ -1434,6 +1483,10 @@
       // open a tracker issue (CF-113)
       const iss = e.target.closest("[data-issue]");
       if (iss && drawerFinding) { openIssueFor(drawerFinding, iss.dataset.issue); closeDrawer(); return; }
+      // action log (CF-114)
+      const ax = e.target.closest("[data-act-export]");
+      if (ax) { exportActions(ax.dataset.actExport); return; }
+      if (e.target.closest("[data-act-clear]")) { clearActions(); return; }
       // saved views (CF-108)
       if (e.target.closest("[data-view-save-confirm]")) { confirmSaveView(); return; }
       if (e.target.closest("[data-view-import-confirm]")) { confirmImportViews(); }
@@ -1498,6 +1551,7 @@
     loadPresets();
     loadAcks();
     loadNotes();
+    loadActions();
     loadIssueForges();
     syncMutedKeys();
     $("configPath").value = s.config || startup.path || "";

@@ -36,6 +36,11 @@ command palette** and keyboard shortcuts (CF-96).
   them, and **Hide muted** filters them out. Keyed by config+check+target with
   **absolute** expiries pruned on load; local-only (no YAML change, no secrets).
   Logic in the testable `acks.js` UMD module (`acks.test.js`, `node --test`).
+- **Action log** (CF-114): every mute/unmute/note/issue drops a line in a local,
+  bounded (200) timeline (**Actions** button) — newest first, UTC-stamped —
+  exportable as **JSON** or a **Markdown** table (clipboard) for a handover or
+  postmortem. Logic in the testable `audit.js` UMD module (`audit.test.js`,
+  `node --test`). Local operator history, no secrets. **Closes M28.**
 - **Report issue** (CF-113): open a **GitHub/GitLab** issue from a BAD/ERROR
   finding's drawer (prefilled title + body), with a toast link to **Open** it.
   Zero-dep REST client (`issue.go`); repo/project + token come **only from env**

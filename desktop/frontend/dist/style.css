@@ -669,3 +669,14 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 6px; border-radius
   font-family: inherit; font-size: var(--fs-sm); }
 .note-block textarea { min-height: 72px; resize: vertical; }
 .note-block .btn-primary { align-self: flex-start; }
+
+/* action log / audit (CF-114) */
+.act-tools { display: flex; gap: 8px; margin: 12px 0; }
+.act-table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+.act-table th { text-align: left; padding: 6px 8px; color: var(--muted); font-weight: 600;
+  border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg-2); }
+.act-table td { padding: 7px 8px; border-bottom: 1px solid var(--border); vertical-align: top; user-select: text; }
+.act-time { color: var(--muted); white-space: nowrap; }
+.act-mute, .act-unmute { color: var(--muted); background: color-mix(in srgb, var(--muted) 14%, transparent); border: 1px solid color-mix(in srgb, var(--muted) 26%, transparent); }
+.act-note, .act-unnote { color: var(--brand-2); background: color-mix(in srgb, var(--brand-2) 12%, transparent); border: 1px solid color-mix(in srgb, var(--brand-2) 26%, transparent); }
+.act-issue { color: var(--warn); background: var(--warn-bg); border: 1px solid color-mix(in srgb, var(--warn) 30%, transparent); }

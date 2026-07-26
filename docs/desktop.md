@@ -184,6 +184,21 @@ reconciliation across a whole run there's the CLI's
 [`report-issues`](../README.md) subcommand (which drives the `gh`/`glab` CLIs).
 No token ever touches the app's storage or a config file.
 
+## Action log
+
+Every workflow action — a mute, an unmute, a note, an issue opened — drops a
+line in the **Action log** (the **Actions** button in the toolbar). It's the
+timeline of *what did we actually do about the fleet*, newest first, with a UTC
+timestamp, the target and the detail.
+
+![checkfleet desktop — the action log](assets/desktop-actions.png)
+
+**Copy JSON** or **Copy Markdown** puts the whole log on your clipboard — the
+Markdown is a ready table to paste into a handover or a postmortem — and
+**Clear** empties it. The log is **local** and bounded (the last 200 actions);
+like everything in the incident workflow it holds operator history only, never
+secrets (an opened issue is logged by its URL, never a token).
+
 ## Dashboard
 
 The **Dashboard** view charts the persisted history (each Run is appended next
