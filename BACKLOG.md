@@ -167,24 +167,24 @@ Nuovi moduli di dominio per datastore diffusi.
 - [x] **CF-78 — Modulo `memcached`**: `stats` sul protocollo testuale TCP (zero-dep) — reachability, uso memoria vs `limit_maxbytes` (`mem_warn_pct`, default 90), **evictions** e connessioni. La percentuale di memoria e il contatore evictions sono esposti come metriche numeriche (`Finding.Value`, CF-91) così finiscono nello storico e nella card "Metric over time". Le evictions sono un totale dall'avvio, non un rate: nessuna soglia di default, si WARN solo con `evictions_warn` esplicito. _(v0.78.0 il modulo; evictions + metriche in v0.111.0)_
 - [x] **CF-79 — Modulo `cassandra`/`scylla`**: reachability parlando il **protocollo CQL nativo** (handshake OPTIONS→SUPPORTED, STARTUP→READY/AUTHENTICATE) — valutazione risolta a favore dello zero-dep, niente `gocql`, niente auth. **Stato nodi**: finding `cluster` che aggrega quanti nodi accettano CQL vs `expect_nodes` (BAD sotto soglia, WARN se la soglia è raggiunta ma un nodo configurato è giù), con latenza di handshake e nodi-up come metriche numeriche. Limite documentato: lo stato è derivato dalle probe di checkfleet, non da `system.peers` (servirebbe una QUERY autenticata) — non vede i nodi fuori config, ma funziona su cluster con auth attiva. Stessa forma di `expect_members` in etcd. **Chiude M21.** _(v0.79.0 il modulo; stato nodi + metriche in v0.112.0)_
 
-## M22 — Alerting & sink (fase 3)
+## M22 — Alerting & sink (fase 3) ✅
 
-- [ ] **CF-80 — Output Telegram**: `--output telegram` via Bot API `sendMessage`; token e chat id da env, mai in CLI/config.
-- [ ] **CF-81 — Output CSV**: `--output csv` — righe `status,check,target,message` per fogli/ingest, header incluso.
-- [ ] **CF-82 — Webhook con template**: `--output webhook` con template Go opzionale (`--template file`) per plasmare il payload JSON/testo.
-- [ ] **CF-83 — Alert AWS SNS**: pubblica i finding BAD/ERROR su un topic SNS riusando la firma **SigV4 scritta a mano** (come `s3`), creds da env. **Chiude M22.**
+- [x] **CF-80 — Output Telegram**: `--output telegram` via Bot API `sendMessage`; token e chat id da env, mai in CLI/config. (`internal/output/telegram.go` + test) → v0.80.0
+- [x] **CF-81 — Output CSV**: `--output csv` — righe `status,check,target,message` per fogli/ingest, header incluso. (`internal/output/csv.go` + test) → v0.81.0
+- [x] **CF-82 — Webhook con template**: `--output webhook` con template Go opzionale (`--template file`) per plasmare il payload JSON/testo. (`internal/output/template.go` `RenderTemplate` + test) → v0.82.0
+- [x] **CF-83 — Alert AWS SNS**: pubblica i finding BAD/ERROR su un topic SNS riusando la firma **SigV4 scritta a mano** (come `s3`), creds da env. (`internal/alert/sns.go` + `internal/awssig` + `cmd/checkfleet/alert.go` + test) **Chiude M22.** → v0.91.0
 
-## M23 — Engine & robustezza (fase 3)
+## M23 — Engine & robustezza (fase 3) ✅
 
-- [ ] **CF-84 — Timeout/retry per-modulo**: override di `timeout_seconds`/`retries` a livello di modulo, oltre al globale.
-- [ ] **CF-85 — Maintenance window ricorrenti**: finestre di silenzio ricorrenti (es. cron-like giornaliere/settimanali), oltre a quelle una-tantum (CF-52).
-- [ ] **CF-86 — Dedup & ordinamento documentato**: dedup dei finding identici (stesso check/target/status) e documentazione formale del sort worst-first come API. **Chiude M23.**
+- [x] **CF-84 — Timeout/retry per-modulo**: override di `timeout_seconds`/`retries` a livello di modulo, oltre al globale. (`engine.ModuleOverride` / `cfg.ModuleOverrides`, applicati in `registry.Jobs`; test `TestOptionsForOverride`/`TestJobsAppliesOverrides`) → v0.98.0
+- [x] **CF-85 — Maintenance window ricorrenti**: finestre di silenzio ricorrenti (giornaliere `daily: "HH:MM-HH:MM"` + `weekdays`), oltre a quelle una-tantum (CF-52). (`engine/maintenance.go` `inDailyWindow`/`parseDaily` + test) → v0.97.0
+- [x] **CF-86 — Dedup & ordinamento documentato**: dedup dei finding identici (stesso check/target/status) e sort worst-first→check→target documentato come API stabile. (`engine.Dedup` + commento su `engine.go`; test `TestDedup`/`TestRunDedupsFindings`) **Chiude M23.** → v0.96.0
 
-## M24 — Osservabilità del tool (fase 3)
+## M24 — Osservabilità del tool (fase 3) ✅
 
-- [ ] **CF-87 — Self-metrics exporter**: `serve` espone metriche sul tool stesso — durata dell'ultimo run, errori per modulo, timestamp ultimo run.
-- [ ] **CF-88 — `/healthz` & `/readyz`**: endpoint di liveness/readiness su `serve` per orchestratori (k8s/nomad).
-- [ ] **CF-89 — Logging strutturato opzionale**: `--log-format json` per log strutturati (run start/end, errori), default testo. **Chiude M24.**
+- [x] **CF-87 — Self-metrics exporter**: `serve` espone metriche sul tool stesso — durata dell'ultimo run, errori per modulo, timestamp ultimo run. (`output.SelfMetrics` + wiring `/metrics` in `runServe`; test) → v0.92.0
+- [x] **CF-88 — `/healthz` & `/readyz`**: endpoint di liveness/readiness su `serve` per orchestratori (k8s/nomad). (`runServe` in `cmd/checkfleet/main.go`) → v0.93.0
+- [x] **CF-89 — Logging strutturato opzionale**: `--log-format json` per log strutturati (run start/end, errori), default testo, via `log/slog`. (`newLogger` in `cmd/checkfleet/main.go`) **Chiude M24.** → v0.95.0
 
 ## M25 — Desktop GUI v3 — dashboard & grafici (fase 3)
 
