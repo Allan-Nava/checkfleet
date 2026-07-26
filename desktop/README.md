@@ -36,6 +36,13 @@ command palette** and keyboard shortcuts (CF-96).
   them, and **Hide muted** filters them out. Keyed by config+check+target with
   **absolute** expiries pruned on load; local-only (no YAML change, no secrets).
   Logic in the testable `acks.js` UMD module (`acks.test.js`, `node --test`).
+- **Report issue** (CF-113): open a **GitHub/GitLab** issue from a BAD/ERROR
+  finding's drawer (prefilled title + body), with a toast link to **Open** it.
+  Zero-dep REST client (`issue.go`); repo/project + token come **only from env**
+  (`GITHUB_REPO`/`GITHUB_TOKEN`, `GITLAB_PROJECT`/`GITLAB_TOKEN`, optional
+  `*_API`), never the UI. TDD via `httptest` (`issue_test.go`: GitHub bearer,
+  GitLab `PRIVATE-TOKEN`, not-configured, forge detection). The follow-up
+  deferred from CF-106; distinct from the CLI's `report-issues` bulk reconciler.
 - **Notes** (CF-112): pin an **owner** + free-text context to a finding from its
   drawer (*“Marco — rotating this cert tomorrow”*); the row gets a **note** chip
   and the note persists. Same key as mutes (config+check+target); local-only, no

@@ -125,6 +125,9 @@
     StartMonitor: async () => {},
     StopMonitor: async () => {},
     MonitorRunning: async () => false,
+    IssueForges: async () => ({ github: true, gitlab: false }),
+    OpenIssue: async (forge, check, target) => ({ ok: true, forge, url: "https://example.com/" + forge + "/issues/1", message: "opened issue on " + forge }),
+    OpenURL: async () => {},
   };
 
   // Wails event bus (CF-109). In the browser preview there is no runtime, so the
@@ -529,6 +532,27 @@
   }
   function saveNotes() { try { localStorage.setItem("cf-notes", JSON.stringify(notes)); } catch (_) {} }
   function findingNote(f) { return CFNotes.get(notes, ackKey(f)); }
+
+  /* ---------------- open tracker issue (CF-113) ---------------- */
+  // Which forges are configured (env set) — fetched once; the drawer shows a
+  // button per configured forge for BAD/ERROR findings only.
+  let issueForges = {};
+  async function loadIssueForges() {
+    try { issueForges = (await Backend.IssueForges()) || {}; } catch (_) { issueForges = {}; }
+  }
+  async function openIssueFor(f, forge) {
+    setStatus("opening " + forge + " issue…");
+    try {
+      const r = await Backend.OpenIssue(forge, f.check, f.target, f.status, f.message);
+      if (r && r.ok) {
+        toast("Opened " + forge + " issue", { kind: "success", action: r.url ? { label: "Open", fn: () => Backend.OpenURL(r.url) } : null });
+        setStatus(r.message);
+      } else {
+        toast((r && r.message) || "Could not open the issue", { kind: /not configured/.test(r && r.message) ? "warn" : "error" });
+        setStatus((r && r.message) || "issue failed");
+      }
+    } catch (e) { toast("Open issue failed: " + e, { kind: "error" }); }
+  }
   function setFindingNote(f, owner, text) {
     const before = CFNotes.has(notes, ackKey(f));
     notes = CFNotes.set(notes, { key: ackKey(f), owner, text, at: Date.now() });
@@ -1056,6 +1080,13 @@
       `<input id="noteOwner" type="text" placeholder="owner (optional)" maxlength="40" autocomplete="off" value="${escapeHtml(note ? note.owner : "")}">` +
       `<textarea id="noteText" placeholder="what's going on with this target…" maxlength="500">${escapeHtml(note ? note.text : "")}</textarea>` +
       `<button class="btn btn-primary" data-note-save="1">Save note</button></div>`;
+    // Report to a tracker (CF-113) — only worth it for a real problem, and only
+    // for forges whose token/repo env is set.
+    const forgeBtns = ["github", "gitlab"].filter((g) => issueForges[g])
+      .map((g) => `<button class="btn" data-issue="${g}">${g === "github" ? "GitHub" : "GitLab"}</button>`).join("");
+    const issueBlock = (f.status === "BAD" || f.status === "ERROR") && forgeBtns
+      ? `<div class="mute-block"><span class="mute-label">Report issue</span>${forgeBtns}</div>`
+      : "";
     openDrawer("Finding", `
       <div class="kv"><span>Status</span><span class="badge ${f.status}">${f.status}</span></div>
       <div class="kv"><span>Check</span><b class="mono">${escapeHtml(f.check)}</b></div>
@@ -1063,6 +1094,7 @@
       ${metricRow}
       <p class="drawer-msg">${escapeHtml(f.message)}</p>
       ${muteBlock}
+      ${issueBlock}
       ${noteBlock}
       ${hasMetric ? `<div class="finding-trend" id="findingTrend"><p class="chart-empty">loading trend…</p></div>` : ""}
       <button class="btn copy-btn" data-copy="${escapeHtml(text)}">Copy</button>`);
@@ -1399,6 +1431,9 @@
         closeDrawer();
         return;
       }
+      // open a tracker issue (CF-113)
+      const iss = e.target.closest("[data-issue]");
+      if (iss && drawerFinding) { openIssueFor(drawerFinding, iss.dataset.issue); closeDrawer(); return; }
       // saved views (CF-108)
       if (e.target.closest("[data-view-save-confirm]")) { confirmSaveView(); return; }
       if (e.target.closest("[data-view-import-confirm]")) { confirmImportViews(); }
@@ -1463,6 +1498,7 @@
     loadPresets();
     loadAcks();
     loadNotes();
+    loadIssueForges();
     syncMutedKeys();
     $("configPath").value = s.config || startup.path || "";
     if ($("configPath").value) addToWorkspace($("configPath").value);

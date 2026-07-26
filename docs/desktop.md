@@ -161,6 +161,29 @@ target can be both muted and annotated. Clearing both fields removes the note.
 Like mutes, notes are **local** operator context — never written to your YAML,
 never sent anywhere, no secrets.
 
+## Report a finding to your tracker
+
+When a finding is a real problem you want tracked, open its drawer and
+**Report issue → GitHub** / **GitLab**. checkfleet opens an issue with a
+prefilled title (`[checkfleet] check/target — STATUS`) and body (the message and
+context), then toasts a link you can **Open** in your browser.
+
+![checkfleet desktop — report a finding as a GitHub/GitLab issue](assets/desktop-issue.png)
+
+The button only appears for **BAD/ERROR** findings, and only for a forge that's
+**configured** — the repo/project and token come **only from environment
+variables**, never the UI:
+
+| Forge  | Repo/project        | Token          | API override (optional) |
+| ------ | ------------------- | -------------- | ----------------------- |
+| GitHub | `GITHUB_REPO` (`owner/repo`) | `GITHUB_TOKEN` | `GITHUB_API`  |
+| GitLab | `GITLAB_PROJECT` (id or url-encoded path) | `GITLAB_TOKEN` | `GITLAB_API` |
+
+This is a one-click *“open an issue for this finding”*; for bulk open/close
+reconciliation across a whole run there's the CLI's
+[`report-issues`](../README.md) subcommand (which drives the `gh`/`glab` CLIs).
+No token ever touches the app's storage or a config file.
+
 ## Dashboard
 
 The **Dashboard** view charts the persisted history (each Run is appended next
