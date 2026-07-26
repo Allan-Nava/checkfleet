@@ -31,6 +31,11 @@ command palette** and keyboard shortcuts (CF-96).
 - **History & diff**: in-session **Changes** (CF-64), a persistent worst-status
   **Trend** sparkline (CF-70), and a **History browser** to open and compare any
   two past runs (CF-104) — all from the `.<name>.history.jsonl` beside the config.
+- **Workspace** (CF-107): a left-hand panel (grid button in the title bar) that
+  keeps every fleet you use in one place — configs are remembered automatically,
+  up to 20, MRU-first. **Run all** evaluates them independently and rolls the
+  results into one worst-across-all badge; click a row to switch fleets. Stores
+  paths only (no config contents, no credentials).
 - **Send to a chat/webhook** (CF-106): a **Send…** control posts the current run
   to Slack / Discord / Teams / a generic webhook, reusing the `internal/output`
   renderers. The URL comes only from an env var (`SLACK_WEBHOOK`,

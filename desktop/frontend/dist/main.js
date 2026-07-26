@@ -113,6 +113,10 @@
       { check: "redis", target: "redis-cache-01:6379", from: "WARN", to: "OK", kind: "resolved" },
     ]),
     Send: async (target) => ({ ok: true, target, message: "sent to " + target }),
+    WorkspaceStatus: async (paths) => (paths || []).map((p, i) => {
+      const w = ["OK", "WARN", "BAD", "OK", "ERROR"][i % 5];
+      return { path: p, worst: w, ok: 12, warn: w === "WARN" ? 3 : 0, bad: w === "BAD" ? 2 : 0, error: w === "ERROR" ? 1 : 0, err: "" };
+    }),
     ScheduleSnippet: async (path, interval) =>
       "# cron — run every 5 min:\n*/5 * * * * checkfleet check all --config " +
       (path || "checkfleet.yml") + " --exit-on-bad\n\n" +
@@ -131,6 +135,8 @@
   let metricSeries = [];
   let running = false;
   let historyRuns = [];
+  let workspacePaths = [];
+  let wsStatuses = {};
 
   /* ---------------- rendering ---------------- */
   function severityAllowed(status, min) {
@@ -296,6 +302,7 @@
   async function run() {
     running = true;
     setBusy(true);
+    addToWorkspace($("configPath").value); // the fleets you run become your workspace
     setStatus("running checks…");
     render(); // show the loading state right away (unless a prior run is on screen)
     try {
@@ -936,6 +943,81 @@
       <div class="hist-actions"><button class="btn" data-hist-back>← Runs</button></div>${body}`);
   }
 
+  /* ---------------- workspace: your fleets (CF-107) ---------------- */
+  function loadWorkspace() {
+    try { workspacePaths = JSON.parse(localStorage.getItem("cf-workspace") || "[]"); } catch (_) { workspacePaths = []; }
+    if (!Array.isArray(workspacePaths)) workspacePaths = [];
+  }
+  function saveWorkspace() {
+    try { localStorage.setItem("cf-workspace", JSON.stringify(workspacePaths.slice(0, 20))); } catch (_) {}
+  }
+  function addToWorkspace(path) {
+    path = (path || "").trim();
+    if (!path) return;
+    workspacePaths = [path, ...workspacePaths.filter((p) => p !== path)].slice(0, 20);
+    saveWorkspace();
+  }
+  const wsBasename = (p) => p.split("/").pop() || p;
+
+  function openWorkspace() {
+    $("wsScrim").hidden = false;
+    $("workspace").hidden = false;
+    renderWorkspace();
+    trapFocus($("workspace"));
+  }
+  function closeWorkspace() {
+    if ($("workspace").hidden) return;
+    $("workspace").hidden = true;
+    $("wsScrim").hidden = true;
+    releaseFocus();
+  }
+
+  function renderWorkspace() {
+    const list = $("wsList");
+    if (!workspacePaths.length) {
+      list.innerHTML = `<p class="drawer-msg">No fleets yet. Add a config, or open one from the toolbar — the ones you use appear here.</p>`;
+      $("wsWorst").hidden = true;
+      return;
+    }
+    const cur = $("configPath").value;
+    list.innerHTML = workspacePaths.map((p) => {
+      const s = wsStatuses[p];
+      const dot = s ? `<span class="badge ${s.err ? "ERROR" : s.worst}">${s.err ? "ERR" : s.worst}</span>` : `<span class="ws-dot"></span>`;
+      const counts = s && !s.err ? `<span class="ws-counts mono">${s.ok}·${s.warn}·${s.bad}·${s.error}</span>` : "";
+      return `<button class="ws-item${p === cur ? " active" : ""}" data-ws="${escapeHtml(p)}" title="${escapeHtml(p)}">` +
+        `${dot}<span class="ws-name">${escapeHtml(wsBasename(p))}</span>${counts}</button>`;
+    }).join("");
+    const worsts = workspacePaths.map((p) => wsStatuses[p]).filter(Boolean).map((s) => s.err ? "ERROR" : s.worst);
+    if (worsts.length) {
+      const agg = worstOf(worsts);
+      $("wsWorst").className = "badge " + agg; $("wsWorst").textContent = agg; $("wsWorst").hidden = false;
+    } else { $("wsWorst").hidden = true; }
+  }
+
+  async function runWorkspace() {
+    if (!workspacePaths.length) return;
+    setStatus("running workspace…");
+    let sts = [];
+    try { sts = (await Backend.WorkspaceStatus(workspacePaths)) || []; } catch (_) {}
+    wsStatuses = {};
+    sts.forEach((s) => { wsStatuses[s.path] = s; });
+    renderWorkspace();
+    const agg = worstOf(sts.map((s) => (s.err ? "ERROR" : s.worst))) || "OK";
+    toast("Workspace: worst " + agg + " across " + sts.length + " fleets", { kind: agg === "OK" ? "success" : "warn" });
+    setStatus("workspace: " + sts.length + " fleets · worst " + agg);
+  }
+
+  function switchConfig(path) {
+    $("configPath").value = path;
+    addToWorkspace(path);
+    updateHint();
+    refreshStacks();
+    saveSettings();
+    closeWorkspace();
+    setView("fleet");
+    run();
+  }
+
   /* ---------------- wiring ---------------- */
   function bind() {
     $("run").addEventListener("click", run);
@@ -963,6 +1045,17 @@
     document.querySelectorAll(".viewtab").forEach((t) =>
       t.addEventListener("click", () => setView(t.dataset.view)));
     $("palette").addEventListener("click", () => openPalette());
+    $("workspaceBtn").addEventListener("click", openWorkspace);
+    $("wsClose").addEventListener("click", closeWorkspace);
+    $("wsScrim").addEventListener("click", closeWorkspace);
+    $("wsRunAll").addEventListener("click", runWorkspace);
+    $("wsAdd").addEventListener("click", async () => {
+      try { const p = await Backend.OpenConfigDialog(); if (p) { addToWorkspace(p); renderWorkspace(); } } catch (_) {}
+    });
+    $("wsList").addEventListener("click", (e) => {
+      const it = e.target.closest("[data-ws]");
+      if (it) switchConfig(it.dataset.ws);
+    });
     $("dashRefresh").addEventListener("click", renderDashboard);
     $("metricSel").addEventListener("change", drawMetric);
     // empty-state actions (retry / open editor / clear filters)
@@ -1048,7 +1141,7 @@
       const mod = e.metaKey || e.ctrlKey;
       if (mod && (e.key === "k" || e.key === "K")) { e.preventDefault(); paletteOpen() ? closePalette() : openPalette(); return; }
       if (mod && e.key === "Enter") { e.preventDefault(); run(); return; }
-      if (e.key === "Escape") { closePalette(); closeDrawer(); return; }
+      if (e.key === "Escape") { closePalette(); closeDrawer(); closeWorkspace(); return; }
       // bare keys only when not typing and no modifier
       const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName || "");
       if (typing || mod || e.altKey) return;
@@ -1082,7 +1175,9 @@
     // Persisted settings (config/stack/interval/auto/notify) win over the
     // startup defaults, so the app reopens where you left it.
     const s = loadSettings();
+    loadWorkspace();
     $("configPath").value = s.config || startup.path || "";
+    if ($("configPath").value) addToWorkspace($("configPath").value);
     if (s.interval) $("interval").value = s.interval;
     if (s.auto) $("auto").checked = true;
     if (s.notify) $("notify").checked = true;

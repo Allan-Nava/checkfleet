@@ -774,6 +774,49 @@ func (a *App) Send(target string) SendResult {
 	return SendResult{OK: true, Target: target, Message: "sent to " + target}
 }
 
+// ConfigStatus is one config's rollup in the multi-config workspace (CF-107).
+type ConfigStatus struct {
+	Path  string `json:"path"`
+	Worst string `json:"worst"`
+	OK    int    `json:"ok"`
+	WARN  int    `json:"warn"`
+	BAD   int    `json:"bad"`
+	ERROR int    `json:"error"`
+	Err   string `json:"err,omitempty"`
+}
+
+// WorkspaceStatus runs each config once (base stack, no caching/history/diff)
+// and returns a per-config rollup, so the GUI can show a whole workspace of
+// fleets at a glance. Read-only: it never edits the files.
+func (a *App) WorkspaceStatus(paths []string) []ConfigStatus {
+	out := make([]ConfigStatus, 0, len(paths))
+	for _, p := range paths {
+		cs := ConfigStatus{Path: p, Worst: "OK"}
+		cfg, err := loadConfig(p, "")
+		if err != nil {
+			cs.Err, cs.Worst = err.Error(), "ERROR"
+			out = append(out, cs)
+			continue
+		}
+		checks := registry.Configured(cfg)
+		if len(checks) == 0 {
+			cs.Err, cs.Worst = "no module configured", "ERROR"
+			out = append(out, cs)
+			continue
+		}
+		res := engine.RunWith(a.context(), checks, engine.Options{
+			Timeout: time.Duration(cfg.TimeoutSeconds) * time.Second,
+			Retries: cfg.Retries,
+			Backoff: time.Duration(cfg.RetryBackoffMS) * time.Millisecond,
+		})
+		sum := engine.Summarize(res.Findings)
+		cs.OK, cs.WARN, cs.BAD, cs.ERROR = sum[engine.OK], sum[engine.WARN], sum[engine.BAD], sum[engine.ERROR]
+		cs.Worst = string(engine.Worst(res.Findings))
+		out = append(out, cs)
+	}
+	return out
+}
+
 // SendTargets lists the targets and whether each is configured (its env var is
 // set), so the GUI can label the menu without ever revealing the URL.
 func (a *App) SendTargets() map[string]bool {

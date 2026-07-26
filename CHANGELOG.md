@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.115.0
+
+- Desktop (CF-107, M27 — workspace multi-config): nuovo **pannello Workspace** (pulsante a griglia nella title bar) che tiene insieme tutte le flotte usate sulla macchina — prod, staging, edge, lab, ognuna col suo `checkfleet.yml`. I config vengono **ricordati automaticamente** a ogni open/run (nessuno step "add" separato), MRU-first, fino a 20, e sopravvivono ai riavvii (localStorage: **solo i path**, mai contenuti o credenziali); si può anche fissarne uno con **+ Add config**. **Run all** valuta ogni config in modo indipendente (con il proprio stack), riempie i badge per-fleet con i conteggi `OK·WARN·BAD·ERROR` e fa il **rollup del worst aggregato** nel badge in testa al pannello — a colpo d'occhio si vede se *qualcosa, ovunque*, richiede attenzione. Click su una riga per switchare il fleet attivo (ricarica i suoi stack). Binding `App.WorkspaceStatus([]path) []ConfigStatus` (riusa `loadConfig`/`registry.Configured`/`engine.RunWith`/`Summarize`/`Worst`; config mancante → `ERROR` per quella riga, le altre proseguono). TDD `TestWorkspaceStatus`; smoke frontend verde; docs (`docs/desktop.md`, `desktop/README.md`) aggiornate nello stesso commit con screenshot `docs/assets/desktop-workspace.png`.
+
 ## 0.114.1
 
 - Desktop (fix CI): il job `frontend-lint` falliva su `html-validate` con due `prefer-native-element` introdotti dal lavoro di accessibilità (CF-103) — `role="progressbar"` sulla barra di caricamento e `role="listbox"` sulla lista della command-palette. Aggiunte due **direttive inline** `html-validate-disable-next`, ognuna con la sua motivazione sul posto: un `<progress>` indeterminato non può ospitare lo sliver animato custom (con `appearance:none` non resta un box interno da animare), e la palette è un **combobox ARIA** con lista filtrata mentre digiti e focus che resta nell'input via `aria-activedescendant` — cose che un `<select>` nativo non sa fare. Nessun cambiamento visivo né di comportamento.

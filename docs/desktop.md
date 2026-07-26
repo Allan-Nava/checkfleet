@@ -166,6 +166,34 @@ run before it (new / resolved / worsened / improved) — the same delta as
 
 ![checkfleet desktop — history browser](assets/desktop-history.png)
 
+## Workspace — many fleets at a glance
+
+A single machine often watches more than one fleet: production, staging, an edge
+region, a lab box — each with its own `checkfleet.yml`. The **workspace** is the
+left-hand panel that keeps them all in one place. Open it with the grid button in
+the title bar (top-right), or press <kbd>Esc</kbd> to close it.
+
+![checkfleet desktop — workspace panel](assets/desktop-workspace.png)
+
+Every config you open or run is remembered here automatically — no separate
+"add" step needed — and you can also pin one explicitly with **+ Add config**
+(it opens the same file picker as **Browse…**). The list holds up to 20 fleets,
+most-recently-used first, and survives restarts (stored in local browser
+storage, never on disk as a file).
+
+Each row shows the config's basename, and — once evaluated — its worst status as
+a badge plus the `OK·WARN·BAD·ERROR` counts. **Run all** evaluates every config
+in the workspace in one shot (each runs independently, with its own stack), fills
+in the badges, and rolls the results up into the single **worst-across-all**
+badge in the panel header — so you can tell at a glance whether *anything*,
+anywhere, needs attention. Click any row to switch the main view to that fleet
+(it becomes the active config and its stacks reload); the active fleet is
+highlighted.
+
+The workspace never stores credentials or config contents — only the file paths
+— and evaluating a fleet here is exactly the same run as pressing **Run**, so
+`--exit-on-bad` semantics and thresholds are identical.
+
 ## Group by module
 
 Tick **Group** to fold the findings table into collapsible sections, one per

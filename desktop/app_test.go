@@ -562,3 +562,25 @@ func TestSend(t *testing.T) {
 		t.Error("SendTargets should report slack as configured")
 	}
 }
+
+func TestWorkspaceStatus(t *testing.T) {
+	addr := startTCP(t)
+	tcpCfg := "timeout_seconds: 5\nchecks:\n  tcp:\n    targets:\n      - address: \"" + addr + "\"\n"
+	a := writeConfig(t, "a.yml", tcpCfg)
+	b := writeConfig(t, "b.yml", tcpCfg)
+	app := NewApp("test")
+
+	st := app.WorkspaceStatus([]string{a, b, "/no/such/config.yml"})
+	if len(st) != 3 {
+		t.Fatalf("want 3 statuses, got %d", len(st))
+	}
+	if st[0].Worst != "OK" || st[0].OK < 1 || st[0].Err != "" {
+		t.Errorf("config a should be OK: %+v", st[0])
+	}
+	if st[1].Worst != "OK" {
+		t.Errorf("config b should be OK: %+v", st[1])
+	}
+	if st[2].Err == "" || st[2].Worst != "ERROR" {
+		t.Errorf("missing config should be an ERROR row: %+v", st[2])
+	}
+}
