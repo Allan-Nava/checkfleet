@@ -31,6 +31,12 @@ command palette** and keyboard shortcuts (CF-96).
 - **History & diff**: in-session **Changes** (CF-64), a persistent worst-status
   **Trend** sparkline (CF-70), and a **History browser** to open and compare any
   two past runs (CF-104) — all from the `.<name>.history.jsonl` beside the config.
+- **Background monitor** (CF-109): **Auto** starts a **Go-driven** periodic run
+  (not just a JS timer) that emits samples the UI renders off-thread, with a
+  **● monitoring** status chip colored by worst status. A native notification
+  fires **only when the worst status changes** (degraded / improved / recovered)
+  — deduped in Go via a pure `monitorAlert` (tested in `monitor_test.go`). A
+  colored menu-bar/tray icon is deferred to Wails v3 (no systray in v2).
 - **Saved views** (CF-108): the **Views** bar names and stores toolbar presets —
   stack + filter + min-severity + group + open view — as one-click chips that
   light up when active; the set imports/exports as JSON via the clipboard. Pure

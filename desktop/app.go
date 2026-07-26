@@ -33,6 +33,13 @@ type App struct {
 	last  engine.Result
 	title string
 	prev  map[string]engine.Status // previous run's statuses, for the diff view
+
+	// Background monitor (CF-109): a Go-driven periodic run that emits samples to
+	// the frontend and fires a native notification only when the worst status
+	// changes. Guarded by its own mutex so it never blocks a foreground run.
+	monMu     sync.Mutex
+	monCancel context.CancelFunc
+	monLast   string // last observed worst status ("" = no sample yet)
 }
 
 // Change is one status transition between the previous run and this one.

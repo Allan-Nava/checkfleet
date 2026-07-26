@@ -638,3 +638,15 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 6px; border-radius
 .view-json-input { width: 100%; min-height: 180px; margin: 12px 0; padding: 12px; border-radius: var(--r-md);
   background: var(--surface); color: var(--text); border: 1px solid var(--border-str);
   font-family: var(--mono); font-size: 12px; resize: vertical; }
+
+/* ================= background monitor badge (CF-109) ================= */
+.mon-badge { display: inline-flex; align-items: center; gap: 6px; margin-left: 12px;
+  font-size: 11.5px; color: var(--muted); }
+.mon-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok);
+  box-shadow: 0 0 0 3px var(--ok-bg); animation: mon-pulse 2s var(--ease) infinite; }
+.mon-badge.s-OK    .mon-dot { background: var(--ok);   box-shadow: 0 0 0 3px var(--ok-bg); }
+.mon-badge.s-WARN  .mon-dot { background: var(--warn); box-shadow: 0 0 0 3px var(--warn-bg); }
+.mon-badge.s-BAD   .mon-dot { background: var(--bad);  box-shadow: 0 0 0 3px var(--bad-bg); }
+.mon-badge.s-ERROR .mon-dot { background: var(--err);  box-shadow: 0 0 0 3px var(--err-bg); }
+@keyframes mon-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .mon-dot { animation: none; } }

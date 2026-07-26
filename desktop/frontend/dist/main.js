@@ -122,7 +122,16 @@
       (path || "checkfleet.yml") + " --exit-on-bad\n\n" +
       "# or run continuously as a Prometheus exporter:\ncheckfleet serve --config " +
       (path || "checkfleet.yml") + " --interval " + (interval || "60s") + " --listen :9876",
+    StartMonitor: async () => {},
+    StopMonitor: async () => {},
+    MonitorRunning: async () => false,
   };
+
+  // Wails event bus (CF-109). In the browser preview there is no runtime, so the
+  // subscription is a no-op and the monitor falls back to a JS interval.
+  const Events = (window.runtime && window.runtime.EventsOn)
+    ? window.runtime
+    : { EventsOn: () => {} };
 
   /* ---------------- state ---------------- */
   let report = null;
@@ -458,11 +467,48 @@
     } catch (_) {}
   }
 
+  // Auto-refresh is a Go-driven background monitor (CF-109): the ticker lives in
+  // Go, emits samples we render off-thread, and fires a native notification only
+  // when the worst status changes. In mock/browser preview (no Wails backend) we
+  // fall back to a plain JS interval so the toggle still does something.
   function setAutoRefresh(on) {
     if (timer) { clearInterval(timer); timer = null; }
-    if (on) {
-      const secs = parseInt($("interval").value, 10) || 30;
-      timer = setInterval(run, secs * 1000);
+    const secs = parseInt($("interval").value, 10) || 30;
+    if (Backend.StartMonitor && !IS_MOCK) {
+      if (on) Backend.StartMonitor($("configPath").value, $("stack").value, secs);
+      else Backend.StopMonitor();
+      setMonBadge(on);
+      return;
+    }
+    if (on) timer = setInterval(run, secs * 1000);
+    setMonBadge(on);
+  }
+
+  // setMonBadge shows/updates the "● monitoring" chip in the status bar, colored
+  // by the latest worst status.
+  function setMonBadge(on, worst) {
+    const b = $("monBadge");
+    if (!b) return;
+    b.hidden = !on;
+    if (worst) {
+      b.className = "mon-badge s-" + worst;
+      $("monText").textContent = "monitoring · " + worst;
+    } else if (on) {
+      b.className = "mon-badge";
+      $("monText").textContent = "monitoring";
+    }
+  }
+
+  // onMonitorSample renders a background sample and, when the worst status
+  // changed, surfaces a toast (Go already fired the native notification).
+  function onMonitorSample(s) {
+    if (!s || !s.report) return;
+    report = s.report;
+    render();
+    setMonBadge(true, s.worst);
+    if (s.changed) {
+      const kind = s.worst === "OK" ? "success" : (s.worst === "WARN" ? "warn" : "error");
+      toast("Monitor: fleet is now " + s.worst, { kind });
     }
   }
 
@@ -1132,12 +1178,15 @@
         if (p) { $("configPath").value = p; updateHint(); await refreshStacks(); }
       } catch (_) {}
     });
-    $("configPath").addEventListener("change", () => { updateHint(); refreshStacks(); saveSettings(); });
+    $("configPath").addEventListener("change", () => { updateHint(); refreshStacks(); saveSettings(); if ($("auto").checked) setAutoRefresh(true); });
     $("filter").addEventListener("input", () => { render(); renderViewChips(); });
     $("minsev").addEventListener("change", () => { render(); renderViewChips(); });
-    $("stack").addEventListener("change", () => { saveSettings(); renderViewChips(); });
+    $("stack").addEventListener("change", () => { saveSettings(); renderViewChips(); if ($("auto").checked) setAutoRefresh(true); });
     $("notify").addEventListener("change", saveSettings);
     $("auto").addEventListener("change", (e) => { setAutoRefresh(e.target.checked); saveSettings(); });
+    // background-monitor events (CF-109)
+    Events.EventsOn("monitor:sample", onMonitorSample);
+    Events.EventsOn("monitor:stopped", () => setMonBadge(false));
     $("interval").addEventListener("change", () => { if ($("auto").checked) setAutoRefresh(true); saveSettings(); });
     $("export").addEventListener("click", () => save($("expfmt").value));
     $("send").addEventListener("click", sendReport);

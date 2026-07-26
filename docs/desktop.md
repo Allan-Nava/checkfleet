@@ -53,9 +53,11 @@ Everything is one screen, scanned top-to-bottom.
   native file picker.
 - **Stack** — pick a `checkfleet.<stack>.yml` profile discovered next to the
   config (same overlay as the CLI's `--stack`); `(base)` runs the base file.
-- **Auto** + interval — re-run the checks on a timer (10s / 30s / 60s / 5m).
-- **Notify** — pop a native OS notification after a run whose worst status is
-  BAD/ERROR.
+- **Auto** + interval — start a background monitor (see below) on a timer
+  (10s / 30s / 60s / 5m).
+- **Notify** — pop a native OS notification after a *manual* run whose worst
+  status is BAD/ERROR. (The background monitor has its own change-only
+  notifications, described below.)
 - **Run** — execute every configured module now.
 
 The app remembers your config path, stack, interval, Auto and Notify between
@@ -215,6 +217,29 @@ clipboard, **Import** reads a pasted export (matching names are overwritten) —
 handy for sharing a team's standard lenses or seeding a new machine. A view is
 pure UI state (knobs, not data): it holds **no credentials and no config
 contents**, and lives in local browser storage, so it never touches your YAML.
+
+## Background monitoring
+
+Tick **Auto** and the app keeps watching the fleet on the chosen interval. The
+loop runs in **Go**, not a browser timer, so each pass is a real run of the same
+modules — findings, trend and history all keep filling in while you're on
+another view. A small **● monitoring** chip in the status bar shows it's live,
+colored by the latest worst status.
+
+![checkfleet desktop — background monitoring](assets/desktop-monitor.png)
+
+The point of a monitor is to tell you when something *changes*, not to nag: a
+native OS notification fires **only when the worst status crosses a boundary** —
+*degraded* (e.g. WARN → ERROR), *improved*, or *recovered to OK*. A fleet that
+stays BAD for an hour notifies once, not sixty times. Starting the monitor on an
+already-broken fleet tells you straight away; starting it on a healthy one is
+silent until something breaks. Changing the config, stack or interval re-points
+the monitor automatically.
+
+A colored **menu-bar / tray icon** is the natural next step here; it needs a
+system-tray integration that Wails v2 doesn't provide (it arrives in Wails v3),
+so it's deliberately deferred rather than pulled in as a fragile dependency —
+tracked in the backlog.
 
 ## Group by module
 
