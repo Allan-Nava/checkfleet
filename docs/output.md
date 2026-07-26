@@ -6,6 +6,25 @@ nav_order: 6
 Pick one with `--output`. Every format renders the same findings, sorted
 worst-first.
 
+## Fan out to several sinks
+
+`--output` takes a **comma-separated list**, so one run emits to several sinks at
+once — the checks run only once:
+
+```bash
+# print JSON locally and push the report to Slack
+checkfleet check all --config checkfleet.yml --output json,slack
+
+# a file format plus two chat sinks
+checkfleet check all --config checkfleet.yml --output markdown,slack,teams --out-file report.md
+```
+
+With multiple sinks each one is **isolated**: an unset env var or a down webhook
+is reported on stderr but doesn't stop the other sinks or fail the run (the
+[finding gate](ci.md) is separate). With a single `--output`, a sink error still
+aborts the command as before. `--out-file` applies to the format renderer;
+combining several *file* formats in one run isn't meaningful (the last wins).
+
 ## `text` (default)
 
 For the terminal. One line per finding with a colored status glyph, then a

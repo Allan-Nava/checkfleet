@@ -90,7 +90,7 @@ func main() {
 func usage() {
 	fmt.Fprintln(os.Stderr, `usage:
   checkfleet init [--modules certs,http] [--config checkfleet.yml] [--force]     # scaffold a starter config
-  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka|ingest|s3|smtp|elasticsearch|mongodb|mysql|etcd|clickhouse|vault|memcached|cassandra> --config checkfleet.yml [--output text|markdown|json|junit|html|prometheus|otlp|csv|slack|discord|teams|telegram|webhook] [--out-file PATH] [--no-color] [--only ...] [--min-severity warn] [--target glob] [--watch 5s] [--history F --diff] [--max-concurrency N] [--exit-on-bad]
+  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka|ingest|s3|smtp|elasticsearch|mongodb|mysql|etcd|clickhouse|vault|memcached|cassandra> --config checkfleet.yml [--output text|markdown|json|junit|html|prometheus|otlp|csv|slack|discord|teams|telegram|webhook,...] [--out-file PATH] [--no-color] [--only ...] [--min-severity warn] [--target glob] [--watch 5s] [--history F --diff] [--max-concurrency N] [--exit-on-bad]
   checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s] [--max-concurrency N]   # export Prometheus metrics
   checkfleet report-issues --config checkfleet.yml [--forge github|gitlab]     # open/close tracker issues from BAD findings
   checkfleet alert --config checkfleet.yml --provider pagerduty --key-env K    # create/resolve on-call alerts from BAD/ERROR
@@ -110,7 +110,7 @@ func runCheck(args []string) error {
 	fs := flag.NewFlagSet("check", flag.ExitOnError)
 	configPath := fs.String("config", "checkfleet.yml", "YAML config file")
 	stack := fs.String("stack", "", "comma-separated stack profiles overlaid in order (last wins): checkfleet.<stack>.yml onto the base")
-	format := fs.String("output", "text", "format: text, markdown, json, junit, html, prometheus, otlp, csv, slack, discord, teams, telegram, webhook")
+	format := fs.String("output", "text", "output sink(s), comma-separated to fan out (e.g. text,slack): text, markdown, json, junit, html, prometheus, otlp, csv, slack, discord, teams, telegram, webhook")
 	outFile := fs.String("out-file", "", "write the output to this file (atomically) instead of stdout")
 	noColor := fs.Bool("no-color", false, "disable ANSI colour in the text output (also honours NO_COLOR)")
 	webhookEnv := fs.String("webhook-env", "SLACK_WEBHOOK", "env var holding the Slack webhook URL (slack output)")
@@ -202,77 +202,98 @@ func runCheck(args []string) error {
 		return nil
 	}
 
-	switch *format {
-	case "slack":
-		payload, err := output.Slack(res, module)
-		if err != nil {
-			return err
-		}
-		url := os.Getenv(*webhookEnv)
-		if url == "" {
-			return fmt.Errorf("slack webhook not set: env %s is empty", *webhookEnv)
-		}
-		if err := postJSON(context.Background(), url, payload); err != nil {
-			return err
-		}
-		fmt.Println("checkfleet: report sent to Slack")
-	case "discord":
-		if err := postRendered(*webhookEnv, "Discord", func() (string, error) { return output.Discord(res, module) }); err != nil {
-			return err
-		}
-	case "teams":
-		if err := postRendered(*webhookEnv, "Teams", func() (string, error) { return output.Teams(res, module) }); err != nil {
-			return err
-		}
-	case "telegram":
-		text, err := output.Telegram(res, module)
-		if err != nil {
-			return err
-		}
-		token, chat := os.Getenv(*tgTokenEnv), os.Getenv(*tgChatEnv)
-		if token == "" || chat == "" {
-			return fmt.Errorf("telegram not set: env %s and/or %s are empty", *tgTokenEnv, *tgChatEnv)
-		}
-		if err := postTelegram(context.Background(), token, chat, text); err != nil {
-			return err
-		}
-		fmt.Println("checkfleet: report sent to Telegram")
-	case "webhook":
-		var payload string
-		var err error
-		if *tmplFile != "" {
-			tmpl, rerr := os.ReadFile(*tmplFile)
-			if rerr != nil {
-				return fmt.Errorf("reading template %s: %w", *tmplFile, rerr)
-			}
-			payload, err = output.RenderTemplate(res, module, string(tmpl))
-		} else {
-			payload, err = output.JSON(res)
-		}
-		if err != nil {
-			return err
-		}
-		url := os.Getenv(*webhookEnv)
-		if url == "" {
-			return fmt.Errorf("webhook not set: env %s is empty", *webhookEnv)
-		}
-		if err := postJSON(context.Background(), url, payload); err != nil {
-			return err
-		}
-		fmt.Println("checkfleet: report sent to the webhook")
-	default:
-		color := *format == "text" && *outFile == "" && !*noColor &&
-			os.Getenv("NO_COLOR") == "" && isTerminal(os.Stdout)
-		rendered, err := render(*format, res, module, color)
-		if err != nil {
-			return err
-		}
-		if *outFile != "" {
-			if err := atomicWrite(*outFile, rendered); err != nil {
+	// --output may be a comma-separated list, so one run fans out to several
+	// sinks (e.g. text,slack). Color is only meaningful for a lone text sink on
+	// a terminal.
+	sinks := splitCSV(*format)
+	if len(sinks) == 0 {
+		sinks = []string{"text"}
+	}
+	color := len(sinks) == 1 && sinks[0] == "text" && *outFile == "" && !*noColor &&
+		os.Getenv("NO_COLOR") == "" && isTerminal(os.Stdout)
+
+	// emit sends the run to one sink: a push sink (slack/…) POSTs to its env URL,
+	// a format renderer writes to --out-file or stdout.
+	emit := func(sink string) error {
+		switch sink {
+		case "slack":
+			payload, err := output.Slack(res, module)
+			if err != nil {
 				return err
 			}
-		} else {
+			url := os.Getenv(*webhookEnv)
+			if url == "" {
+				return fmt.Errorf("slack webhook not set: env %s is empty", *webhookEnv)
+			}
+			if err := postJSON(context.Background(), url, payload); err != nil {
+				return err
+			}
+			fmt.Println("checkfleet: report sent to Slack")
+		case "discord":
+			return postRendered(*webhookEnv, "Discord", func() (string, error) { return output.Discord(res, module) })
+		case "teams":
+			return postRendered(*webhookEnv, "Teams", func() (string, error) { return output.Teams(res, module) })
+		case "telegram":
+			text, err := output.Telegram(res, module)
+			if err != nil {
+				return err
+			}
+			token, chat := os.Getenv(*tgTokenEnv), os.Getenv(*tgChatEnv)
+			if token == "" || chat == "" {
+				return fmt.Errorf("telegram not set: env %s and/or %s are empty", *tgTokenEnv, *tgChatEnv)
+			}
+			if err := postTelegram(context.Background(), token, chat, text); err != nil {
+				return err
+			}
+			fmt.Println("checkfleet: report sent to Telegram")
+		case "webhook":
+			var payload string
+			var err error
+			if *tmplFile != "" {
+				tmpl, rerr := os.ReadFile(*tmplFile)
+				if rerr != nil {
+					return fmt.Errorf("reading template %s: %w", *tmplFile, rerr)
+				}
+				payload, err = output.RenderTemplate(res, module, string(tmpl))
+			} else {
+				payload, err = output.JSON(res)
+			}
+			if err != nil {
+				return err
+			}
+			url := os.Getenv(*webhookEnv)
+			if url == "" {
+				return fmt.Errorf("webhook not set: env %s is empty", *webhookEnv)
+			}
+			if err := postJSON(context.Background(), url, payload); err != nil {
+				return err
+			}
+			fmt.Println("checkfleet: report sent to the webhook")
+		default:
+			rendered, err := render(sink, res, module, color)
+			if err != nil {
+				return err
+			}
+			if *outFile != "" {
+				return atomicWrite(*outFile, rendered)
+			}
 			fmt.Print(rendered)
+		}
+		return nil
+	}
+
+	if len(sinks) == 1 {
+		// One sink: errors abort the command (exit 1), as before.
+		if err := emit(sinks[0]); err != nil {
+			return err
+		}
+	} else {
+		// Fan-out: each sink is isolated — a down webhook or an unset env doesn't
+		// stop the others or fail the run (the finding gate is separate).
+		for _, s := range sinks {
+			if err := emit(s); err != nil {
+				fmt.Fprintf(os.Stderr, "checkfleet: output %q: %v\n", s, err)
+			}
 		}
 	}
 
@@ -495,11 +516,15 @@ func loadConfig(path, stack string) (*engine.Config, error) {
 
 // splitStacks parses a comma-separated --stack value into trimmed, non-empty
 // names, preserving order.
-func splitStacks(stack string) []string {
+func splitStacks(stack string) []string { return splitCSV(stack) }
+
+// splitCSV splits a comma-separated flag value into trimmed, non-empty entries,
+// preserving order (used for --stack and the multi-sink --output).
+func splitCSV(s string) []string {
 	var out []string
-	for _, s := range strings.Split(stack, ",") {
-		if s = strings.TrimSpace(s); s != "" {
-			out = append(out, s)
+	for _, p := range strings.Split(s, ",") {
+		if p = strings.TrimSpace(p); p != "" {
+			out = append(out, p)
 		}
 	}
 	return out

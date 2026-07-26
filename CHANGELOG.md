@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.126.0
+
+- CLI (CF-118, M29 — fan-out multi-sink): `--output` accetta ora una **lista comma-separated**, così un singolo run emette verso **più sink insieme** senza rilanciare i check — es. `--output json,slack` stampa il JSON in locale **e** manda il report a Slack, oppure `--output markdown,slack,teams`. Con più sink ognuno è **isolato**: una env non settata o un webhook giù viene segnalato su stderr ma **non blocca gli altri sink né fa fallire la run** (il gate dei finding, `--exit-on-bad`, resta separato). Con `--output` singolo il comportamento è invariato (un errore del sink aborta come prima — back-compat). `--out-file` vale per il renderer di formato. TDD: unit `TestSplitCSV` + due test d'integrazione che eseguono il binario (`cmd/checkfleet/fanout_test.go`: il fan-out colpisce ogni sink verificato con un webhook `httptest`; un sink non configurato è isolato → exit 0 con il resto che parte e lo stderr che nomina il sink). Docs: nuova sezione in `docs/output.md`.
+
 ## 0.125.1
 
 - Docs (backlog, planning): aggiunta la milestone **M32 — CI & pipelines (fase 4)**: rendere checkfleet cittadino di prima classe del CI, oltre l'attuale `--exit-on-bad`. Item pianificati (CF-134..138): **gate configurabile** (`--exit-on warn|bad|error` + `--exit-code N`), **output GitHub Actions annotations** (`--output github` con `::error::`/`::warning::` + job summary), **output SARIF** (per il tab Code scanning/Security), **baseline / fail-on-new** (gata solo sui finding nuovi vs una baseline, per adottare su flotte già "sporche"), **GitHub Action riutilizzabile** (`action.yml` composite + snippet GitLab CI — chiude M32). Tutto zero-dep, opt-in e retro-compatibile (l'exit-code di default non cambia). Nessun cambiamento al software — solo pianificazione; ogni item sarà una release a sé.
