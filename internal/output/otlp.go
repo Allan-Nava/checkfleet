@@ -55,8 +55,19 @@ func OTLP(res engine.Result) (string, error) {
 		totalPoints = append(totalPoints, dp([]otlpKV{kv("status", string(st))}, sum[st]))
 	}
 
+	// Global labels (CF-119) become resource attributes, sorted for determinism.
+	resAttrs := []otlpKV{kv("service.name", "checkfleet")}
+	lkeys := make([]string, 0, len(res.Labels))
+	for k := range res.Labels {
+		lkeys = append(lkeys, k)
+	}
+	sort.Strings(lkeys)
+	for _, k := range lkeys {
+		resAttrs = append(resAttrs, kv(k, res.Labels[k]))
+	}
+
 	req := otlpRequest{ResourceMetrics: []otlpResourceMetrics{{
-		Resource: otlpResource{Attributes: []otlpKV{kv("service.name", "checkfleet")}},
+		Resource: otlpResource{Attributes: resAttrs},
 		ScopeMetrics: []otlpScopeMetrics{{
 			Scope: otlpScope{Name: "checkfleet"},
 			Metrics: []otlpMetric{

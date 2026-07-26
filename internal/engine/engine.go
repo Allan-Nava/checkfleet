@@ -52,6 +52,9 @@ type Result struct {
 	Findings []Finding     `json:"findings"`
 	Started  time.Time     `json:"started"`
 	Duration time.Duration `json:"duration_ns"`
+	// Labels are global key/value metadata (env, region, …) carried into the
+	// outputs for routing/dashboards (CF-119). Set by the caller after the run.
+	Labels map[string]string `json:"labels,omitempty"`
 }
 
 // Run executes the checks sequentially, each bounded by timeout.

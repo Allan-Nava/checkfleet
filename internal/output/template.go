@@ -18,6 +18,7 @@ type TemplateData struct {
 	BAD      int
 	ERROR    int
 	Findings []engine.Finding
+	Labels   map[string]string // global labels (CF-119)
 }
 
 // RenderTemplate executes a Go text/template against the run, for shaping a
@@ -38,6 +39,7 @@ func RenderTemplate(res engine.Result, title, tmplText string) (string, error) {
 		BAD:      sum[engine.BAD],
 		ERROR:    sum[engine.ERROR],
 		Findings: res.Findings,
+		Labels:   res.Labels,
 	}
 	var b strings.Builder
 	if err := t.Execute(&b, data); err != nil {

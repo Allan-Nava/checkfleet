@@ -4,6 +4,13 @@ retries: 0                 # retry checks that produce ERROR findings (transient
 retry_backoff_ms: 500      # base backoff between attempts (doubles each retry), used when retries > 0
 max_concurrency: 0         # cap on checks running at once (0 = unbounded); useful for large fleets. --max-concurrency overrides
 
+# Global labels attached to the outputs (Prometheus label set, JSON "labels",
+# OTLP resource attributes, and .Labels in webhook templates) — for routing and
+# dashboards. Operator metadata only, never secrets.
+labels:
+  env: prod
+  region: eu
+
 # Per-module overrides of the tuning above (a zero field falls back to the global).
 module_overrides:
   postgres: {timeout_seconds: 10, retries: 2}   # DB checks: shorter deadline, retry transients

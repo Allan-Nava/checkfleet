@@ -37,6 +37,7 @@ checks:
 | `retries` | int | `0` | Retry a check that produced an ERROR finding (transient network/handshake), up to this many times. |
 | `retry_backoff_ms` | int | `500` (when `retries`>0) | Base backoff between attempts; doubles each retry. |
 | `max_concurrency` | int | `0` (unbounded) | Cap on how many checks run at once. Handy for large fleets so a run doesn't open hundreds of connections at once. `--max-concurrency` overrides it. |
+| `labels` | map | — | Global key/value labels attached to the outputs — see [Global labels](#global-labels). |
 | `module_overrides` | map | — | Per-module override of `timeout_seconds`/`retries`/`retry_backoff_ms`, keyed by module name. A zero field falls back to the global value. |
 | `include` | list | — | Files or directories deep-merged under this config at load time — see [Splitting config across files](#splitting-config-across-files-include). |
 | `checks` | map | — | One entry per module. A module runs only if its key is present. |
@@ -318,6 +319,29 @@ checks:
   certs:
     targets: [edge.example.com]
 ```
+
+## Global labels
+
+`labels:` attaches key/value metadata to a run — which environment, region,
+cluster — and carries it into the outputs for routing and dashboards:
+
+```yaml
+labels:
+  env: prod
+  region: eu
+```
+
+Where they surface:
+
+| Output | How labels appear |
+|---|---|
+| `prometheus` | on **every series** — `checkfleet_finding_status{check="…",target="…",env="prod",region="eu"}` (invalid label chars in a key become `_`). |
+| `json` | a top-level `"labels": { … }` object. |
+| `otlp` | as **resource attributes** on the metrics. |
+| `webhook` (template) | available as `.Labels` (e.g. `{{ .Labels.env }}`). |
+
+Labels are **operator metadata only** — never secrets. Other formats (text,
+markdown, …) ignore them.
 
 ## Splitting config across files (`include`)
 

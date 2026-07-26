@@ -14,11 +14,12 @@ import (
 
 // Config is the root of checkfleet.yml.
 type Config struct {
-	TimeoutSeconds int          `yaml:"timeout_seconds"`
-	Retries        int          `yaml:"retries"`          // retry checks with ERROR findings
-	RetryBackoffMS int          `yaml:"retry_backoff_ms"` // base backoff (default 500 when retries>0)
-	MaxConcurrency int          `yaml:"max_concurrency"`  // cap on checks running at once (0 = unbounded, CF-116)
-	Checks         ChecksConfig `yaml:"checks"`
+	TimeoutSeconds int               `yaml:"timeout_seconds"`
+	Retries        int               `yaml:"retries"`          // retry checks with ERROR findings
+	RetryBackoffMS int               `yaml:"retry_backoff_ms"` // base backoff (default 500 when retries>0)
+	MaxConcurrency int               `yaml:"max_concurrency"`  // cap on checks running at once (0 = unbounded, CF-116)
+	Labels         map[string]string `yaml:"labels"`           // global labels attached to the outputs (CF-119)
+	Checks         ChecksConfig      `yaml:"checks"`
 
 	// Maintenance windows: findings matching an active window are muted or
 	// downgraded so scheduled work doesn't page. See ApplyMaintenance.
@@ -51,24 +52,24 @@ type MaintenanceWindow struct {
 }
 
 type ChecksConfig struct {
-	Certs    *CertsConfig    `yaml:"certs"`
-	HTTP     *HTTPConfig     `yaml:"http"`
-	NATS     *NATSConfig     `yaml:"nats"`
-	HAProxy  *HAProxyConfig  `yaml:"haproxy"`
-	Stream   *StreamConfig   `yaml:"stream"`
-	Patroni  *PatroniConfig  `yaml:"patroni"`
-	Consul   *ConsulConfig   `yaml:"consul"`
-	Postgres *PostgresConfig `yaml:"postgres"`
-	DNS      *DNSConfig      `yaml:"dns"`
-	Redis    *RedisConfig    `yaml:"redis"`
-	Keycloak *KeycloakConfig `yaml:"keycloak"`
-	TCP      *TCPConfig      `yaml:"tcp"`
-	TLS      *TLSConfig      `yaml:"tls"`
-	NTP      *NTPConfig      `yaml:"ntp"`
-	RabbitMQ *RabbitMQConfig `yaml:"rabbitmq"`
-	GRPC     *GRPCConfig     `yaml:"grpc"`
-	LDAP     *LDAPConfig     `yaml:"ldap"`
-	Kafka    *KafkaConfig    `yaml:"kafka"`
+	Certs         *CertsConfig         `yaml:"certs"`
+	HTTP          *HTTPConfig          `yaml:"http"`
+	NATS          *NATSConfig          `yaml:"nats"`
+	HAProxy       *HAProxyConfig       `yaml:"haproxy"`
+	Stream        *StreamConfig        `yaml:"stream"`
+	Patroni       *PatroniConfig       `yaml:"patroni"`
+	Consul        *ConsulConfig        `yaml:"consul"`
+	Postgres      *PostgresConfig      `yaml:"postgres"`
+	DNS           *DNSConfig           `yaml:"dns"`
+	Redis         *RedisConfig         `yaml:"redis"`
+	Keycloak      *KeycloakConfig      `yaml:"keycloak"`
+	TCP           *TCPConfig           `yaml:"tcp"`
+	TLS           *TLSConfig           `yaml:"tls"`
+	NTP           *NTPConfig           `yaml:"ntp"`
+	RabbitMQ      *RabbitMQConfig      `yaml:"rabbitmq"`
+	GRPC          *GRPCConfig          `yaml:"grpc"`
+	LDAP          *LDAPConfig          `yaml:"ldap"`
+	Kafka         *KafkaConfig         `yaml:"kafka"`
 	Ingest        *IngestConfig        `yaml:"ingest"`
 	S3            *S3Config            `yaml:"s3"`
 	SMTP          *SMTPConfig          `yaml:"smtp"`

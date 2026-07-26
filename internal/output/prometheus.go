@@ -43,32 +43,80 @@ func Prometheus(res engine.Result) string {
 		return order[i].target < order[j].target
 	})
 
+	// Global labels (CF-119) ride on every series so you can filter by env/region.
+	extra := promLabels(res.Labels)
+	braces := func(existing string) string {
+		switch {
+		case existing == "" && extra == "":
+			return ""
+		case existing == "":
+			return "{" + extra + "}"
+		case extra == "":
+			return "{" + existing + "}"
+		default:
+			return "{" + existing + "," + extra + "}"
+		}
+	}
+
 	b.WriteString("# HELP checkfleet_finding_status Finding severity (0=OK,1=WARN,2=BAD,3=ERROR).\n")
 	b.WriteString("# TYPE checkfleet_finding_status gauge\n")
 	for _, k := range order {
-		fmt.Fprintf(&b, "checkfleet_finding_status{check=\"%s\",target=\"%s\"} %d\n", esc(k.check), esc(k.target), worst[k])
+		fmt.Fprintf(&b, "checkfleet_finding_status%s %d\n", braces(fmt.Sprintf("check=\"%s\",target=\"%s\"", esc(k.check), esc(k.target))), worst[k])
 	}
 
 	sum := engine.Summarize(res.Findings)
 	b.WriteString("# HELP checkfleet_findings_total Number of findings by status.\n")
 	b.WriteString("# TYPE checkfleet_findings_total gauge\n")
 	for _, st := range []engine.Status{engine.OK, engine.WARN, engine.BAD, engine.ERROR} {
-		fmt.Fprintf(&b, "checkfleet_findings_total{status=%q} %d\n", st, sum[st])
+		fmt.Fprintf(&b, "checkfleet_findings_total%s %d\n", braces(fmt.Sprintf("status=\"%s\"", st)), sum[st])
 	}
 
 	b.WriteString("# HELP checkfleet_worst_status Worst severity across all findings.\n")
 	b.WriteString("# TYPE checkfleet_worst_status gauge\n")
-	fmt.Fprintf(&b, "checkfleet_worst_status %d\n", severity[engine.Worst(res.Findings)])
+	fmt.Fprintf(&b, "checkfleet_worst_status%s %d\n", braces(""), severity[engine.Worst(res.Findings)])
 
 	b.WriteString("# HELP checkfleet_run_duration_seconds Duration of the last run.\n")
 	b.WriteString("# TYPE checkfleet_run_duration_seconds gauge\n")
-	fmt.Fprintf(&b, "checkfleet_run_duration_seconds %g\n", res.Duration.Seconds())
+	fmt.Fprintf(&b, "checkfleet_run_duration_seconds%s %g\n", braces(""), res.Duration.Seconds())
 
 	b.WriteString("# HELP checkfleet_last_run_timestamp_seconds Unix time of the last run.\n")
 	b.WriteString("# TYPE checkfleet_last_run_timestamp_seconds gauge\n")
-	fmt.Fprintf(&b, "checkfleet_last_run_timestamp_seconds %d\n", res.Started.Unix())
+	fmt.Fprintf(&b, "checkfleet_last_run_timestamp_seconds%s %d\n", braces(""), res.Started.Unix())
 
 	return b.String()
+}
+
+// promLabels renders global labels as sorted Prometheus label pairs
+// (name sanitized to [a-zA-Z_][a-zA-Z0-9_]*), or "" when there are none.
+func promLabels(labels map[string]string) string {
+	if len(labels) == 0 {
+		return ""
+	}
+	keys := make([]string, 0, len(labels))
+	for k := range labels {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	parts := make([]string, 0, len(keys))
+	for _, k := range keys {
+		parts = append(parts, fmt.Sprintf("%s=\"%s\"", promName(k), esc(labels[k])))
+	}
+	return strings.Join(parts, ",")
+}
+
+// promName sanitizes a label key to a valid Prometheus label name.
+func promName(s string) string {
+	if s == "" {
+		return "_"
+	}
+	out := []rune(s)
+	for i, r := range out {
+		ok := r == '_' || (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (i > 0 && r >= '0' && r <= '9')
+		if !ok {
+			out[i] = '_'
+		}
+	}
+	return string(out)
 }
 
 // esc escapes a Prometheus label value (backslash, quote, newline).

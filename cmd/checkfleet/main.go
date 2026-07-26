@@ -175,6 +175,7 @@ func runCheck(args []string) error {
 	}
 
 	res := engine.RunJobsLimited(context.Background(), selected, limit)
+	res.Labels = cfg.Labels // global labels ride into the outputs (CF-119)
 	if *historyPath != "" {
 		flaps, err := recordHistory(*historyPath, res, *flapChanges, *flapWindow)
 		if err != nil {
@@ -319,6 +320,7 @@ func runCheck(args []string) error {
 func runWatch(jobs []engine.Job, cfg *engine.Config, filter engine.FilterOptions, interval time.Duration, color bool, limit int) error {
 	for {
 		res := engine.RunJobsLimited(context.Background(), jobs, limit)
+		res.Labels = cfg.Labels
 		res.Findings = engine.ApplyMaintenance(res.Findings, cfg.Maintenance, time.Now())
 		res.Findings = engine.Filter(res.Findings, filter)
 		fmt.Print(watchFrame(res, time.Now(), interval, color))
@@ -559,6 +561,7 @@ func runServe(args []string) error {
 	var ready atomic.Bool
 	runOnce := func() {
 		res := engine.RunJobsLimited(context.Background(), jobs, limit)
+		res.Labels = cfg.Labels
 		res.Findings = engine.ApplyMaintenance(res.Findings, cfg.Maintenance, time.Now())
 		mu.Lock()
 		latest = res

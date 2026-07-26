@@ -113,6 +113,7 @@ func (a *App) RunChecks(configPath, stack string) Report {
 		Retries: cfg.Retries,
 		Backoff: time.Duration(cfg.RetryBackoffMS) * time.Millisecond,
 	}, cfg.MaxConcurrency)
+	res.Labels = cfg.Labels
 
 	a.mu.Lock()
 	a.last = res
