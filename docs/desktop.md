@@ -194,6 +194,28 @@ The workspace never stores credentials or config contents — only the file path
 — and evaluating a fleet here is exactly the same run as pressing **Run**, so
 `--exit-on-bad` semantics and thresholds are identical.
 
+## Saved views
+
+You keep coming back to the same handful of lenses: *prod errors only*, *certs
+about to expire*, *everything grouped by module*. A **saved view** captures that
+whole toolbar state — the **stack**, the **filter** text, the **min-severity**,
+the **Group** toggle and which top-level view is open — under a name, and the
+**Views** bar under the toolbar switches between them in one click.
+
+![checkfleet desktop — saved views](assets/desktop-views.png)
+
+Set the toolbar the way you want it, then **＋ Save view** and name it (reusing a
+name overwrites it). Each chip applies its view on click; the chip lights up when
+the toolbar already matches it, so you can see at a glance which lens you're in.
+The **✕** on a chip deletes it. Saved views are also commands in the palette
+(<kbd>⌘K</kbd> → *View: …*, plus *Save current view*).
+
+**Import / Export** move the whole set as JSON: **Export** copies it to the
+clipboard, **Import** reads a pasted export (matching names are overwritten) —
+handy for sharing a team's standard lenses or seeding a new machine. A view is
+pure UI state (knobs, not data): it holds **no credentials and no config
+contents**, and lives in local browser storage, so it never touches your YAML.
+
 ## Group by module
 
 Tick **Group** to fold the findings table into collapsible sections, one per

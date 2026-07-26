@@ -110,6 +110,16 @@
       <button class="btn" id="send" disabled>Send…</button>
     </div>
 
+    <!-- saved views (CF-108): named toolbar presets, one click to switch -->
+    <div class="views-bar" id="viewsBar" role="toolbar" aria-label="Saved views">
+      <span class="views-label">Views</span>
+      <span class="views-chips" id="viewChips"></span>
+      <button class="chip chip-add" id="viewSave" title="Save the current stack, filter, min-severity, group and view as a named preset">＋ Save view</button>
+      <span class="spacer"></span>
+      <button class="btn btn-ghost" id="viewImport" title="Import a set of saved views from JSON">Import</button>
+      <button class="btn btn-ghost" id="viewExport" title="Export saved views as JSON">Export</button>
+    </div>
+
     <!-- findings table -->
     <main class="table-wrap" id="tableWrap">
       <table class="findings">
@@ -274,6 +284,7 @@
   </div>
 
   <script src="charts.js"></script>
+  <script src="presets.js"></script>
   <script src="main.js"></script>
 </body>
 </html>

@@ -31,6 +31,11 @@ command palette** and keyboard shortcuts (CF-96).
 - **History & diff**: in-session **Changes** (CF-64), a persistent worst-status
   **Trend** sparkline (CF-70), and a **History browser** to open and compare any
   two past runs (CF-104) — all from the `.<name>.history.jsonl` beside the config.
+- **Saved views** (CF-108): the **Views** bar names and stores toolbar presets —
+  stack + filter + min-severity + group + open view — as one-click chips that
+  light up when active; the set imports/exports as JSON via the clipboard. Pure
+  UI state in localStorage (no config contents, no credentials). Logic lives in
+  the testable `presets.js` UMD module (`presets.test.js`, `node --test`).
 - **Workspace** (CF-107): a left-hand panel (grid button in the title bar) that
   keeps every fleet you use in one place — configs are remembered automatically,
   up to 20, MRU-first. **Run all** evaluates them independently and rolls the

@@ -348,6 +348,105 @@
     try { return JSON.parse(localStorage.getItem("cf-settings") || "{}"); } catch (_) { return {}; }
   }
 
+  /* ---------------- saved views / presets (CF-108) ---------------- */
+  // A view bundles the toolbar knobs you look at often. Logic lives in the
+  // testable CFPresets module; here we bind it to the DOM and localStorage.
+  let presets = [];
+  function loadPresets() {
+    try { presets = CFPresets.parse(localStorage.getItem("cf-views") || "[]"); } catch (_) { presets = []; }
+  }
+  function savePresets() {
+    try { localStorage.setItem("cf-views", CFPresets.serialize(presets)); } catch (_) {}
+  }
+  // currentState reads the exact toolbar knobs a preset owns.
+  function currentState() {
+    return { stack: $("stack").value, filter: $("filter").value,
+      minsev: $("minsev").value, group: $("groupBy").checked, view: view };
+  }
+  function applyPreset(p) {
+    if (!p) return;
+    $("stack").value = p.stack || "";
+    $("filter").value = p.filter || "";
+    $("minsev").value = p.minsev || "ok";
+    $("groupBy").checked = !!p.group;
+    setView(p.view || "fleet");
+    render();
+    saveSettings();
+    toast("View “" + p.name + "”", { timeout: 1600 });
+  }
+  // A one-line human summary of a preset, for the chip's tooltip.
+  function chipTitle(p) {
+    const bits = [p.view || "fleet", p.stack ? "stack " + p.stack : "base stack"];
+    if (p.filter) bits.push("filter “" + p.filter + "”");
+    if (p.minsev && p.minsev !== "ok") bits.push("≥ " + p.minsev.toUpperCase());
+    if (p.group) bits.push("grouped");
+    return bits.join(" · ");
+  }
+  function renderViewChips() {
+    const host = $("viewChips");
+    if (!host) return;
+    if (!presets.length) {
+      host.innerHTML = `<span class="views-empty">No saved views yet — set the toolbar how you like it, then <b>Save view</b>.</span>`;
+      return;
+    }
+    const st = currentState();
+    host.innerHTML = presets.map((p) => {
+      const active = CFPresets.matches(p, st);
+      return `<span class="chip view-chip${active ? " active" : ""}" title="${escapeHtml(chipTitle(p))}">` +
+        `<button class="chip-apply" data-view-apply="${escapeHtml(p.name)}">${escapeHtml(p.name)}</button>` +
+        `<button class="chip-x" data-view-del="${escapeHtml(p.name)}" aria-label="Delete view ${escapeHtml(p.name)}">✕</button></span>`;
+    }).join("");
+  }
+  function saveCurrentView() {
+    openDrawer("Save view", `
+      <p class="drawer-msg">Name this view — it captures the current stack, filter, min-severity, group toggle and open view. Reusing a name overwrites it.</p>
+      <div class="view-form">
+        <input id="viewName" type="text" placeholder="e.g. Prod errors" autocomplete="off" maxlength="40" aria-label="View name">
+        <button class="btn btn-primary" data-view-save-confirm>Save</button>
+      </div>`);
+    const inp = $("viewName");
+    if (inp) { inp.focus(); inp.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); confirmSaveView(); } }); }
+  }
+  function confirmSaveView() {
+    const name = ($("viewName") ? $("viewName").value : "");
+    const p = CFPresets.normalize(name, currentState());
+    if (!p) { toast("Enter a name for the view", { kind: "warn" }); return; }
+    presets = CFPresets.upsert(presets, p);
+    savePresets();
+    renderViewChips();
+    closeDrawer();
+    toast("Saved view “" + p.name + "”", { kind: "success", timeout: 2500 });
+  }
+  async function exportViews() {
+    if (!presets.length) { toast("No saved views to export", { kind: "warn" }); return; }
+    const json = CFPresets.serialize(presets);
+    try {
+      await navigator.clipboard.writeText(json);
+      toast("Copied " + presets.length + " view" + (presets.length === 1 ? "" : "s") + " to the clipboard (JSON)", { kind: "success" });
+    } catch (_) {
+      openDrawer("Export views", `<p class="drawer-msg">Copy this JSON to share or back up your views.</p><pre class="view-json">${escapeHtml(json)}</pre>`);
+    }
+  }
+  async function importViews() {
+    let text = "";
+    try { text = await navigator.clipboard.readText(); } catch (_) {}
+    openDrawer("Import views", `
+      <p class="drawer-msg">Paste a views JSON export below (pre-filled from your clipboard when possible). Views with a matching name are overwritten.</p>
+      <textarea id="importJson" class="view-json-input" spellcheck="false" placeholder='[ { "name": "Prod errors", "minsev": "error" } ]'>${escapeHtml(text || "")}</textarea>
+      <button class="btn btn-primary" data-view-import-confirm>Import</button>`);
+    const ta = $("importJson"); if (ta) ta.focus();
+  }
+  function confirmImportViews() {
+    const text = $("importJson") ? $("importJson").value : "";
+    const incoming = CFPresets.parse(text);
+    if (!incoming.length) { toast("No valid views found in that JSON", { kind: "warn" }); return; }
+    incoming.forEach((p) => { presets = CFPresets.upsert(presets, p); });
+    savePresets();
+    renderViewChips();
+    closeDrawer();
+    toast("Imported " + incoming.length + " view" + (incoming.length === 1 ? "" : "s"), { kind: "success" });
+  }
+
   async function refreshStacks() {
     try {
       const stacks = (await Backend.ListStacks($("configPath").value)) || [];
@@ -405,6 +504,7 @@
     $("dashboard").hidden = !dashboardOn;
     $("editor").hidden = !editorOn;
     $("findingsBar").hidden = name !== "fleet";
+    $("viewsBar").hidden = name !== "fleet";
     $("tableWrap").hidden = name !== "fleet";
     $("summary").hidden = name !== "fleet" || !report;
     const tabs = document.querySelectorAll(".viewtab");
@@ -415,6 +515,7 @@
     });
     if (dashboardOn) renderDashboard();
     if (editorOn) loadConfigText();
+    renderViewChips(); // keep the active-view highlight in sync
     saveSettings();
   }
 
@@ -744,6 +845,10 @@
       { label: "Go to Config", hint: "3", act: () => setView("config") },
       { label: "Focus filter", hint: "/", act: () => { setView("fleet"); $("filter").focus(); } },
       { label: "Validate config", act: runValidate },
+      { label: "Save current view", act: () => { setView("fleet"); saveCurrentView(); } },
+      { label: "Export saved views", act: exportViews },
+      { label: "Import saved views", act: () => { setView("fleet"); importViews(); } },
+      ...presets.map((p) => ({ label: "View: " + p.name, act: () => applyPreset(p) })),
       { label: "Show trend", act: showTrend },
       { label: "Export as Markdown", act: () => save("markdown") },
       { label: "Export as JSON", act: () => save("json") },
@@ -1028,9 +1133,9 @@
       } catch (_) {}
     });
     $("configPath").addEventListener("change", () => { updateHint(); refreshStacks(); saveSettings(); });
-    $("filter").addEventListener("input", render);
-    $("minsev").addEventListener("change", render);
-    $("stack").addEventListener("change", saveSettings);
+    $("filter").addEventListener("input", () => { render(); renderViewChips(); });
+    $("minsev").addEventListener("change", () => { render(); renderViewChips(); });
+    $("stack").addEventListener("change", () => { saveSettings(); renderViewChips(); });
     $("notify").addEventListener("change", saveSettings);
     $("auto").addEventListener("change", (e) => { setAutoRefresh(e.target.checked); saveSettings(); });
     $("interval").addEventListener("change", () => { if ($("auto").checked) setAutoRefresh(true); saveSettings(); });
@@ -1041,10 +1146,24 @@
     $("changes").addEventListener("click", showChanges);
     $("trend").addEventListener("click", showTrend);
     $("history").addEventListener("click", showHistory);
-    $("groupBy").addEventListener("change", () => { render(); saveSettings(); });
+    $("groupBy").addEventListener("change", () => { render(); saveSettings(); renderViewChips(); });
     document.querySelectorAll(".viewtab").forEach((t) =>
       t.addEventListener("click", () => setView(t.dataset.view)));
     $("palette").addEventListener("click", () => openPalette());
+    // saved views (CF-108)
+    $("viewSave").addEventListener("click", saveCurrentView);
+    $("viewExport").addEventListener("click", exportViews);
+    $("viewImport").addEventListener("click", importViews);
+    $("viewChips").addEventListener("click", (e) => {
+      const ap = e.target.closest("[data-view-apply]");
+      if (ap) { applyPreset(CFPresets.find(presets, ap.dataset.viewApply)); return; }
+      const del = e.target.closest("[data-view-del]");
+      if (del) {
+        presets = CFPresets.remove(presets, del.dataset.viewDel);
+        savePresets(); renderViewChips();
+        toast("Deleted view “" + del.dataset.viewDel + "”", { timeout: 2000 });
+      }
+    });
     $("workspaceBtn").addEventListener("click", openWorkspace);
     $("wsClose").addEventListener("click", closeWorkspace);
     $("wsScrim").addEventListener("click", closeWorkspace);
@@ -1117,7 +1236,10 @@
       const diff = e.target.closest("[data-hist-diff]");
       if (diff) { showRunDiff(+diff.dataset.histDiff, +diff.dataset.histTo); return; }
       const runEl = e.target.closest("[data-run]");
-      if (runEl) { showRunDetail(+runEl.dataset.run); }
+      if (runEl) { showRunDetail(+runEl.dataset.run); return; }
+      // saved views (CF-108)
+      if (e.target.closest("[data-view-save-confirm]")) { confirmSaveView(); return; }
+      if (e.target.closest("[data-view-import-confirm]")) { confirmImportViews(); }
     });
     $("drawerClose").addEventListener("click", closeDrawer);
     $("drawerScrim").addEventListener("click", closeDrawer);
@@ -1176,6 +1298,7 @@
     // startup defaults, so the app reopens where you left it.
     const s = loadSettings();
     loadWorkspace();
+    loadPresets();
     $("configPath").value = s.config || startup.path || "";
     if ($("configPath").value) addToWorkspace($("configPath").value);
     if (s.interval) $("interval").value = s.interval;

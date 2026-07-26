@@ -615,3 +615,26 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 6px; border-radius
 .ws-counts { color: var(--muted); }
 .ws-dot { flex: 0 0 auto; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
 .ws-foot { padding: 10px 16px; border-top: 1px solid var(--border); }
+
+/* ================= saved views / presets (CF-108) ================= */
+.views-bar { display: flex; align-items: center; gap: 8px; padding: 0 12px 10px; flex: 0 0 auto; flex-wrap: wrap; }
+.views-label { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.views-chips { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.views-empty { font-size: 12px; color: var(--muted); }
+.view-chip { display: inline-flex; align-items: center; gap: 0; padding: 0; overflow: hidden; }
+.view-chip.active { color: var(--heading); background: color-mix(in srgb, var(--brand) 18%, transparent); border-color: var(--brand); }
+.chip-apply { padding: 2px 9px; font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+.chip-x { padding: 2px 7px 2px 4px; font-size: 10px; line-height: 1; color: inherit; background: none; border: none; opacity: .5; cursor: pointer; }
+.chip-x:hover { opacity: 1; color: var(--bad); }
+.chip-add { color: var(--muted); background: none; border: 1px dashed var(--border-str); }
+.chip-add:hover { color: var(--heading); border-color: var(--brand); }
+.btn-ghost { background: none; border-color: transparent; color: var(--muted); }
+.btn-ghost:hover:not(:disabled) { color: var(--heading); border-color: var(--border-str); }
+.view-form { display: flex; gap: 8px; margin: 12px 0; }
+.view-form input { flex: 1; }
+.view-json { max-height: 40vh; overflow: auto; padding: 12px; border-radius: var(--r-md);
+  background: var(--surface); border: 1px solid var(--border); font-family: var(--mono); font-size: 12px;
+  white-space: pre-wrap; word-break: break-all; user-select: text; }
+.view-json-input { width: 100%; min-height: 180px; margin: 12px 0; padding: 12px; border-radius: var(--r-md);
+  background: var(--surface); color: var(--text); border: 1px solid var(--border-str);
+  font-family: var(--mono); font-size: 12px; resize: vertical; }
