@@ -658,3 +658,14 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 6px; border-radius
 .row-muted:hover { opacity: .8; }
 .mute-block { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
 .mute-label { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+
+/* operator notes (CF-112) */
+.chip-note { margin-left: 8px; color: var(--brand-2); background: color-mix(in srgb, var(--brand-2) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand-2) 26%, transparent); }
+.note-block { display: flex; flex-direction: column; gap: 8px; margin: 14px 0;
+  padding-top: 14px; border-top: 1px solid var(--border); }
+.note-block input, .note-block textarea { width: 100%; padding: 8px 10px; border-radius: var(--r-md);
+  background: var(--surface); color: var(--text); border: 1px solid var(--border-str);
+  font-family: inherit; font-size: var(--fs-sm); }
+.note-block textarea { min-height: 72px; resize: vertical; }
+.note-block .btn-primary { align-self: flex-start; }

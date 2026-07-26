@@ -36,6 +36,11 @@ command palette** and keyboard shortcuts (CF-96).
   them, and **Hide muted** filters them out. Keyed by config+check+target with
   **absolute** expiries pruned on load; local-only (no YAML change, no secrets).
   Logic in the testable `acks.js` UMD module (`acks.test.js`, `node --test`).
+- **Notes** (CF-112): pin an **owner** + free-text context to a finding from its
+  drawer (*“Marco — rotating this cert tomorrow”*); the row gets a **note** chip
+  and the note persists. Same key as mutes (config+check+target); local-only, no
+  YAML change, no secrets. Logic in the testable `notes.js` UMD module
+  (`notes.test.js`, `node --test`).
 - **Mute-aware worst & monitor** (CF-111): the worst-status pill and the
   background monitor's change-notifications are computed over **un-muted**
   findings, so a snoozed problem stops dominating the headline and won't

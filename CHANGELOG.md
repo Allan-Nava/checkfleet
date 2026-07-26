@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.120.0
+
+- Desktop (CF-112, M28 — note per finding): mutare dice *“ignora per ora”*, una **nota** dice *perché*. Dal detail drawer di un finding aggiungi un **owner** (opzionale) e una riga di contesto — *“Marco — ingest pool drenato per la migrazione edge, atteso fino alle 18:00”*. Il finding porta poi un chip **note** in tabella (hover per il testo) e la nota ritorna alla riapertura. Le note condividono l'identità del finding con i mute (**config + check + target**), quindi un target può essere sia mutato sia annotato; svuotando entrambi i campi la nota si cancella. Come i mute sono **contesto operativo locale** — mai scritto nello YAML, mai inviato altrove, nessun segreto. Logica nel modulo UMD **`notes.js`** (zero-dep, come `acks.js`/`presets.js`) con **TDD** `notes.test.js` (`node --test`, 5 test: normalize/set-upsert-e-delete/remove-get-has/describe/sanitize). Docs (`docs/desktop.md`, `desktop/README.md`) aggiornate nello stesso commit con screenshot `docs/assets/desktop-note.png`.
+
 ## 0.119.1
 
 - Docs (backlog, riconciliazione): marcati come **chiusi** nel `BACKLOG.md` i 10 item di **M22 / M23 / M24** che erano già implementati, wired e testati nel codice ma con la checkbox rimasta aperta — nessun cambiamento al software, solo allineamento del backlog. Riepilogo con versione di rilascio: **CF-80** Telegram (v0.80.0), **CF-81** CSV (v0.81.0), **CF-82** webhook con template (v0.82.0), **CF-83** SNS/SigV4 (v0.91.0, chiude M22); **CF-84** override timeout/retry per-modulo (v0.98.0), **CF-85** maintenance ricorrenti daily/weekdays (v0.97.0), **CF-86** dedup + sort documentato (v0.96.0, chiude M23); **CF-87** self-metrics (v0.92.0), **CF-88** `/healthz`+`/readyz` (v0.93.0), **CF-89** logging JSON via `slog` (v0.95.0, chiude M24). Unico item ancora aperto fuori da M28: **CF-21** (modulo `mediamtx`), deprioritizzato.

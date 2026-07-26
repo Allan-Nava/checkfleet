@@ -146,6 +146,21 @@ a snoozed finding won't fire a native notification or raise the ● monitoring
 badge until its mute lifts. (The mute set is pushed to the Go side so the
 off-thread monitor honours it too.)
 
+## Note a finding
+
+Muting says *“ignore this for now”*; a **note** says *why*. In the finding
+drawer, jot an **owner** (optional) and a line of context — *“Marco — ingest
+pool drained for the edge migration, expected until 18:00”*. The finding then
+carries a **note** chip in the table (hover for the text), and the note comes
+back the next time you open it.
+
+![checkfleet desktop — an operator note on a finding](assets/desktop-note.png)
+
+Notes share a finding's identity with mutes (**config + check + target**), so a
+target can be both muted and annotated. Clearing both fields removes the note.
+Like mutes, notes are **local** operator context — never written to your YAML,
+never sent anywhere, no secrets.
+
 ## Dashboard
 
 The **Dashboard** view charts the persisted history (each Run is appended next

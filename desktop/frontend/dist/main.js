@@ -260,12 +260,16 @@
 
     const findingRow = (f, i) => {
       const muted = findingMuted(f);
+      const note = findingNote(f);
       const chip = muted
         ? `<span class="chip chip-muted" title="${escapeHtml(CFAcks.describe(acks[ackKey(f)], Date.now()))}">muted</span>`
         : "";
+      const noteChip = note
+        ? `<span class="chip chip-note" title="${escapeHtml(CFNotes.describe(note))}">note</span>`
+        : "";
       return `
       <tr data-i="${i}"${$("groupBy").checked ? ` data-grp="${escapeHtml(f.check)}"` : ""}${muted ? ` class="row-muted"` : ""}>
-        <td><span class="badge ${f.status}">${f.status}</span>${chip}</td>
+        <td><span class="badge ${f.status}">${f.status}</span>${chip}${noteChip}</td>
         <td class="cell-check">${escapeHtml(f.check)}</td>
         <td class="cell-target">${escapeHtml(f.target)}</td>
         <td class="cell-trend">${sparkFor(f)}</td>
@@ -514,6 +518,24 @@
     syncMutedKeys();
     render();
     toast("Unmuted " + f.check + " · " + f.target, { timeout: 2000 });
+  }
+
+  /* ---------------- operator notes (CF-112) ---------------- */
+  // A note pins "who's on it / what's going on" to a finding, keyed like a mute.
+  let notes = {};
+  function loadNotes() {
+    try { notes = CFNotes.sanitize(JSON.parse(localStorage.getItem("cf-notes") || "{}")); }
+    catch (_) { notes = {}; }
+  }
+  function saveNotes() { try { localStorage.setItem("cf-notes", JSON.stringify(notes)); } catch (_) {} }
+  function findingNote(f) { return CFNotes.get(notes, ackKey(f)); }
+  function setFindingNote(f, owner, text) {
+    const before = CFNotes.has(notes, ackKey(f));
+    notes = CFNotes.set(notes, { key: ackKey(f), owner, text, at: Date.now() });
+    saveNotes();
+    render();
+    const after = CFNotes.has(notes, ackKey(f));
+    toast(after ? "Note saved" : (before ? "Note cleared" : "Note empty"), { timeout: 2000, kind: after || before ? "success" : "warn" });
   }
 
   async function refreshStacks() {
@@ -1028,6 +1050,12 @@
         `<button class="btn" data-mute="8h">8h</button>` +
         `<button class="btn" data-mute="24h">24h</button>` +
         `<button class="btn" data-mute="recovery">until recovery</button></div>`;
+    const note = findingNote(f);
+    const noteBlock = `<div class="note-block">` +
+      `<span class="mute-label">Note</span>` +
+      `<input id="noteOwner" type="text" placeholder="owner (optional)" maxlength="40" autocomplete="off" value="${escapeHtml(note ? note.owner : "")}">` +
+      `<textarea id="noteText" placeholder="what's going on with this target…" maxlength="500">${escapeHtml(note ? note.text : "")}</textarea>` +
+      `<button class="btn btn-primary" data-note-save="1">Save note</button></div>`;
     openDrawer("Finding", `
       <div class="kv"><span>Status</span><span class="badge ${f.status}">${f.status}</span></div>
       <div class="kv"><span>Check</span><b class="mono">${escapeHtml(f.check)}</b></div>
@@ -1035,6 +1063,7 @@
       ${metricRow}
       <p class="drawer-msg">${escapeHtml(f.message)}</p>
       ${muteBlock}
+      ${noteBlock}
       ${hasMetric ? `<div class="finding-trend" id="findingTrend"><p class="chart-empty">loading trend…</p></div>` : ""}
       <button class="btn copy-btn" data-copy="${escapeHtml(text)}">Copy</button>`);
 
@@ -1364,6 +1393,12 @@
       const mb = e.target.closest("[data-mute]");
       if (mb && drawerFinding) { muteFinding(drawerFinding, mb.dataset.mute); closeDrawer(); return; }
       if (e.target.closest("[data-unmute]") && drawerFinding) { unmuteFinding(drawerFinding); closeDrawer(); return; }
+      // save a note (CF-112)
+      if (e.target.closest("[data-note-save]") && drawerFinding) {
+        setFindingNote(drawerFinding, $("noteOwner") ? $("noteOwner").value : "", $("noteText") ? $("noteText").value : "");
+        closeDrawer();
+        return;
+      }
       // saved views (CF-108)
       if (e.target.closest("[data-view-save-confirm]")) { confirmSaveView(); return; }
       if (e.target.closest("[data-view-import-confirm]")) { confirmImportViews(); }
@@ -1427,6 +1462,7 @@
     loadWorkspace();
     loadPresets();
     loadAcks();
+    loadNotes();
     syncMutedKeys();
     $("configPath").value = s.config || startup.path || "";
     if ($("configPath").value) addToWorkspace($("configPath").value);
