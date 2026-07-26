@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.122.3
+
+- Docs (backlog, planning): ampliata **M30 — Insight & intelligence** con altri quattro item (CF-125..128), sempre funzioni pure su history in `internal/insight`, zero-dep, riusati da CLI + desktop: **SLO error-budget & burn rate** (fast/slow burn stile SRE, “budget finito tra ~X”), **MTTR & durata outage corrente** (recovery time + “down da 47m, di solito ~8m”), **fleet health score** (indice 0–100 pesato per severità+stabilità, con trend), **“what changed” digest** (riassunto narrativo new/resolved/degrading/flapping, `--digest since=…` + drawer, inoltrabile ai sink M22 — chiude M30). Nessun cambiamento al software — solo pianificazione; ogni item sarà una release a sé.
+
 ## 0.122.2
 
 - Docs (backlog, planning): aggiunta la milestone **M30 — Insight & intelligence (fase 4)**: trasformare la **history** che checkfleet già persiste (status + metrica + timestamp per target/run) in **segnale**, restando fedeli alla filosofia (analisi di dominio, non dashboard). Logica in un nuovo package **`internal/insight`** di funzioni pure, zero-dep (statistica a mano), riusato da CLI e desktop. Item pianificati (CF-120..124): **flapping detection** (target che oscillano), **trend forecast / ETA-to-threshold** (regressione lineare → “sfonda la soglia tra ~N giorni”), **anomaly / baseline deviation** (EWMA + z-score sulla norma recente), **correlation / blast-radius** (raggruppa i failure correlati per host/modulo/subnet), **runbooks & remediation hints** (URL/nota per-check mostrati negli output e nel drawer). Nessun cambiamento al software — solo pianificazione; ogni item sarà una release a sé.
