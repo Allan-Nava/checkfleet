@@ -31,6 +31,11 @@ command palette** and keyboard shortcuts (CF-96).
 - **History & diff**: in-session **Changes** (CF-64), a persistent worst-status
   **Trend** sparkline (CF-70), and a **History browser** to open and compare any
   two past runs (CF-104) — all from the `.<name>.history.jsonl` beside the config.
+- **Mute findings** (CF-110): snooze a finding (1h / 8h / 24h / until recovery)
+  from its detail drawer — it dims with a **muted** chip, the status bar counts
+  them, and **Hide muted** filters them out. Keyed by config+check+target with
+  **absolute** expiries pruned on load; local-only (no YAML change, no secrets).
+  Logic in the testable `acks.js` UMD module (`acks.test.js`, `node --test`).
 - **Background monitor** (CF-109): **Auto** starts a **Go-driven** periodic run
   (not just a JS timer) that emits samples the UI renders off-thread, with a
   **● monitoring** status chip colored by worst status. A native notification

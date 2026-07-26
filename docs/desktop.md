@@ -115,6 +115,23 @@ running anything (the same problems as `checkfleet validate`).
 
 ![checkfleet desktop — finding detail drawer](assets/desktop-detail.png)
 
+## Mute a finding
+
+Some findings you already know about — a cert you're rotating tomorrow, a node
+you took down on purpose. Open the finding's detail drawer and **Snooze** it for
+**1h**, **8h**, **24h**, or **until recovery**. A muted finding dims in the
+table with a **muted** chip, and the status bar shows a running *“N muted”*
+count; **Hide muted** in the toolbar takes them off-screen entirely.
+
+![checkfleet desktop — muted findings and snooze controls](assets/desktop-mute.png)
+
+Mutes are keyed by **config + check + target**, so they follow the exact target
+across runs and don't leak between fleets. Timed snoozes store an **absolute**
+expiry and are pruned on load, so a mute you set at 6pm for 1h is gone by 7pm
+even if you reopened the app in between; *until recovery* mutes stay until you
+lift them. Everything is **local** (browser storage): a mute is an operator
+note, never a change to your YAML, and holds no secrets.
+
 ## Dashboard
 
 The **Dashboard** view charts the persisted history (each Run is appended next

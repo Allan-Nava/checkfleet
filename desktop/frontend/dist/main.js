@@ -236,21 +236,29 @@
     // table (preserve backend worst-first order)
     const q = $("filter").value.trim().toLowerCase();
     const min = $("minsev").value;
+    const hideMuted = $("hideMuted") && $("hideMuted").checked;
     const visible = findings.filter((f) => {
       if (!severityAllowed(f.status, min)) return false;
+      if (hideMuted && findingMuted(f)) return false;
       if (!q) return true;
       return (f.check + " " + f.target + " " + f.message).toLowerCase().includes(q);
     });
     visibleFindings = visible;
 
-    const findingRow = (f, i) => `
-      <tr data-i="${i}"${$("groupBy").checked ? ` data-grp="${escapeHtml(f.check)}"` : ""}>
-        <td><span class="badge ${f.status}">${f.status}</span></td>
+    const findingRow = (f, i) => {
+      const muted = findingMuted(f);
+      const chip = muted
+        ? `<span class="chip chip-muted" title="${escapeHtml(CFAcks.describe(acks[ackKey(f)], Date.now()))}">muted</span>`
+        : "";
+      return `
+      <tr data-i="${i}"${$("groupBy").checked ? ` data-grp="${escapeHtml(f.check)}"` : ""}${muted ? ` class="row-muted"` : ""}>
+        <td><span class="badge ${f.status}">${f.status}</span>${chip}</td>
         <td class="cell-check">${escapeHtml(f.check)}</td>
         <td class="cell-target">${escapeHtml(f.target)}</td>
         <td class="cell-trend">${sparkFor(f)}</td>
         <td class="cell-msg">${escapeHtml(f.message)}</td>
       </tr>`;
+    };
 
     if ($("groupBy").checked) {
       const order = [];
@@ -286,7 +294,9 @@
     const changes = report.changes || [];
     $("changes").disabled = changes.length === 0;
     $("changes").textContent = changes.length ? `Changes (${changes.length})` : "Changes";
-    setStatus(`${findings.length} findings · ${report.ok} OK / ${report.warn} WARN / ${report.bad} BAD / ${report.error} ERROR`);
+    const muted = findings.filter(findingMuted).length;
+    setStatus(`${findings.length} findings · ${report.ok} OK / ${report.warn} WARN / ${report.bad} BAD / ${report.error} ERROR` +
+      (muted ? ` · ${muted} muted` : ""));
   }
 
   function setStatus(t) { $("statusText").textContent = t; }
@@ -349,6 +359,7 @@
         auto: $("auto").checked,
         notify: $("notify").checked,
         groupBy: $("groupBy").checked,
+        hideMuted: $("hideMuted").checked,
         view: view,
       }));
     } catch (_) {}
@@ -454,6 +465,31 @@
     renderViewChips();
     closeDrawer();
     toast("Imported " + incoming.length + " view" + (incoming.length === 1 ? "" : "s"), { kind: "success" });
+  }
+
+  /* ---------------- acknowledge / mute findings (CF-110) ---------------- */
+  // A mute silences one finding (keyed config#check#target) for a while. Logic
+  // lives in the testable CFAcks module; here we bind it to storage and the UI.
+  let acks = {};
+  function loadAcks() {
+    try { acks = CFAcks.prune(JSON.parse(localStorage.getItem("cf-acks") || "{}"), Date.now()); }
+    catch (_) { acks = {}; }
+  }
+  function saveAcks() { try { localStorage.setItem("cf-acks", JSON.stringify(acks)); } catch (_) {} }
+  function ackKey(f) { return CFAcks.key($("configPath").value, f.check, f.target); }
+  function findingMuted(f) { return CFAcks.isMuted(acks, ackKey(f), Date.now()); }
+  function muteFinding(f, choice) {
+    const now = Date.now();
+    acks = CFAcks.mute(acks, { key: ackKey(f), until: CFAcks.durationUntil(choice, now), at: now });
+    saveAcks();
+    render();
+    toast("Muted " + f.check + " · " + f.target, { timeout: 2200 });
+  }
+  function unmuteFinding(f) {
+    acks = CFAcks.unmute(acks, ackKey(f));
+    saveAcks();
+    render();
+    toast("Unmuted " + f.check + " · " + f.target, { timeout: 2000 });
   }
 
   async function refreshStacks() {
@@ -950,18 +986,31 @@
     if (c) { try { c.act(); } catch (_) {} }
   }
 
+  let drawerFinding = null; // the finding shown in the detail drawer, for mute actions
+
   async function showFindingDetail(f) {
+    drawerFinding = f;
     const text = `${f.status} ${f.check} ${f.target} — ${f.message}`;
     const hasMetric = f.value != null;
     const metricRow = hasMetric
       ? `<div class="kv"><span>Metric</span><b class="mono">${escapeHtml(String(f.value))} ${escapeHtml(f.unit || "")}</b></div>`
       : "";
+    const muted = findingMuted(f);
+    const muteBlock = muted
+      ? `<div class="mute-block"><span class="chip chip-muted">${escapeHtml(CFAcks.describe(acks[ackKey(f)], Date.now()))}</span>` +
+        `<button class="btn" data-unmute="1">Unmute</button></div>`
+      : `<div class="mute-block"><span class="mute-label">Snooze</span>` +
+        `<button class="btn" data-mute="1h">1h</button>` +
+        `<button class="btn" data-mute="8h">8h</button>` +
+        `<button class="btn" data-mute="24h">24h</button>` +
+        `<button class="btn" data-mute="recovery">until recovery</button></div>`;
     openDrawer("Finding", `
       <div class="kv"><span>Status</span><span class="badge ${f.status}">${f.status}</span></div>
       <div class="kv"><span>Check</span><b class="mono">${escapeHtml(f.check)}</b></div>
       <div class="kv"><span>Target</span><b class="mono">${escapeHtml(f.target)}</b></div>
       ${metricRow}
       <p class="drawer-msg">${escapeHtml(f.message)}</p>
+      ${muteBlock}
       ${hasMetric ? `<div class="finding-trend" id="findingTrend"><p class="chart-empty">loading trend…</p></div>` : ""}
       <button class="btn copy-btn" data-copy="${escapeHtml(text)}">Copy</button>`);
 
@@ -1196,6 +1245,7 @@
     $("trend").addEventListener("click", showTrend);
     $("history").addEventListener("click", showHistory);
     $("groupBy").addEventListener("change", () => { render(); saveSettings(); renderViewChips(); });
+    $("hideMuted").addEventListener("change", () => { render(); saveSettings(); });
     document.querySelectorAll(".viewtab").forEach((t) =>
       t.addEventListener("click", () => setView(t.dataset.view)));
     $("palette").addEventListener("click", () => openPalette());
@@ -1286,6 +1336,10 @@
       if (diff) { showRunDiff(+diff.dataset.histDiff, +diff.dataset.histTo); return; }
       const runEl = e.target.closest("[data-run]");
       if (runEl) { showRunDetail(+runEl.dataset.run); return; }
+      // mute / unmute a finding (CF-110)
+      const mb = e.target.closest("[data-mute]");
+      if (mb && drawerFinding) { muteFinding(drawerFinding, mb.dataset.mute); closeDrawer(); return; }
+      if (e.target.closest("[data-unmute]") && drawerFinding) { unmuteFinding(drawerFinding); closeDrawer(); return; }
       // saved views (CF-108)
       if (e.target.closest("[data-view-save-confirm]")) { confirmSaveView(); return; }
       if (e.target.closest("[data-view-import-confirm]")) { confirmImportViews(); }
@@ -1348,12 +1402,14 @@
     const s = loadSettings();
     loadWorkspace();
     loadPresets();
+    loadAcks();
     $("configPath").value = s.config || startup.path || "";
     if ($("configPath").value) addToWorkspace($("configPath").value);
     if (s.interval) $("interval").value = s.interval;
     if (s.auto) $("auto").checked = true;
     if (s.notify) $("notify").checked = true;
     if (s.groupBy) $("groupBy").checked = true;
+    if (s.hideMuted) $("hideMuted").checked = true;
     updateHint();
     await refreshStacks();
     if (s.stack) $("stack").value = s.stack;

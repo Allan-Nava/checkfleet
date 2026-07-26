@@ -650,3 +650,11 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 6px; border-radius
 .mon-badge.s-ERROR .mon-dot { background: var(--err);  box-shadow: 0 0 0 3px var(--err-bg); }
 @keyframes mon-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .mon-dot { animation: none; } }
+
+/* ================= acknowledge / mute findings (CF-110) ================= */
+.chip-muted { margin-left: 8px; color: var(--muted); background: color-mix(in srgb, var(--muted) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--muted) 26%, transparent); }
+.row-muted { opacity: .5; }
+.row-muted:hover { opacity: .8; }
+.mute-block { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.mute-label { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
