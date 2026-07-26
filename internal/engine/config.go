@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"sort"
 	"strings"
@@ -1006,55 +1007,54 @@ func applyDefaults(cfg *Config) {
 	}
 }
 
-// LoadConfigStack loads a base config and overlays a per-stack file
-// (checkfleet.<stack>.yml next to the base), applying defaults after the
-// merge. A module present in the stack replaces the base's module wholesale.
+// LoadConfigStack loads a base config and overlays a single per-stack file.
+// It is LoadConfigStacks with one stack, kept for callers that pass just one.
 func LoadConfigStack(basePath, stack string) (*Config, error) {
+	return LoadConfigStacks(basePath, []string{stack})
+}
+
+// LoadConfigStacks loads a base config and overlays per-stack files in order
+// (CF-117): checkfleet.<stack>.yml next to the base, for each stack, applying
+// defaults once at the end. Overlays compose left-to-right so the LAST stack
+// wins — e.g. --stack region,env layers env on top of region on top of base.
+// A module present in a stack replaces that module wholesale (it gets its own
+// defaults again); a module the stack leaves out is inherited. Each stack file
+// resolves its own includes (CF-115) before overlaying.
+func LoadConfigStacks(basePath string, stacks []string) (*Config, error) {
 	base, err := parseConfig(basePath)
 	if err != nil {
 		return nil, err
 	}
-	over, err := parseConfig(StackPath(basePath, stack))
-	if err != nil {
-		return nil, fmt.Errorf("stack %q: %w", stack, err)
+	for _, s := range stacks {
+		if s == "" {
+			continue
+		}
+		over, err := parseConfig(StackPath(basePath, s))
+		if err != nil {
+			return nil, fmt.Errorf("stack %q: %w", s, err)
+		}
+		base.overlay(over)
 	}
-	base.overlay(over)
 	applyDefaults(base)
 	return base, nil
 }
 
-// overlay merges over on top of c: a set timeout and any non-nil module win.
+// overlay merges over on top of c: a set timeout wins, and any module the stack
+// defines replaces c's module wholesale. The module copy is generic (reflection
+// over the Checks struct) so every module — present and future — is covered;
+// the earlier hand-listed version silently ignored modules added after it.
 func (c *Config) overlay(over *Config) {
 	if over.TimeoutSeconds > 0 {
 		c.TimeoutSeconds = over.TimeoutSeconds
 	}
-	o := over.Checks
-	if o.Certs != nil {
-		c.Checks.Certs = o.Certs
-	}
-	if o.HTTP != nil {
-		c.Checks.HTTP = o.HTTP
-	}
-	if o.NATS != nil {
-		c.Checks.NATS = o.NATS
-	}
-	if o.HAProxy != nil {
-		c.Checks.HAProxy = o.HAProxy
-	}
-	if o.Stream != nil {
-		c.Checks.Stream = o.Stream
-	}
-	if o.Patroni != nil {
-		c.Checks.Patroni = o.Patroni
-	}
-	if o.Consul != nil {
-		c.Checks.Consul = o.Consul
-	}
-	if o.Postgres != nil {
-		c.Checks.Postgres = o.Postgres
-	}
-	if o.DNS != nil {
-		c.Checks.DNS = o.DNS
+	oc := reflect.ValueOf(&over.Checks).Elem()
+	cc := reflect.ValueOf(&c.Checks).Elem()
+	for i := 0; i < oc.NumField(); i++ {
+		f := oc.Field(i)
+		// Every module is a pointer field; a non-nil one replaces the base's.
+		if f.Kind() == reflect.Ptr && !f.IsNil() {
+			cc.Field(i).Set(f)
+		}
 	}
 }
 

@@ -993,10 +993,17 @@ func (a *App) context() context.Context {
 	return context.Background()
 }
 
-// loadConfig mirrors the CLI: overlay a stack profile when set.
+// loadConfig mirrors the CLI: overlay stack profiles when set. `stack` may be a
+// comma-separated list applied left-to-right, last wins (CF-117).
 func loadConfig(path, stack string) (*engine.Config, error) {
-	if stack != "" {
-		return engine.LoadConfigStack(path, stack)
+	var stacks []string
+	for _, s := range strings.Split(stack, ",") {
+		if s = strings.TrimSpace(s); s != "" {
+			stacks = append(stacks, s)
+		}
 	}
-	return engine.LoadConfig(path)
+	if len(stacks) == 0 {
+		return engine.LoadConfig(path)
+	}
+	return engine.LoadConfigStacks(path, stacks)
 }

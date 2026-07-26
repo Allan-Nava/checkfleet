@@ -109,7 +109,7 @@ func runCheck(args []string) error {
 
 	fs := flag.NewFlagSet("check", flag.ExitOnError)
 	configPath := fs.String("config", "checkfleet.yml", "YAML config file")
-	stack := fs.String("stack", "", "stack profile: overlays checkfleet.<stack>.yml onto the base")
+	stack := fs.String("stack", "", "comma-separated stack profiles overlaid in order (last wins): checkfleet.<stack>.yml onto the base")
 	format := fs.String("output", "text", "format: text, markdown, json, junit, html, prometheus, otlp, csv, slack, discord, teams, telegram, webhook")
 	outFile := fs.String("out-file", "", "write the output to this file (atomically) instead of stdout")
 	noColor := fs.Bool("no-color", false, "disable ANSI colour in the text output (also honours NO_COLOR)")
@@ -403,7 +403,7 @@ func atomicWrite(path, content string) error {
 func runValidate(args []string) error {
 	fs := flag.NewFlagSet("validate", flag.ExitOnError)
 	configPath := fs.String("config", "checkfleet.yml", "YAML config file")
-	stack := fs.String("stack", "", "stack profile: overlays checkfleet.<stack>.yml onto the base")
+	stack := fs.String("stack", "", "comma-separated stack profiles overlaid in order (last wins): checkfleet.<stack>.yml onto the base")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -482,12 +482,27 @@ func effectiveConcurrency(flag int, cfg *engine.Config) int {
 	return cfg.MaxConcurrency
 }
 
-// loadConfig loads the base config, overlaying a stack profile when set.
+// loadConfig loads the base config, overlaying stack profiles when set. --stack
+// accepts a comma-separated list applied left-to-right (last wins), e.g.
+// --stack region,env (CF-117).
 func loadConfig(path, stack string) (*engine.Config, error) {
-	if stack != "" {
-		return engine.LoadConfigStack(path, stack)
+	stacks := splitStacks(stack)
+	if len(stacks) == 0 {
+		return engine.LoadConfig(path)
 	}
-	return engine.LoadConfig(path)
+	return engine.LoadConfigStacks(path, stacks)
+}
+
+// splitStacks parses a comma-separated --stack value into trimmed, non-empty
+// names, preserving order.
+func splitStacks(stack string) []string {
+	var out []string
+	for _, s := range strings.Split(stack, ",") {
+		if s = strings.TrimSpace(s); s != "" {
+			out = append(out, s)
+		}
+	}
+	return out
 }
 
 // runServe exposes the findings as Prometheus metrics, re-running the checks on
@@ -495,7 +510,7 @@ func loadConfig(path, stack string) (*engine.Config, error) {
 func runServe(args []string) error {
 	fs := flag.NewFlagSet("serve", flag.ExitOnError)
 	configPath := fs.String("config", "checkfleet.yml", "YAML config file")
-	stack := fs.String("stack", "", "stack profile: overlays checkfleet.<stack>.yml onto the base")
+	stack := fs.String("stack", "", "comma-separated stack profiles overlaid in order (last wins): checkfleet.<stack>.yml onto the base")
 	listen := fs.String("listen", ":9876", "listen address")
 	interval := fs.Duration("interval", 60*time.Second, "interval between check re-runs")
 	logFormat := fs.String("log-format", "text", "log format: text or json (structured)")

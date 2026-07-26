@@ -296,14 +296,21 @@ one set of defaults and a small override per environment. Given
 
 The merge is **per module**: a module present in the stack file replaces the
 base's module entirely (so the module gets its own defaults again); a module
-absent from the stack is inherited from the base. `timeout_seconds` is
-overridden only if the stack sets it. `--stack` works with both `check` and
-`serve`.
+absent from the stack is inherited from the base. Every module can be overridden
+this way. `timeout_seconds` is overridden only if the stack sets it. `--stack`
+works with both `check` and `serve`.
+
+**Compose several stacks** by passing a comma-separated list — they overlay
+**left-to-right, last wins**, so you can layer environment on region on base:
 
 ```bash
 checkfleet check all  --config checkfleet.yml --stack prod
-checkfleet serve      --config checkfleet.yml --stack prod
+checkfleet check all  --config checkfleet.yml --stack region-eu,prod   # prod wins
+checkfleet serve      --config checkfleet.yml --stack region-eu,prod
 ```
+
+Each stack file resolves its own [`include`](#splitting-config-across-files-include)
+before it overlays the base.
 
 ```yaml
 # checkfleet.prod.yml — overrides only what differs from the base

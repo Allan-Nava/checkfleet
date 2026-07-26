@@ -80,3 +80,63 @@ func TestLoadConfigStackMissingFileErrors(t *testing.T) {
 		t.Error("nonexistent stack: want error")
 	}
 }
+
+// Multiple stacks compose left-to-right: the last one wins (CF-117).
+func TestLoadConfigStacksComposeLastWins(t *testing.T) {
+	dir := t.TempDir()
+	base := filepath.Join(dir, "checkfleet.yml")
+	writeFile(t, dir, "checkfleet.yml",
+		"timeout_seconds: 5\nchecks:\n  http:\n    targets:\n      - url: https://base/\n")
+	// region overrides http; env overrides http again + adds dns and a timeout.
+	writeFile(t, dir, "checkfleet.region.yml",
+		"checks:\n  http:\n    targets:\n      - url: https://region/\n")
+	writeFile(t, dir, "checkfleet.env.yml",
+		"timeout_seconds: 20\nchecks:\n  http:\n    targets:\n      - url: https://env/\n  dns:\n    targets:\n      - name: env.example\n")
+
+	cfg, err := LoadConfigStacks(base, []string{"region", "env"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.TimeoutSeconds != 20 {
+		t.Fatalf("timeout = %d, want 20 (env, last, wins)", cfg.TimeoutSeconds)
+	}
+	if cfg.Checks.HTTP == nil || cfg.Checks.HTTP.Targets[0].URL != "https://env/" {
+		t.Fatalf("http should be env's (last wins), got %+v", cfg.Checks.HTTP)
+	}
+	if cfg.Checks.DNS == nil {
+		t.Fatal("dns from the env stack should be present")
+	}
+}
+
+// A stack can override a module the old hand-listed overlay ignored (e.g.
+// redis): the reflection-based overlay covers every module.
+func TestOverlayCoversAllModules(t *testing.T) {
+	dir := t.TempDir()
+	base := filepath.Join(dir, "checkfleet.yml")
+	writeFile(t, dir, "checkfleet.yml",
+		"checks:\n  redis:\n    targets: [base-redis:6379]\n")
+	writeFile(t, dir, "checkfleet.prod.yml",
+		"checks:\n  redis:\n    targets: [prod-redis:6379]\n")
+
+	cfg, err := LoadConfigStack(base, "prod")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Checks.Redis == nil || len(cfg.Checks.Redis.Targets) != 1 || cfg.Checks.Redis.Targets[0] != "prod-redis:6379" {
+		t.Fatalf("redis should be overridden by the stack, got %+v", cfg.Checks.Redis)
+	}
+}
+
+// Empty entries in the stack list are ignored (so "prod," or "" is harmless).
+func TestLoadConfigStacksIgnoresEmpty(t *testing.T) {
+	dir := t.TempDir()
+	base := filepath.Join(dir, "checkfleet.yml")
+	writeFile(t, dir, "checkfleet.yml", "timeout_seconds: 7\nchecks:\n  http:\n    targets:\n      - url: https://base/\n")
+	cfg, err := LoadConfigStacks(base, []string{"", ""})
+	if err != nil {
+		t.Fatalf("empty stacks should be a no-op, got %v", err)
+	}
+	if cfg.TimeoutSeconds != 7 {
+		t.Fatalf("timeout = %d, want base 7", cfg.TimeoutSeconds)
+	}
+}
