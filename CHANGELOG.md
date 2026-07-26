@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.122.1
+
+- Docs (backlog, planning): aggiunta la milestone **M29 — Engine & scale (fase 4)**: rendere l'engine comodo su config estesi, molti target e più destinazioni, sempre zero-dep e senza segreti. Item pianificati (CF-115..119): **config include / `conf.d`** (split multi-file con deep-merge e cycle detection), **cap di concorrenza globale** (`max_concurrency`/`--max-concurrency`, oggi le goroutine sono illimitate), **composizione di stack** (`--stack a,b,c` last-wins), **fan-out multi-sink** (un run → più output insieme), **label globali** propagate agli output (Prometheus/JSON/OTLP/template). Nessun cambiamento al software — solo pianificazione; ogni item sarà una release a sé.
+
 ## 0.122.0
 
 - Desktop (CF-114, M28 — action log / audit): ogni azione del workflow — un mute, un unmute, una nota, una issue aperta — lascia una riga nell'**Action log** (bottone **Actions** nella toolbar). È la timeline di *cosa abbiamo fatto davvero sulla flotta*, newest-first, con timestamp **UTC**, target e dettaglio. **Copy JSON** o **Copy Markdown** mettono l'intero log in clipboard (il Markdown è una tabella pronta da incollare in un handover o un postmortem) e **Clear** lo svuota. Il log è **locale** e bounded (ultime 200 azioni); come tutto l'incident workflow tiene solo storia operativa, mai segreti (una issue è loggata per URL, mai il token). Logica pura nel modulo UMD **`audit.js`** (add/sanitize/toJSON/toMarkdown, con escape di pipe/newline nel Markdown) con **TDD** `audit.test.js` (`node --test`, 5 test: prepend newest-first + kind vuoto ignorato, immutabilità + cap a MAX, sanitize, round-trip JSON, tabella Markdown con escaping). Docs (`docs/desktop.md`, `desktop/README.md`) aggiornate nello stesso commit con screenshot `docs/assets/desktop-actions.png`.
