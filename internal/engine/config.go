@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -594,13 +595,15 @@ func LoadBytes(raw []byte) (*Config, error) {
 }
 
 // parseConfig reads and unmarshals a config file WITHOUT applying defaults, so
-// callers can overlay one config on another before defaults kick in.
+// callers can overlay one config on another before defaults kick in. It resolves
+// any `include:` files first (CF-115), deep-merging them under this file, then
+// applies ${...} interpolation to the merged result.
 func parseConfig(path string) (*Config, error) {
-	raw, err := os.ReadFile(path)
+	merged, err := loadMergedMap(path, map[string]bool{})
 	if err != nil {
-		return nil, fmt.Errorf("config: %w", err)
+		return nil, err
 	}
-	raw, err = expandVars(raw)
+	raw, err := yaml.Marshal(merged)
 	if err != nil {
 		return nil, fmt.Errorf("config %s: %w", path, err)
 	}
@@ -609,6 +612,135 @@ func parseConfig(path string) (*Config, error) {
 		return nil, fmt.Errorf("config %s: %w", path, err)
 	}
 	return &cfg, nil
+}
+
+// loadMergedMap reads a config file into a generic map and resolves its
+// `include:` list (CF-115): each included file (a path or list of paths,
+// resolved relative to THIS file's directory) is loaded and deep-merged UNDER
+// the current file, so the file that does the including always wins. Includes
+// apply in listed order (a later include wins over an earlier one). `visiting`
+// tracks the in-progress include chain by absolute path so a cycle is reported
+// instead of recursing forever; a diamond (the same file reached two ways) is
+// fine. Interpolation is deferred to the caller so it runs once on the merged
+// whole.
+func loadMergedMap(path string, visiting map[string]bool) (map[string]any, error) {
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		abs = path
+	}
+	if visiting[abs] {
+		return nil, fmt.Errorf("config: include cycle at %s", path)
+	}
+	visiting[abs] = true
+	defer delete(visiting, abs)
+
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("config: %w", err)
+	}
+	// Interpolate ${...} per file on the original bytes (its own formatting),
+	// before the map round-trip, so a merged value can't get re-quoted.
+	raw, err = expandVars(raw)
+	if err != nil {
+		return nil, fmt.Errorf("config %s: %w", path, err)
+	}
+	var m map[string]any
+	if err := yaml.Unmarshal(raw, &m); err != nil {
+		return nil, fmt.Errorf("config %s: %w", path, err)
+	}
+	if m == nil {
+		m = map[string]any{}
+	}
+
+	includes := includePaths(m["include"])
+	delete(m, "include")
+
+	base := map[string]any{}
+	dir := filepath.Dir(path)
+	for _, inc := range includes {
+		if !filepath.IsAbs(inc) {
+			inc = filepath.Join(dir, inc)
+		}
+		files, err := expandInclude(inc)
+		if err != nil {
+			return nil, err
+		}
+		for _, f := range files {
+			sub, err := loadMergedMap(f, visiting)
+			if err != nil {
+				return nil, err
+			}
+			deepMerge(base, sub)
+		}
+	}
+	deepMerge(base, m) // the including file wins over everything it includes
+	return base, nil
+}
+
+// expandInclude resolves one include entry to the files to merge: a plain file
+// is itself; a directory (a conf.d/ style drop-in) expands to its *.yml/*.yaml
+// entries in sorted order, so drop-ins apply predictably.
+func expandInclude(path string) ([]string, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, fmt.Errorf("config include: %w", err)
+	}
+	if !info.IsDir() {
+		return []string{path}, nil
+	}
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		return nil, fmt.Errorf("config include dir %s: %w", path, err)
+	}
+	var files []string
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		if ext := strings.ToLower(filepath.Ext(e.Name())); ext == ".yml" || ext == ".yaml" {
+			files = append(files, filepath.Join(path, e.Name()))
+		}
+	}
+	sort.Strings(files) // ReadDir is already sorted, but be explicit
+	return files, nil
+}
+
+// includePaths coerces the `include` field into a list of paths, accepting a
+// single string or a list of strings (anything else is ignored).
+func includePaths(v any) []string {
+	switch t := v.(type) {
+	case string:
+		if t == "" {
+			return nil
+		}
+		return []string{t}
+	case []any:
+		out := make([]string, 0, len(t))
+		for _, e := range t {
+			if s, ok := e.(string); ok && s != "" {
+				out = append(out, s)
+			}
+		}
+		return out
+	default:
+		return nil
+	}
+}
+
+// deepMerge overlays src onto dst in place: nested maps merge key-by-key, so two
+// files can each contribute different modules under `checks:`; any other value
+// (scalar or list — e.g. a module's `targets:`) replaces wholesale, so
+// redefining a module overrides it rather than appending.
+func deepMerge(dst, src map[string]any) {
+	for k, sv := range src {
+		if sm, ok := sv.(map[string]any); ok {
+			if dm, ok := dst[k].(map[string]any); ok {
+				deepMerge(dm, sm)
+				continue
+			}
+		}
+		dst[k] = sv
+	}
 }
 
 // varPattern matches ${...} interpolation tokens in a config file.

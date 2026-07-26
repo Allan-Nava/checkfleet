@@ -37,6 +37,7 @@ checks:
 | `retries` | int | `0` | Retry a check that produced an ERROR finding (transient network/handshake), up to this many times. |
 | `retry_backoff_ms` | int | `500` (when `retries`>0) | Base backoff between attempts; doubles each retry. |
 | `module_overrides` | map | — | Per-module override of `timeout_seconds`/`retries`/`retry_backoff_ms`, keyed by module name. A zero field falls back to the global value. |
+| `include` | list | — | Files or directories deep-merged under this config at load time — see [Splitting config across files](#splitting-config-across-files-include). |
 | `checks` | map | — | One entry per module. A module runs only if its key is present. |
 
 Per-module tuning is handy when one module is slower or flakier than the rest —
@@ -309,6 +310,38 @@ checks:
   certs:
     targets: [edge.example.com]
 ```
+
+## Splitting config across files (`include`)
+
+A large fleet reads better split by team or service. `include:` pulls other
+files (or a whole directory) into one config at load time:
+
+```yaml
+# checkfleet.yml
+include:
+  - conf.d/            # every *.yml / *.yaml in the directory, in sorted order
+  - ../shared/dns.yml  # a single file, relative to THIS file
+timeout_seconds: 30
+checks:
+  http:
+    targets: [{url: https://app.example/health}]
+```
+
+Rules:
+
+- **Paths are relative** to the file doing the include (absolute paths work
+  too). A directory contributes its `*.yml`/`*.yaml` entries, sorted by name —
+  prefix them `10-`, `20-`, … to control order.
+- The merge is a **deep merge**: two files can each add different modules under
+  `checks:`, and they combine. Redefining the *same* module (or any scalar/list
+  like a module's `targets:`) **replaces** it wholesale.
+- **The including file wins** over everything it includes; among includes, a
+  **later entry wins** over an earlier one. Includes may nest.
+- `${…}` interpolation runs per file, and an **include cycle** or a missing
+  file is a clear load error.
+
+`include` composes with `--stack`: the base and the stack file each resolve
+their own includes before the stack overlays the base.
 
 ## `checks.redis`
 
