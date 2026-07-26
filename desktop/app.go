@@ -714,9 +714,9 @@ func (a *App) ValidateText(content string) []string {
 // AddEndpoint inserts a new endpoint into the editor's config text (see
 // engine.AddEndpoint) and returns the updated YAML. The result is not saved —
 // the frontend puts it back in the textarea for review before Save.
-func (a *App) AddEndpoint(yamlText, kind, value, recordType string, expectStatus int) (string, error) {
+func (a *App) AddEndpoint(yamlText, kind, value, recordType, extra string, expectStatus int) (string, error) {
 	return engine.AddEndpoint(yamlText, engine.EndpointSpec{
-		Kind: kind, Value: value, RecordType: recordType, ExpectStatus: expectStatus,
+		Kind: kind, Value: value, RecordType: recordType, Extra: extra, ExpectStatus: expectStatus,
 	})
 }
 

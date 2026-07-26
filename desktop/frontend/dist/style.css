@@ -589,3 +589,8 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 6px; border-radius
   border-bottom: 1px solid var(--border); font-size: var(--fs-sm); }
 .hist-target { color: var(--heading); overflow: hidden; text-overflow: ellipsis; }
 .hist-val { margin-left: auto; font-family: var(--mono); color: var(--brand-2); }
+
+/* ================= config editor v2 — live validation badge (CF-105) ================= */
+.cfg-status { font-size: var(--fs-xs); font-weight: 600; padding: 2px 8px; border-radius: var(--r-full); }
+.cfg-status.ok { color: var(--ok); background: var(--ok-bg); }
+.cfg-status.bad { color: var(--bad); background: var(--bad-bg); cursor: help; }

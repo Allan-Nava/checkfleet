@@ -54,6 +54,44 @@ func TestAddEndpointKinds(t *testing.T) {
 	}
 }
 
+func TestAddEndpointMoreKinds(t *testing.T) {
+	out := ""
+	out = addOK(t, out, EndpointSpec{Kind: "tls", Value: "example.com:443"})
+	out = addOK(t, out, EndpointSpec{Kind: "redis", Value: "cache-01:6379"})
+	out = addOK(t, out, EndpointSpec{Kind: "nats", Value: "nats-01:8222"})
+	out = addOK(t, out, EndpointSpec{Kind: "smtp", Value: "relay.example.com:587"})
+	out = addOK(t, out, EndpointSpec{Kind: "grpc", Value: "svc:443", Extra: "grpc.health.v1.Health"})
+	out = addOK(t, out, EndpointSpec{Kind: "postgres", Value: "postgres://ops@pg-01:5432/app", Extra: "PGPASSWORD"})
+
+	cfg, err := LoadBytes([]byte(out))
+	if err != nil {
+		t.Fatalf("parse: %v\n%s", err, out)
+	}
+	if p := Validate(cfg); len(p) != 0 {
+		t.Fatalf("built config should validate, got %v\n%s", p, out)
+	}
+	if cfg.Checks.TLS == nil || len(cfg.Checks.TLS.Targets) != 1 || cfg.Checks.TLS.Targets[0] != "example.com:443" {
+		t.Errorf("tls target: %+v", cfg.Checks.TLS)
+	}
+	if cfg.Checks.Redis == nil || len(cfg.Checks.Redis.Targets) != 1 {
+		t.Errorf("redis target: %+v", cfg.Checks.Redis)
+	}
+	if cfg.Checks.NATS == nil || len(cfg.Checks.NATS.Targets) != 1 {
+		t.Errorf("nats target: %+v", cfg.Checks.NATS)
+	}
+	if cfg.Checks.SMTP == nil || len(cfg.Checks.SMTP.Targets) != 1 || cfg.Checks.SMTP.Targets[0].Address != "relay.example.com:587" {
+		t.Errorf("smtp target: %+v", cfg.Checks.SMTP)
+	}
+	if cfg.Checks.GRPC == nil || len(cfg.Checks.GRPC.Targets) != 1 ||
+		cfg.Checks.GRPC.Targets[0].Address != "svc:443" || cfg.Checks.GRPC.Targets[0].Service != "grpc.health.v1.Health" {
+		t.Errorf("grpc target (address+service): %+v", cfg.Checks.GRPC)
+	}
+	if cfg.Checks.Postgres == nil || len(cfg.Checks.Postgres.Targets) != 1 ||
+		cfg.Checks.Postgres.Targets[0].DSN != "postgres://ops@pg-01:5432/app" || cfg.Checks.Postgres.Targets[0].PasswordEnv != "PGPASSWORD" {
+		t.Errorf("postgres target (dsn+password_env): %+v", cfg.Checks.Postgres)
+	}
+}
+
 func TestAddEndpointAppendsAndKeepsComments(t *testing.T) {
 	in := "# my fleet\nchecks:\n  http:\n    targets:\n      - url: https://a.example.com/\n"
 	out := addOK(t, in, EndpointSpec{Kind: "http", Value: "https://b.example.com/"})
@@ -74,7 +112,7 @@ func TestAddEndpointErrors(t *testing.T) {
 	if _, err := AddEndpoint("", EndpointSpec{Kind: "http", Value: "  "}); err == nil {
 		t.Error("empty value should error")
 	}
-	if _, err := AddEndpoint("", EndpointSpec{Kind: "smtp", Value: "x"}); err == nil {
+	if _, err := AddEndpoint("", EndpointSpec{Kind: "mongodb", Value: "x"}); err == nil {
 		t.Error("unsupported kind should error")
 	}
 	if _, err := AddEndpoint("checks: [1,2,3]\n", EndpointSpec{Kind: "http", Value: "https://x/"}); err != nil {

@@ -175,10 +175,19 @@ just one way to edit and run it.
 ### Add an endpoint
 
 You don't have to hand-write YAML. **+ Add endpoint** opens a quick form for the
-most common checks — **http** (URL + expected status), **certs** (`host:443`),
-**tcp** (`host:port`) and **dns** (name + record type). Pick a type, fill the
-field and **Add**: the endpoint is merged into the YAML (existing comments and
-formatting are preserved), ready to review and **Save**.
+common checks — **http** (URL + expected status), **certs** / **tls**
+(`host:443`), **tcp** / **smtp** (`host:port`), **dns** (name + record type),
+**redis** / **nats** (`host:port`), **grpc** (`host:port` + optional service) and
+**postgres** (DSN + optional password-env var). Pick a type, fill the field(s)
+and **Add**: the endpoint is merged into the YAML (existing comments and
+formatting are preserved), ready to review and **Save**. Secrets are never
+entered here — for `postgres` you give the *name* of the env var that holds the
+password, not the password itself.
+
+As you type in the editor, a **live validity badge** next to the path shows
+`✓ valid` or `✕ N problems` (hover for the details) — the same checks as the
+**Validate** button, run against the unsaved text, so you catch a broken edit
+immediately.
 
 ![checkfleet desktop — add endpoint form](assets/desktop-addendpoint.png)
 

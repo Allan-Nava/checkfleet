@@ -257,7 +257,7 @@ func TestConfigEditorBindings(t *testing.T) {
 
 func TestAddEndpointBinding(t *testing.T) {
 	app := NewApp("test")
-	out, err := app.AddEndpoint("", "http", "https://example.com/health", "", 200)
+	out, err := app.AddEndpoint("", "http", "https://example.com/health", "", "", 200)
 	if err != nil {
 		t.Fatalf("AddEndpoint: %v", err)
 	}
@@ -268,7 +268,7 @@ func TestAddEndpointBinding(t *testing.T) {
 	if p := app.ValidateText(out); len(p) != 0 {
 		t.Errorf("built config should validate, got %v", p)
 	}
-	if _, err := app.AddEndpoint("", "bogus", "x", "", 0); err == nil {
+	if _, err := app.AddEndpoint("", "bogus", "x", "", "", 0); err == nil {
 		t.Error("unsupported kind should error")
 	}
 }

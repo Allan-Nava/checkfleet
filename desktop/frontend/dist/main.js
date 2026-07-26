@@ -28,16 +28,20 @@
     ReadConfig: async () => "timeout_seconds: 30\nchecks:\n  http:\n    targets:\n      - url: https://example.com/health\n        expect_status: 200\n        max_latency_ms: 2000\n  certs:\n    warn_days: 30\n    crit_days: 7\n    targets: [example.com:443]\n",
     SaveConfig: async () => {},
     ValidateText: async () => [],
-    AddEndpoint: async (yaml, kind, value, recordType, expectStatus) => {
+    AddEndpoint: async (yaml, kind, value, recordType, extra, expectStatus) => {
       // Preview-only textual merge (the real backend edits the YAML node tree).
       const nl = "\n";
+      const scalar = (k) => "  " + k + ":" + nl + "    targets: [" + value + "]" + nl;
+      const map = (k, kv) => "  " + k + ":" + nl + "    targets:" + nl + "      - " + kv + nl;
       let block;
-      if (kind === "certs") block = "  certs:" + nl + "    targets: [" + value + "]" + nl;
-      else if (kind === "tcp") block = "  tcp:" + nl + "    targets:" + nl + "      - address: " + value + nl;
-      else if (kind === "dns") block = "  dns:" + nl + "    targets:" + nl + "      - name: " + value +
-        (recordType && recordType !== "A" ? nl + "        type: " + recordType : "") + nl;
-      else block = "  http:" + nl + "    targets:" + nl + "      - url: " + value +
-        (expectStatus ? nl + "        expect_status: " + expectStatus : "") + nl;
+      switch (kind) {
+        case "certs": case "tls": case "redis": case "nats": block = scalar(kind); break;
+        case "tcp": case "smtp": block = map(kind, "address: " + value); break;
+        case "dns": block = map("dns", "name: " + value + (recordType && recordType !== "A" ? nl + "        type: " + recordType : "")); break;
+        case "grpc": block = map("grpc", "address: " + value + (extra ? nl + "        service: " + extra : "")); break;
+        case "postgres": block = map("postgres", "dsn: " + value + (extra ? nl + "        password_env: " + extra : "")); break;
+        default: block = map("http", "url: " + value + (expectStatus ? nl + "        expect_status: " + expectStatus : "")); break;
+      }
       const base = yaml && yaml.trim() ? yaml.replace(/\s*$/, "\n") : "checks:\n";
       return (base.includes("checks:") ? base : base + "checks:\n") + block;
     },
@@ -518,6 +522,28 @@
     $("schedBox").hidden = true;
     try { $("cfgText").value = await Backend.ReadConfig($("configPath").value); }
     catch (e) { cfgMessage(String(e), true); }
+    liveValidate();
+  }
+
+  // liveValidate (CF-105) — debounced validity badge in the editor bar while you
+  // type, using the same engine.Validate as the Validate button (no disk write).
+  let _cfgValTimer = null;
+  function liveValidate() {
+    clearTimeout(_cfgValTimer);
+    _cfgValTimer = setTimeout(async () => {
+      const badge = $("cfgStatus");
+      if (!badge) return;
+      let problems = [];
+      try { problems = (await Backend.ValidateText($("cfgText").value)) || []; }
+      catch (e) { problems = [String(e)]; }
+      if (problems.length === 0) {
+        badge.className = "cfg-status ok"; badge.textContent = "✓ valid"; badge.removeAttribute("title");
+      } else {
+        badge.className = "cfg-status bad";
+        badge.textContent = "✕ " + problems.length + " problem" + (problems.length > 1 ? "s" : "");
+        badge.title = problems.join("\n");
+      }
+    }, 400);
   }
 
   function cfgMessage(text, bad) {
@@ -537,10 +563,16 @@
 
   // Placeholders + which extra field shows, per endpoint kind.
   const EP_HINTS = {
-    http:  { label: "URL",       ph: "https://example.com/health" },
-    certs: { label: "Host:port", ph: "example.com:443" },
-    tcp:   { label: "Host:port", ph: "db.internal:5432" },
-    dns:   { label: "Name",      ph: "example.com" },
+    http:     { label: "URL",       ph: "https://example.com/health" },
+    certs:    { label: "Host:port", ph: "example.com:443" },
+    tls:      { label: "Host:port", ph: "example.com:443" },
+    tcp:      { label: "Host:port", ph: "db.internal:5432" },
+    dns:      { label: "Name",      ph: "example.com" },
+    redis:    { label: "Host:port", ph: "cache-01:6379" },
+    nats:     { label: "Monitor",   ph: "nats-01:8222" },
+    smtp:     { label: "Host:port", ph: "relay.example.com:587" },
+    grpc:     { label: "Host:port", ph: "svc.internal:443" },
+    postgres: { label: "DSN",       ph: "postgres://ops@pg-01:5432/app" },
   };
 
   function syncAddForm() {
@@ -550,6 +582,12 @@
     $("epValue").placeholder = h.ph;
     $("epExtraStatus").hidden = kind !== "http";
     $("epExtraType").hidden = kind !== "dns";
+    const hasExtra = kind === "grpc" || kind === "postgres";
+    $("epExtraExtra").hidden = !hasExtra;
+    if (hasExtra) {
+      $("epExtraLabel").textContent = kind === "grpc" ? "Service (opt.)" : "Password env (opt.)";
+      $("epExtra").placeholder = kind === "grpc" ? "grpc.health.v1.Health" : "PGPASSWORD";
+    }
   }
 
   function toggleAddForm(on) {
@@ -565,12 +603,15 @@
     if (!value) { $("epValue").focus(); return; }
     try {
       const updated = await Backend.AddEndpoint(
-        $("cfgText").value, kind, value, $("epType").value, Number($("epStatus").value) || 0);
+        $("cfgText").value, kind, value, $("epType").value, $("epExtra").value.trim(), Number($("epStatus").value) || 0);
       $("cfgText").value = updated;
       $("epValue").value = "";
+      $("epExtra").value = "";
       toggleAddForm(false);
       cfgMessage("Added " + kind + " endpoint — review and Save.", false);
-    } catch (err) { cfgMessage("Add failed: " + err, true); }
+      toast("Added " + kind + " endpoint — review and Save", { kind: "success" });
+      liveValidate();
+    } catch (err) { cfgMessage("Add failed: " + err, true); toast("Add failed: " + err, { kind: "error" }); }
   }
 
   async function toggleSchedule() {
@@ -921,6 +962,7 @@
       if (el) showModuleDrill(el.getAttribute("data-module"));
     });
     $("cfgReload").addEventListener("click", loadConfigText);
+    $("cfgText").addEventListener("input", liveValidate);
     $("cfgValidate").addEventListener("click", cfgValidate);
     $("cfgSave").addEventListener("click", cfgSave);
     $("addEndpoint").addEventListener("click", () => toggleAddForm());

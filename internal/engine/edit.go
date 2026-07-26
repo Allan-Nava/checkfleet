@@ -11,10 +11,11 @@ import (
 // EndpointSpec is a single endpoint added via the desktop "Add endpoint"
 // quick-form. Only the fields relevant to Kind are read.
 type EndpointSpec struct {
-	Kind         string `json:"kind"`         // http | certs | tcp | dns
-	Value        string `json:"value"`        // url (http) | host:443 (certs) | host:port (tcp) | name (dns)
+	Kind         string `json:"kind"`         // http | certs | tls | tcp | dns | redis | nats | smtp | grpc | postgres
+	Value        string `json:"value"`        // url (http) | host:port (certs/tls/tcp/redis/nats/smtp/grpc) | name (dns) | dsn (postgres)
 	ExpectStatus int    `json:"expectStatus"` // http only; 0 omits the key
 	RecordType   string `json:"recordType"`   // dns only; "" or "A" omits the key
+	Extra        string `json:"extra"`        // grpc service / postgres password_env; "" omits the key
 }
 
 // AddEndpoint inserts a new endpoint into raw config YAML and returns the
@@ -29,7 +30,7 @@ func AddEndpoint(yamlText string, spec EndpointSpec) (string, error) {
 		return "", fmt.Errorf("endpoint value is empty")
 	}
 	switch spec.Kind {
-	case "http", "certs", "tcp", "dns":
+	case "http", "certs", "tls", "tcp", "dns", "redis", "nats", "smtp", "grpc", "postgres":
 	default:
 		return "", fmt.Errorf("unsupported endpoint kind %q", spec.Kind)
 	}
@@ -55,8 +56,8 @@ func AddEndpoint(yamlText string, spec EndpointSpec) (string, error) {
 	targets := ensureSeq(module, "targets")
 
 	switch spec.Kind {
-	case "certs":
-		// targets is a sequence of host[:port] scalars.
+	case "certs", "tls", "redis", "nats":
+		// targets is a sequence of host[:port] (or monitor URL) scalars.
 		targets.Content = append(targets.Content, scalarNode(spec.Value))
 	case "http":
 		m := &yaml.Node{Kind: yaml.MappingNode}
@@ -65,9 +66,23 @@ func AddEndpoint(yamlText string, spec EndpointSpec) (string, error) {
 			m.Content = append(m.Content, keyNode("expect_status"), intNode(spec.ExpectStatus))
 		}
 		targets.Content = append(targets.Content, m)
-	case "tcp":
+	case "tcp", "smtp":
 		m := &yaml.Node{Kind: yaml.MappingNode}
 		m.Content = append(m.Content, keyNode("address"), scalarNode(spec.Value))
+		targets.Content = append(targets.Content, m)
+	case "grpc":
+		m := &yaml.Node{Kind: yaml.MappingNode}
+		m.Content = append(m.Content, keyNode("address"), scalarNode(spec.Value))
+		if svc := strings.TrimSpace(spec.Extra); svc != "" {
+			m.Content = append(m.Content, keyNode("service"), scalarNode(svc))
+		}
+		targets.Content = append(targets.Content, m)
+	case "postgres":
+		m := &yaml.Node{Kind: yaml.MappingNode}
+		m.Content = append(m.Content, keyNode("dsn"), scalarNode(spec.Value))
+		if pw := strings.TrimSpace(spec.Extra); pw != "" {
+			m.Content = append(m.Content, keyNode("password_env"), scalarNode(pw))
+		}
 		targets.Content = append(targets.Content, m)
 	case "dns":
 		m := &yaml.Node{Kind: yaml.MappingNode}

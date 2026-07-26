@@ -34,8 +34,10 @@ command palette** and keyboard shortcuts (CF-96).
 - **Details, explain, validate, notify** (CF-62/63): a detail drawer with Copy,
   module **Explain**, config **Validate**, and native desktop **Notify** on a
   bad run.
-- **Config editor** (CF-65/66): a YAML panel with Reload/Validate/Save, a quick
-  **Add endpoint** form and a **Schedule** snippet (cron / `serve`).
+- **Config editor** (CF-65/66/105): a YAML panel with Reload/Validate/Save, a
+  **live validity badge** while you type, a quick **Add endpoint** form covering
+  the common checks (http/certs/tls/tcp/dns/redis/nats/smtp/grpc/postgres) and a
+  **Schedule** snippet (cron / `serve`).
 - **UX & a11y** (M26): a design-token system, loading/empty/error states,
   motion, non-blocking **toasts**, and keyboard/ARIA accessibility (focus-trap,
   focus-visible, `prefers-reduced-motion`).
