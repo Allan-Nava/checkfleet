@@ -27,6 +27,52 @@ load and validate — edit the values, keep secrets in the environment, then run
 `checkfleet check all`. It refuses to overwrite an existing file unless you pass
 `--force`.
 
+### Recipes: start from a stack, not a module list
+
+```bash
+checkfleet init --recipe web       # http + certs + dns
+checkfleet init --recipe db        # postgres + redis + tcp
+checkfleet init --recipe edge      # haproxy + certs + tcp + ntp
+checkfleet init --recipe media     # stream + ingest + http
+```
+
+| Recipe | Why those modules |
+|---|---|
+| `web` | is it answering, is the certificate alive, **do the records still point at us** |
+| `db` | connectivity, replication lag, memory pressure |
+| `edge` | backend health, TLS expiry, reachability and **clock skew** |
+| `media` | manifest freshness, live-edge age, and the ingest endpoints behind it |
+
+The value isn't saving typing. It's that someone new to this doesn't yet know a
+web tier needs `dns` (records drift after a migration and nothing else notices)
+or that an edge tier needs `ntp` (clock skew breaks TLS and tokens long before
+anyone suspects the clock).
+
+### From an Ansible inventory
+
+The inventory already knows every host. Generate the targets from it instead of
+retyping hostnames:
+
+```bash
+checkfleet init --from-inventory hosts.ini                          # certs + http
+checkfleet init --from-inventory hosts.ini --modules certs,http,tcp
+checkfleet init --from-inventory hosts.ini --group web
+```
+
+Addresses come from `ansible_host` where the inventory sets one, otherwise from
+the host name. For `http`/`certs` you may want the public DNS name instead — SNI
+and the certificate CN follow the name, not the IP — which is why the generated
+file says so in a comment.
+
+Only modules whose target can be derived **from a hostname alone** are available
+here (`certs`, `tls`, `http`, `tcp`, `dns`, `ntp`, `redis`, `memcached`,
+`haproxy`, `consul`, `nats`). Ask for `postgres` and it refuses with an
+explanation rather than inventing a DSN: a config that looks ready and fails on
+its first run is worse than being told up front.
+
+Output is deterministic (hosts sorted by name), so regenerating after an
+inventory change produces a diff of the change and nothing else.
+
 ## The `check` command
 
 ```bash

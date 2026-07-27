@@ -119,6 +119,74 @@ var snippets = map[string]string{
 // defaultModules is the starter set used when the user names none.
 var defaultModules = []string{"certs", "http"}
 
+// Recipe is a named starter stack: the modules that answer the questions a
+// given kind of infrastructure actually raises.
+//
+// The point is not to save typing — it is that someone starting out does not yet
+// know that a web tier needs `dns` (records drift after a migration and nothing
+// else notices) or that an edge tier needs `ntp` (clock skew breaks TLS and
+// tokens long before anyone suspects the clock).
+type Recipe struct {
+	Name    string
+	Summary string
+	Modules []string
+}
+
+var recipes = map[string]Recipe{
+	"web": {
+		Name:    "web",
+		Summary: "public web tier: is it answering, is the certificate alive, do the records still point at us",
+		Modules: []string{"http", "certs", "dns"},
+	},
+	"db": {
+		Name:    "db",
+		Summary: "data tier: connectivity, replication lag and memory pressure",
+		Modules: []string{"postgres", "redis", "tcp"},
+	},
+	"edge": {
+		Name:    "edge",
+		Summary: "load balancers and network edge: backend health, TLS expiry, reachability and clock skew",
+		Modules: []string{"haproxy", "certs", "tcp", "ntp"},
+	},
+	"media": {
+		Name:    "media",
+		Summary: "streaming: manifest freshness, live-edge age and the ingest endpoints behind it",
+		Modules: []string{"stream", "ingest", "http"},
+	},
+}
+
+// Recipes returns the recipe names, sorted.
+func Recipes() []string {
+	names := make([]string, 0, len(recipes))
+	for n := range recipes {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+	return names
+}
+
+// RecipeByName looks up a recipe.
+func RecipeByName(name string) (Recipe, bool) {
+	r, ok := recipes[strings.ToLower(strings.TrimSpace(name))]
+	return r, ok
+}
+
+// ConfigForRecipe renders a starter config for a named stack.
+func ConfigForRecipe(name string) (string, error) {
+	r, ok := RecipeByName(name)
+	if !ok {
+		return "", fmt.Errorf("unknown recipe %q; available: %s", name, strings.Join(Recipes(), ", "))
+	}
+	body, err := Config(r.Modules)
+	if err != nil {
+		// A recipe naming a module with no snippet is a programming error, not
+		// user input — RecipesAreValid covers it in the tests.
+		return "", fmt.Errorf("recipe %q: %w", name, err)
+	}
+	header := fmt.Sprintf("# Recipe: %s — %s\n", r.Name, r.Summary)
+	return header + body, nil
+}
+
 // Supported returns the module names init can scaffold, sorted.
 func Supported() []string {
 	names := make([]string, 0, len(snippets))
