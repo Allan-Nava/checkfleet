@@ -22,6 +22,7 @@ import (
 	"net"
 	"net/url"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/Allan-Nava/checkfleet/internal/engine"
@@ -38,6 +39,12 @@ type Target struct {
 	// are covered by that single target. Empty when no host is derivable (an
 	// object key, a queue name…).
 	Hosts []string `json:"hosts,omitempty"`
+	// Port from the target's address, 0 when it names none. Carried separately
+	// because the address itself may be a DSN that must never be printed, while
+	// the port is plain metadata a diagnostic needs in order to probe. When an
+	// address lists several endpoints (a replica set) this is the first one's
+	// port, which in practice is shared by all members.
+	Port int `json:"port,omitempty"`
 }
 
 // candidate field names holding targets, in priority order.
@@ -88,7 +95,7 @@ func targetsOf(module string, cfg reflect.Value) []Target {
 		switch f.Kind() {
 		case reflect.String:
 			if s := f.String(); s != "" {
-				return []Target{{Module: module, Name: s, Hosts: hostsOf(s)}}
+				return []Target{{Module: module, Name: s, Hosts: hostsOf(s), Port: portOf(s)}}
 			}
 		case reflect.Slice:
 			out := make([]Target, 0, f.Len())
@@ -109,7 +116,7 @@ func targetFrom(module string, v reflect.Value) (Target, bool) {
 		if s == "" {
 			return Target{}, false
 		}
-		return Target{Module: module, Name: s, Hosts: hostsOf(s)}, true
+		return Target{Module: module, Name: s, Hosts: hostsOf(s), Port: portOf(s)}, true
 	}
 	if v.Kind() != reflect.Struct {
 		return Target{}, false
@@ -142,7 +149,7 @@ func targetFrom(module string, v reflect.Value) (Target, bool) {
 		// this a dns target could never match an inventory host.
 		addr = name
 	}
-	return Target{Module: module, Name: name, Hosts: hostsOf(addr)}, true
+	return Target{Module: module, Name: name, Hosts: hostsOf(addr), Port: portOf(addr)}, true
 }
 
 // safeName is the address as a display label, reduced to its host when it could
@@ -213,6 +220,45 @@ func hostsOf(addr string) []string {
 		return []string{h}
 	}
 	return nil
+}
+
+// portOf extracts the port from an address, following the same shapes as
+// hostsOf. 0 means the address names no port.
+func portOf(addr string) int {
+	addr = strings.TrimSpace(addr)
+	if addr == "" {
+		return 0
+	}
+	if open := strings.IndexByte(addr, '('); open >= 0 {
+		if close := strings.IndexByte(addr[open:], ')'); close > 0 {
+			return portOf(addr[open+1 : open+close])
+		}
+	}
+
+	hostport := addr
+	if strings.Contains(addr, "://") {
+		u, err := url.Parse(addr)
+		if err != nil || u.Host == "" {
+			return 0
+		}
+		// The first endpoint of a possible comma-separated list.
+		hostport, _, _ = strings.Cut(u.Host, ",")
+	} else if strings.Contains(addr, "=") {
+		for _, field := range strings.Fields(addr) {
+			if k, v, ok := strings.Cut(field, "="); ok && k == "port" {
+				if n, err := strconv.Atoi(v); err == nil {
+					return n
+				}
+			}
+		}
+		return 0
+	}
+	if _, p, err := net.SplitHostPort(hostport); err == nil {
+		if n, err := strconv.Atoi(p); err == nil {
+			return n
+		}
+	}
+	return 0
 }
 
 // bareHost reduces "host:port", "[::1]:port" or "host" to the host.

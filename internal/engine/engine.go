@@ -142,7 +142,18 @@ func RunJobsLimited(ctx context.Context, jobs []Job, maxConcurrency int) Result 
 	for _, fs := range perCheck {
 		findings = append(findings, fs...)
 	}
-	findings = Dedup(findings)
+	findings = SortFindings(Dedup(findings))
+	return Result{Findings: findings, Started: started, Duration: time.Since(started)}
+}
+
+// SortFindings orders findings worst-first, then by check, then by target, with
+// a stable sort so equal keys keep their input order.
+//
+// This ordering is a de-facto API: anything parsing the text output relies on
+// the first line being the thing to look at. It is exported so other producers
+// of findings (the doctor command) present them the same way instead of
+// reimplementing the comparison.
+func SortFindings(findings []Finding) []Finding {
 	sort.SliceStable(findings, func(i, j int) bool {
 		if severity[findings[i].Status] != severity[findings[j].Status] {
 			return severity[findings[i].Status] > severity[findings[j].Status]
@@ -152,7 +163,7 @@ func RunJobsLimited(ctx context.Context, jobs []Job, maxConcurrency int) Result 
 		}
 		return findings[i].Target < findings[j].Target
 	})
-	return Result{Findings: findings, Started: started, Duration: time.Since(started)}
+	return findings
 }
 
 // runWithRetry runs one check, retrying (with exponential backoff) while its

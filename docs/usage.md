@@ -141,6 +141,53 @@ checkfleet validate --config checkfleet.yml            # exit 0 if usable
 checkfleet validate --config checkfleet.yml --stack prod
 ```
 
+## The `doctor` command
+
+Preflight: *why isn't this working?* — about your **environment**, not your
+services.
+
+```bash
+checkfleet doctor --config checkfleet.yml
+checkfleet doctor --config checkfleet.yml --no-probe     # config + variables only
+checkfleet doctor --config checkfleet.yml --output json
+```
+
+```
+⛔ ERROR network  10.20.30.11:5432          resolves but refuses TCP: connection refused
+⛔ ERROR network  db-old.internal:3306      does not resolve: no such host
+🔴 BAD   env      ${PG_PASSWORD}            environment variable PG_PASSWORD is not set — it expands to an empty value
+🔴 BAD   target   redis 127.0.0.1:65999     implausible port 65999
+🟡 WARN  target   http                      duplicate target https://example.com/ (×2)
+🟢 OK    config   checkfleet.yml            valid
+```
+
+What it reports:
+
+| Check | Finds |
+|---|---|
+| `env` | `${VAR}` referenced by the config but **not set** (BAD), set only via a `:-default` (WARN), and `${file:…}` secrets that can't be read (BAD) |
+| `config` | everything `validate` reports, plus a config that fails to load |
+| `target` | addresses with no derivable host, implausible ports, duplicate targets |
+| `network` | per host: does it resolve, and does the port accept a TCP connection (ERROR when not) |
+
+Three things worth knowing:
+
+**An unset `${VAR}` is BAD, not a warning.** It expands to the **empty string,
+silently** — the config parses, the check runs, and it fails against an empty
+password with an error that blames the database. Naming the variable is the whole
+reason this command exists.
+
+**It works on a config that won't load.** The variable scan reads the raw file
+before any parsing, and a load failure is reported as a finding rather than an
+abort — a broken config is exactly when you need a diagnostic.
+
+**Network problems are ERROR, not BAD**, the same distinction the check modules
+make: "we could not measure from here" is not "the target is unhealthy". Probes
+are deduplicated per `host:port`, so 40 URLs on one host is one line.
+
+`doctor` exits `0` whatever it finds. It is a diagnostic, not a gate — use
+`check --exit-on` for that.
+
 ## The `targets` command
 
 What is this config actually watching? `targets` flattens every target across
