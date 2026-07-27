@@ -33,7 +33,7 @@ $ checkfleet check all --config checkfleet.yml
 
 Don't rebuild Prometheus or Grafana. checkfleet fills the layer they can't: checks that need **domain knowledge** (what "healthy" means for a TLS estate, a NATS cluster, an HLS stream), runnable from CI, cron, or your laptop, with reports you can paste straight into your ops docs.
 
-- **Exit code 0 even on WARN/BAD findings** — a check that ran *is* a success. Gate on the output, or use `--exit-on-bad` for CI.
+- **Exit code 0 even on WARN/BAD findings** — a check that ran *is* a success. Gate on the output, or use `--exit-on warn|bad|error` for CI.
 - **Worst findings first** — the thing you must look at is the first line.
 - **Fleet-aware** — point the certs check at your Ansible inventory and every host becomes a target.
 
@@ -119,7 +119,7 @@ checkfleet check nats  --config checkfleet.yml --output markdown  # NATS cluster
 checkfleet check postgres --config checkfleet.yml                 # PostgreSQL (read-only SQL)
 checkfleet check dns   --config checkfleet.yml                    # DNS resolution & drift
 checkfleet check http  --config checkfleet.yml --output json      # machine-readable (includes "worst")
-checkfleet check all   --config checkfleet.yml --exit-on-bad      # exit 2 on BAD/ERROR, for CI gates
+checkfleet check all   --config checkfleet.yml --exit-on bad       # exit 2 on BAD/ERROR, for CI gates
 checkfleet check all   --config checkfleet.yml --output slack     # post a Block Kit report to a Slack webhook
 
 # scope the findings

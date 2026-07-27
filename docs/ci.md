@@ -57,7 +57,7 @@ costs you a usage error rather than a full fleet sweep.
 
 ## GitHub Actions
 
-Use `--output github`. One run, one command:
+Use the action:
 
 ```yaml
 name: fleet-checks
@@ -71,12 +71,58 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: Allan-Nava/checkfleet@v1
+```
+
+That is the whole job. Every input is optional and the defaults are the common
+case: run `all` modules from `checkfleet.yml`, annotate the run, write the job
+summary, fail on BAD/ERROR.
+
+### Inputs
+
+| Input | Default | |
+|---|---|---|
+| `version` | `latest` | release to install, e.g. `0.131.0` |
+| `module` | `all` | `certs`, `http`, … |
+| `config` | `checkfleet.yml` | path to the config |
+| `stack` | — | comma-separated profiles, e.g. `region-eu,prod` |
+| `output` | `github` | any sink list, e.g. `github,slack` |
+| `out-file` | — | write the rendered output to a file |
+| `exit-on` | `bad` | `warn`\|`bad`\|`error`; empty = report only |
+| `exit-code` | `2` | code when the gate trips |
+| `baseline` | — | baseline file (see below) |
+| `fail-on-new` | `false` | gate only on new/worse findings |
+| `min-severity` | — | drop findings below this severity |
+| `target` | — | glob filter on targets |
+
+It exposes one output, `exit-code`, so a workflow can react without re-running
+anything:
+
+```yaml
+      - uses: Allan-Nava/checkfleet@v1
+        id: fleet
+        continue-on-error: true
+        with:
+          config: infra/checkfleet.yml
+          exit-on: warn
+      - if: steps.fleet.outputs.exit-code != '0'
+        run: echo "findings reached the gate"
+```
+
+Pin it to a release (`@v1`) rather than a branch, and remember the action runs
+on Linux and macOS runners only.
+
+### Without the action
+
+The action is a convenience over one command, so nothing is lost by not using
+it:
+
+```yaml
       - uses: actions/setup-go@v5
         with:
           go-version: "1.25"
       - run: go install github.com/Allan-Nava/checkfleet/cmd/checkfleet@latest
-      - name: Run checks
-        run: checkfleet check all --config checkfleet.yml --output github --exit-on bad
+      - run: checkfleet check all --config checkfleet.yml --output github --exit-on bad
 ```
 
 That single command does three things:
@@ -199,6 +245,38 @@ case "$worst" in
   *)         echo "fleet ok ($worst)" ;;
 esac
 ```
+
+## GitLab CI
+
+No plugin needed — download the binary and run it. The JUnit sink turns the
+findings into the pipeline's **Tests** tab, and the SARIF-equivalent for GitLab
+is the JSON artifact.
+
+```yaml
+checkfleet:
+  stage: test
+  image: alpine:3
+  variables:
+    CHECKFLEET_VERSION: "0.131.0"
+  before_script:
+    - apk add --no-cache curl
+    - curl -sSfL "https://github.com/Allan-Nava/checkfleet/releases/download/v${CHECKFLEET_VERSION}/checkfleet_${CHECKFLEET_VERSION}_linux_amd64.tar.gz" | tar -xz checkfleet
+  script:
+    - ./checkfleet check all --config checkfleet.yml --output junit --out-file report.xml --exit-on bad
+  artifacts:
+    when: always          # keep the report even when the gate fails the job
+    reports:
+      junit: report.xml
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+```
+
+`when: always` matters: without it a tripped gate fails the job *and* discards
+the report that explains why.
+
+To schedule it, add a **pipeline schedule** in the project settings; the `rules`
+above keep the job to scheduled runs and the default branch.
 
 ## TeamCity
 

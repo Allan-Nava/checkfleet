@@ -1,0 +1,142 @@
+name: checkfleet
+description: Run checkfleet's domain-aware infrastructure checks and annotate the run
+author: Allan Nava
+branding:
+  icon: check-circle
+  color: blue
+
+inputs:
+  version:
+    description: 'checkfleet release to install ("latest", or a version like 0.131.0)'
+    required: false
+    default: latest
+  module:
+    description: 'module to run: all, certs, http, dns, postgres, …'
+    required: false
+    default: all
+  config:
+    description: path to the YAML config
+    required: false
+    default: checkfleet.yml
+  stack:
+    description: 'comma-separated stack profiles overlaid in order (e.g. region-eu,prod)'
+    required: false
+    default: ''
+  output:
+    description: 'output sink(s), comma-separated. The default annotates the run and writes the job summary'
+    required: false
+    default: github
+  out-file:
+    description: write the rendered output to this file instead of stdout
+    required: false
+    default: ''
+  exit-on:
+    description: 'severity that fails the build: warn|bad|error (empty = report only, never fail)'
+    required: false
+    default: bad
+  exit-code:
+    description: exit code to use when the gate trips (1-125)
+    required: false
+    default: '2'
+  baseline:
+    description: baseline file of known findings; created on first use
+    required: false
+    default: ''
+  fail-on-new:
+    description: 'with `baseline`: gate only on findings that are new or worse than the baseline'
+    required: false
+    default: 'false'
+  min-severity:
+    description: 'show only findings at or above: ok|warn|bad|error'
+    required: false
+    default: ''
+  target:
+    description: show only targets matching this glob
+    required: false
+    default: ''
+
+outputs:
+  exit-code:
+    description: checkfleet's exit code (0 = below the gate, 2 = the gate tripped)
+    value: ${{ steps.run.outputs.exit-code }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install checkfleet
+      shell: bash
+      # Inputs are passed through env, never interpolated into the script body:
+      # a ${{ }} expansion inside bash would let an input containing shell
+      # metacharacters execute as code.
+      env:
+        CHECKFLEET_VERSION: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+
+        os=$(uname -s | tr '[:upper:]' '[:lower:]')
+        arch=$(uname -m)
+        case "$arch" in
+          x86_64|amd64) arch=amd64 ;;
+          aarch64|arm64) arch=arm64 ;;
+          *) echo "::error::checkfleet: unsupported architecture '$arch'"; exit 1 ;;
+        esac
+        case "$os" in
+          linux|darwin) ;;
+          *) echo "::error::checkfleet: unsupported runner OS '$os' (this action supports Linux and macOS)"; exit 1 ;;
+        esac
+
+        version="$CHECKFLEET_VERSION"
+        if [ "$version" = "latest" ]; then
+          # Resolve through the /releases/latest redirect rather than the API:
+          # no token, and no shared unauthenticated rate limit to trip over.
+          version=$(curl -sSfL -o /dev/null -w '%{url_effective}' \
+            https://github.com/Allan-Nava/checkfleet/releases/latest | sed 's#.*/tag/##')
+        fi
+        version="${version#v}"   # accept both 0.131.0 and v0.131.0
+
+        url="https://github.com/Allan-Nava/checkfleet/releases/download/v${version}/checkfleet_${version}_${os}_${arch}.tar.gz"
+        echo "checkfleet: installing $version ($os/$arch)"
+        curl -sSfL "$url" | tar -xz checkfleet
+        install -m 0755 checkfleet "$RUNNER_TEMP/checkfleet"
+        rm -f checkfleet
+        "$RUNNER_TEMP/checkfleet" version
+
+    - name: Run checkfleet
+      id: run
+      shell: bash
+      env:
+        CF_MODULE: ${{ inputs.module }}
+        CF_CONFIG: ${{ inputs.config }}
+        CF_STACK: ${{ inputs.stack }}
+        CF_OUTPUT: ${{ inputs.output }}
+        CF_OUT_FILE: ${{ inputs.out-file }}
+        CF_EXIT_ON: ${{ inputs.exit-on }}
+        CF_EXIT_CODE: ${{ inputs.exit-code }}
+        CF_BASELINE: ${{ inputs.baseline }}
+        CF_FAIL_ON_NEW: ${{ inputs.fail-on-new }}
+        CF_MIN_SEVERITY: ${{ inputs.min-severity }}
+        CF_TARGET: ${{ inputs.target }}
+      run: |
+        set -uo pipefail
+
+        args=(check "$CF_MODULE" --config "$CF_CONFIG" --output "$CF_OUTPUT" --exit-code "$CF_EXIT_CODE")
+        [ -n "$CF_STACK" ]        && args+=(--stack "$CF_STACK")
+        [ -n "$CF_OUT_FILE" ]     && args+=(--out-file "$CF_OUT_FILE")
+        [ -n "$CF_EXIT_ON" ]      && args+=(--exit-on "$CF_EXIT_ON")
+        [ -n "$CF_BASELINE" ]     && args+=(--baseline "$CF_BASELINE")
+        [ -n "$CF_MIN_SEVERITY" ] && args+=(--min-severity "$CF_MIN_SEVERITY")
+        [ -n "$CF_TARGET" ]       && args+=(--target "$CF_TARGET")
+        [ "$CF_FAIL_ON_NEW" = "true" ] && args+=(--fail-on-new)
+
+        # The exit code is the product here, so the failure must not abort the
+        # step before it is recorded.
+        "$RUNNER_TEMP/checkfleet" "${args[@]}"
+        code=$?
+        echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+
+        # 1 means checkfleet itself could not run (bad config, unknown module).
+        # Distinguish it from a tripped gate so the log says which happened.
+        if [ "$code" = "1" ]; then
+          echo "::error::checkfleet could not run — see the message above (config, module or flags)"
+        fi
+        exit $code
