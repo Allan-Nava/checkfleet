@@ -18,6 +18,11 @@ linters:
       - common-false-positives
       - legacy
       - std-error-handling
+    paths:
+      # node_modules ships a Go sample inside a JS package (flatted). CI never
+      # sees it — nothing runs npm install there — but a local run does, and its
+      # findings are noise we can't fix, which is how real ones get ignored.
+      - node_modules
 
 issues:
   # Don't cap the report — we keep the tree clean rather than hiding findings.

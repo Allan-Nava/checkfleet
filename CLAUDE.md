@@ -6,7 +6,7 @@
 
 - **Ogni commit = release taggata `vX.Y.Z`**: nuova sezione in `CHANGELOG.md` (Keep a Changelog, in italiano) + `git tag -a vX.Y.Z -m "Release X.Y.Z"`. Bump `minor` per novità sostanziali (nuovi moduli/output), `patch` per fix. Senza chiederlo. **Esenti**: auto-commit su `.claude/settings.json` e commit `report:` CI.
 - **MAI `git push`** — lo fa sempre l'utente. MAI `Co-Authored-By` nei commit.
-- **Gate prima di chiudere**: `go vet ./...` + `go test ./...` verdi (stessi check della CI).
+- **Gate prima di chiudere**: `go vet ./...` + `go test ./...` + `golangci-lint run` verdi (stessi check della CI). **Il linter fa parte del gate**: `.github/workflows/ci.yml` lo esegue come hard gate e ometterlo qui ha già lasciato passare 20 run rosse di fila. Serve **golangci-lint v2** (il config è schema v2, un binario v1 non lo legge): `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2` — stessa versione pinnata nella CI.
 - **Ogni modulo nuovo = package in `internal/checks/<nome>`** che implementa `engine.Check`, config tipata in `engine/config.go`, wiring in `cmd/checkfleet/main.go`, **test con server/fixture locali** (mai rete esterna nei test, mai infrastruttura reale).
 - **Exit code semantics**: 0 anche con finding WARN/BAD (il check che gira È un successo); ≠0 solo per errori sistemici (config illeggibile, modulo sconosciuto). `--exit-on-bad` per il gating CI. NON cambiare questa semantica.
 - **Niente segreti** in config d'esempio, test, doc o output. I check non loggano mai credenziali.

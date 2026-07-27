@@ -1053,7 +1053,7 @@ func (c *Config) overlay(over *Config) {
 	for i := 0; i < oc.NumField(); i++ {
 		f := oc.Field(i)
 		// Every module is a pointer field; a non-nil one replaces the base's.
-		if f.Kind() == reflect.Ptr && !f.IsNil() {
+		if f.Kind() == reflect.Pointer && !f.IsNil() {
 			cc.Field(i).Set(f)
 		}
 	}
