@@ -71,7 +71,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: Allan-Nava/checkfleet@v1
+      - uses: Allan-Nava/checkfleet@v0.132.0
 ```
 
 That is the whole job. Every input is optional and the defaults are the common
@@ -99,7 +99,7 @@ It exposes one output, `exit-code`, so a workflow can react without re-running
 anything:
 
 ```yaml
-      - uses: Allan-Nava/checkfleet@v1
+      - uses: Allan-Nava/checkfleet@v0.132.0
         id: fleet
         continue-on-error: true
         with:
@@ -109,8 +109,13 @@ anything:
         run: echo "findings reached the gate"
 ```
 
-Pin it to a release (`@v1`) rather than a branch, and remember the action runs
-on Linux and macOS runners only.
+Pin it to a release tag rather than a branch. A moving `v1` alias tag is not
+published yet, so use the exact version (`@v0.132.0`) — the action's own
+`version` input is what controls which checkfleet binary it installs, and that
+defaults to `latest` independently of the tag you pin the action to.
+
+The action runs on **Linux and macOS** runners only; on Windows it fails with an
+explicit message rather than something obscure.
 
 ### Without the action
 
