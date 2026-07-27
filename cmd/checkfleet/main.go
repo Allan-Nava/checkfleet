@@ -545,18 +545,35 @@ func runValidate(args []string) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	cfg, err := loadConfig(*configPath, *stack)
-	if err != nil {
-		return err // parse/read errors are already fatal
+	// A config that fails to load is still worth inspecting: the reason is often
+	// a misspelled key or an unset variable, which Inspect can name even when the
+	// typed load could not complete.
+	cfg, loadErr := loadConfig(*configPath, *stack)
+	problems := engine.Inspect(*configPath, cfg)
+
+	if loadErr != nil {
+		fmt.Fprintf(os.Stderr, "%s: cannot be loaded: %v\n", *configPath, loadErr)
+		for _, p := range problems {
+			fmt.Fprintln(os.Stderr, "  -", p)
+		}
+		os.Exit(1)
 	}
-	problems := engine.Validate(cfg)
-	if len(problems) == 0 {
+	if !engine.Blocking(problems) {
 		fmt.Printf("checkfleet: %s is valid ✅\n", *configPath)
+		// Advisory notes are about this machine, not the config, so they are
+		// printed after the all-clear rather than turning it into a failure.
+		for _, p := range problems {
+			fmt.Printf("  note: %s\n", p)
+		}
 		return nil
 	}
 	fmt.Fprintf(os.Stderr, "%s: %d problem(s):\n", *configPath, len(problems))
 	for _, p := range problems {
-		fmt.Fprintln(os.Stderr, "  -", p)
+		prefix := "  -"
+		if p.Advisory {
+			prefix = "  note:"
+		}
+		fmt.Fprintln(os.Stderr, prefix, p)
 	}
 	os.Exit(1)
 	return nil

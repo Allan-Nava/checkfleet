@@ -134,12 +134,50 @@ title (the dedup key). Requires the matching CLI authenticated: `gh` for GitHub
 
 Check the config without running any check — useful in CI or a pre-commit hook.
 It reports missing targets/URLs/DSNs, incoherent thresholds (e.g. `warn` past
-`crit`), and an empty `checks`. Exit `1` on any problem.
+`crit`), an empty `checks`, and **misspelled keys** — with the fix, not just the
+complaint.
 
 ```bash
 checkfleet validate --config checkfleet.yml            # exit 0 if usable
 checkfleet validate --config checkfleet.yml --stack prod
 ```
+
+```
+checkfleet.yml: 3 problem(s):
+  - unknown key "postgress" at `checks` — it is ignored, so nothing you configured under it runs → did you mean "postgres"?
+  - unknown key "timeout_second" at top level — it is ignored, so nothing you configured under it runs → did you mean "timeout_seconds"?
+  - certs: warn_days (5) should be >= crit_days (30) → the warn threshold must trigger before the crit one — check the two values are not swapped
+```
+
+### Why misspelled keys matter most
+
+YAML unmarshalling **silently drops** anything it doesn't recognise. Write
+`postgress:` instead of `postgres:` and the module simply never runs — no error,
+no warning, and a `check all` that reports a healthy fleet because it checked
+nothing. `validate` compares the keys in your file against the ones the config
+actually accepts (read off the structs, so the list can't drift) and suggests the
+nearest match by edit distance, or by prefix (`elastic` → `elasticsearch`).
+
+When nothing is close enough, no suggestion is offered: a confidently wrong
+"did you mean" is worse than none.
+
+### Notes vs problems
+
+Some findings are about **this machine**, not about the config:
+
+```
+checkfleet: checkfleet.yml is valid ✅
+  note: environment variable PG_PASSWORD is not set, so it expands to an empty value → export PG_PASSWORD=... before running, or write ${PG_PASSWORD:-default} to make the fallback explicit
+```
+
+An unset `${VAR}` is reported as a **note** and does **not** fail `validate`,
+because a laptop running a pre-commit hook legitimately doesn't have production
+secrets exported — failing there would just teach people to skip the hook. Use
+[`doctor`](#the-doctor-command) when the environment *is* the subject: it treats
+the same unset variable as BAD.
+
+Exit `1` on any real config defect; `0` when only notes remain. A config that
+fails to load is reported with its raw-level problems, which usually explain it.
 
 ## The `doctor` command
 

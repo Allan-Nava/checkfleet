@@ -98,6 +98,20 @@ func scanVars(path string, visiting map[string]bool) ([]VarRef, error) {
 	return refs, nil
 }
 
+// isEnvName reports whether s has the shape of an environment variable name.
+// Used to tell a real reference from prose that happens to contain ${…}.
+func isEnvName(s string) bool {
+	for i, r := range s {
+		switch {
+		case r >= 'A' && r <= 'Z', r >= 'a' && r <= 'z', r == '_':
+		case r >= '0' && r <= '9' && i > 0: // a digit may not lead
+		default:
+			return false
+		}
+	}
+	return s != ""
+}
+
 // refsIn extracts the references from one file's text, mirroring expandVars's
 // grammar — including the `$${` escape, which is a literal and not a reference.
 func refsIn(text, file string) []VarRef {
@@ -124,6 +138,14 @@ func refsIn(text, file string) []VarRef {
 			ref.Resolved = os.Getenv(inner) != ""
 		}
 		if ref.Name == "" {
+			continue
+		}
+		// Prose, not a reference. checkfleet.example.yml has the comment
+		// "…comes from the environment via ${...} interpolation", and without
+		// this the scan reports a missing variable literally named "...".
+		// expandVars would replace it with "" too, but inside a comment that is
+		// harmless — reporting it as a problem is not.
+		if ref.Kind == VarEnv && !isEnvName(ref.Name) {
 			continue
 		}
 		// One entry per name per file: the same secret referenced by three
