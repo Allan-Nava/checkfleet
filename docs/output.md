@@ -94,6 +94,33 @@ or attach to an incident.
 checkfleet check all --config checkfleet.yml --output html --out-file report.html
 ```
 
+## `github`
+
+For GitHub Actions. Emits the findings as **workflow commands** on stdout, so
+they become inline annotations on the run and on the PR, and appends the full
+Markdown report to the job summary (`$GITHUB_STEP_SUMMARY`) when that variable
+is set.
+
+```bash
+checkfleet check all --config checkfleet.yml --output github --exit-on bad
+```
+
+| Finding | Annotation |
+|---|---|
+| BAD, ERROR | `::error` |
+| WARN | `::warning` |
+| OK | *(none)* |
+
+OK findings are skipped deliberately: GitHub shows at most 10 annotations per
+level per step, so annotating green targets would hide the real ones. The
+summary still lists everything.
+
+Because the sink writes the summary file itself, you never pipe its output —
+which is what makes the CI gate reliable, see
+[CI integration](ci.md#why-not-just-pipe-into-github_step_summary). Outside
+Actions (no `$GITHUB_STEP_SUMMARY`) it just prints the annotations, which is
+handy for eyeballing the format locally.
+
 ## `prometheus`
 
 The Prometheus text-exposition format (same metrics as `serve`), for a one-shot

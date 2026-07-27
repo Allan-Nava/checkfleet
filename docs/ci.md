@@ -57,6 +57,8 @@ costs you a usage error rather than a full fleet sweep.
 
 ## GitHub Actions
 
+Use `--output github`. One run, one command:
+
 ```yaml
 name: fleet-checks
 on:
@@ -73,14 +75,43 @@ jobs:
         with:
           go-version: "1.25"
       - run: go install github.com/Allan-Nava/checkfleet/cmd/checkfleet@latest
-      - name: Run checks and post a report
-        run: |
-          checkfleet check all --config checkfleet.yml --output markdown >> "$GITHUB_STEP_SUMMARY"
-          checkfleet check all --config checkfleet.yml --exit-on bad
+      - name: Run checks
+        run: checkfleet check all --config checkfleet.yml --output github --exit-on bad
 ```
 
-The first line attaches the ops report to the job summary; the second fails the
-job on BAD/ERROR.
+That single command does three things:
+
+1. **Annotations** — every WARN/BAD/ERROR finding is emitted as a workflow
+   command (`::warning` / `::error`), so it shows up inline on the run and on
+   the PR. OK findings are skipped on purpose: GitHub renders at most 10
+   annotations per level per step, and spending that budget on green targets
+   would push the real problems out of the view.
+2. **Job summary** — the full Markdown report is written to
+   `$GITHUB_STEP_SUMMARY` (appended, so it coexists with other steps).
+3. **The gate** — `--exit-on bad` fails the job.
+
+### Why not just pipe into `$GITHUB_STEP_SUMMARY`
+
+Because this is silently broken:
+
+```yaml
+# DON'T: the gate never fires
+run: checkfleet check all --config checkfleet.yml --output markdown --exit-on bad >> "$GITHUB_STEP_SUMMARY" | tee /dev/stderr
+```
+
+In a pipeline the shell reports the **last** command's status, so checkfleet's
+exit code is replaced by `tee`'s `0` and the job stays green no matter what was
+found. It only works with `set -o pipefail` (which the `run:` default shell does
+*not* enable — you need an explicit `shell: bash`). `--output github` writes the
+summary file itself, so there is no pipe and nothing to get wrong.
+
+### Fanning out
+
+`github` composes with the other sinks, since `--output` takes a list:
+
+```bash
+checkfleet check all --config checkfleet.yml --output github,slack --exit-on bad
+```
 
 ## Gating on JSON
 

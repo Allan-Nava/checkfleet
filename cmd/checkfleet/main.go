@@ -5,9 +5,9 @@
 //	checkfleet version
 //
 // Exit code: 0 also on WARN/BAD findings (a check that ran IS a success —
-// gate on the output instead, or pass --exit-on-bad to get exit 2 when any
-// BAD/ERROR finding is present). Non-zero otherwise only for systemic errors
-// (unreadable config, unknown module).
+// gate on the output instead, or pass --exit-on warn|bad|error to get exit 2,
+// or --exit-code N, when a finding reaches that severity). Non-zero otherwise
+// only for systemic errors (unreadable config, unknown module, bad flag).
 package main
 
 import (
@@ -90,7 +90,7 @@ func main() {
 func usage() {
 	fmt.Fprintln(os.Stderr, `usage:
   checkfleet init [--modules certs,http] [--config checkfleet.yml] [--force]     # scaffold a starter config
-  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka|ingest|s3|smtp|elasticsearch|mongodb|mysql|etcd|clickhouse|vault|memcached|cassandra> --config checkfleet.yml [--output text|markdown|json|junit|html|prometheus|otlp|csv|slack|discord|teams|telegram|webhook,...] [--out-file PATH] [--no-color] [--only ...] [--min-severity warn] [--target glob] [--watch 5s] [--history F --diff] [--max-concurrency N] [--exit-on warn|bad|error] [--exit-code N]
+  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka|ingest|s3|smtp|elasticsearch|mongodb|mysql|etcd|clickhouse|vault|memcached|cassandra> --config checkfleet.yml [--output text|markdown|json|junit|html|github|prometheus|otlp|csv|slack|discord|teams|telegram|webhook,...] [--out-file PATH] [--no-color] [--only ...] [--min-severity warn] [--target glob] [--watch 5s] [--history F --diff] [--max-concurrency N] [--exit-on warn|bad|error] [--exit-code N]
   checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s] [--max-concurrency N]   # export Prometheus metrics
   checkfleet report-issues --config checkfleet.yml [--forge github|gitlab]     # open/close tracker issues from BAD findings
   checkfleet alert --config checkfleet.yml --provider pagerduty --key-env K    # create/resolve on-call alerts from BAD/ERROR
@@ -110,7 +110,7 @@ func runCheck(args []string) error {
 	fs := flag.NewFlagSet("check", flag.ExitOnError)
 	configPath := fs.String("config", "checkfleet.yml", "YAML config file")
 	stack := fs.String("stack", "", "comma-separated stack profiles overlaid in order (last wins): checkfleet.<stack>.yml onto the base")
-	format := fs.String("output", "text", "output sink(s), comma-separated to fan out (e.g. text,slack): text, markdown, json, junit, html, prometheus, otlp, csv, slack, discord, teams, telegram, webhook")
+	format := fs.String("output", "text", "output sink(s), comma-separated to fan out (e.g. text,slack): text, markdown, json, junit, html, github, prometheus, otlp, csv, slack, discord, teams, telegram, webhook")
 	outFile := fs.String("out-file", "", "write the output to this file (atomically) instead of stdout")
 	noColor := fs.Bool("no-color", false, "disable ANSI colour in the text output (also honours NO_COLOR)")
 	webhookEnv := fs.String("webhook-env", "SLACK_WEBHOOK", "env var holding the Slack webhook URL (slack output)")
@@ -226,6 +226,21 @@ func runCheck(args []string) error {
 	// a format renderer writes to --out-file or stdout.
 	emit := func(sink string) error {
 		switch sink {
+		case "github":
+			// Annotations go to stdout, where the Actions runner parses them.
+			fmt.Print(output.GitHub(res))
+			// The full report goes straight to the job summary file, appended so
+			// it coexists with whatever other steps wrote there. Doing the write
+			// here rather than telling users to pipe into $GITHUB_STEP_SUMMARY is
+			// the point: a shell pipe swallows checkfleet's exit code unless
+			// pipefail is set, which silently disables the CI gate.
+			path := os.Getenv("GITHUB_STEP_SUMMARY")
+			if path == "" {
+				// Running outside Actions (local debugging): the annotations on
+				// stdout are still useful, there is just nowhere to put a summary.
+				return nil
+			}
+			return appendFile(path, output.GitHubSummary(res, module))
 		case "slack":
 			payload, err := output.Slack(res, module)
 			if err != nil {
@@ -404,6 +419,22 @@ func isTerminal(f *os.File) bool {
 		return false
 	}
 	return fi.Mode()&os.ModeCharDevice != 0
+}
+
+// appendFile appends content to path, creating it if needed. Used for
+// $GITHUB_STEP_SUMMARY, which is a shared, append-only scratch file: other
+// steps of the same job write to it too, so atomicWrite's rename would throw
+// their contributions away.
+func appendFile(path, content string) error {
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		return err
+	}
+	if _, err := f.WriteString(content); err != nil {
+		f.Close()
+		return err
+	}
+	return f.Close()
 }
 
 // atomicWrite writes content to path via a temp file + rename, so a reader
