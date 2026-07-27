@@ -149,6 +149,8 @@ checkfleet check all --config checkfleet.yml --target 'example.*'  # glob on tar
 
 # other commands
 checkfleet validate     --config checkfleet.yml                   # validate the config without running checks
+checkfleet targets      --config checkfleet.yml                   # what is covered, across every module
+checkfleet targets      --config checkfleet.yml --against hosts.ini  # which inventory hosts are unmonitored
 checkfleet serve        --config checkfleet.yml --listen :9876    # Prometheus exporter (metrics at /metrics)
 checkfleet report-issues --config checkfleet.yml                  # open/close GitHub issues from BAD findings
 ```

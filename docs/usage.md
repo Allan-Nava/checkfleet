@@ -141,6 +141,65 @@ checkfleet validate --config checkfleet.yml            # exit 0 if usable
 checkfleet validate --config checkfleet.yml --stack prod
 ```
 
+## The `targets` command
+
+What is this config actually watching? `targets` flattens every target across
+every module — the answer to "did anyone add the new database to monitoring?".
+
+```bash
+checkfleet targets --config checkfleet.yml
+checkfleet targets --config checkfleet.yml --module certs
+checkfleet targets --config checkfleet.yml --output json
+```
+
+```
+14 target(s) across 3 module(s)
+
+certs (2)
+  github.com
+  api.example.com
+
+http (11)
+  https://example.com/health                           → example.com
+```
+
+### Coverage against an Ansible inventory
+
+Point it at the inventory your playbooks already use and it tells you which
+hosts are unmonitored:
+
+```bash
+checkfleet targets --config checkfleet.yml --against hosts.ini
+checkfleet targets --config checkfleet.yml --against hosts.ini --group db
+```
+
+```
+coverage vs hosts.ini: 4/5 inventory host(s) covered
+
+not monitored (1)
+  db-99
+
+targeted but not in the inventory (2)
+  github.com
+  0.pool.ntp.org
+```
+
+The last section is not an error: external dependencies legitimately aren't in
+your inventory. It's shown because a **typo** in a target looks exactly the same
+— a host you meant to watch, silently watching nothing.
+
+Matching is by hostname, case-insensitive, against both the inventory name and
+its `ansible_host` (so `web2 ansible_host=10.0.0.5` matches a target naming
+either). One target can cover several hosts: a MongoDB replica-set URI names
+every member, and all of them count as covered.
+
+**Credentials never appear in the output.** Targets for postgres/mysql/mongodb
+are DSNs with passwords in them; only the extracted hostname is ever printed, so
+this is safe to pipe into a CI log or commit as a JSON artifact.
+
+Like `doctor`, this is a diagnostic: it exits `0` even when hosts are uncovered.
+A coverage gap is something for a human to decide about, not a build failure.
+
 ## Finding statuses
 
 | Status | Meaning |
@@ -160,10 +219,10 @@ failed". A check that ran *is* a success.
 
 | Code | When |
 |---|---|
-| `0` | The run completed — **even with WARN/BAD/ERROR findings**, unless `--exit-on-bad` is set. |
-| `2` | `--exit-on-bad` was set **and** at least one BAD/ERROR finding is present. |
+| `0` | The run completed — **even with WARN/BAD/ERROR findings**, unless a gate was set. Diagnostic commands (`targets`, `validate`'s clean case) also exit `0`. |
+| `2` | `--exit-on warn\|bad\|error` was set **and** a finding reached that severity. `--exit-code N` changes this number. |
 | `64` | Usage error (missing/unknown subcommand). |
-| `1` | Systemic error: unreadable config, unknown module, unknown output format. |
+| `1` | Systemic error: unreadable config, unknown module, unknown output format, invalid flag. |
 
 This semantics is intentional and stable — see [CI integration](ci.md) for how
 to gate on it.

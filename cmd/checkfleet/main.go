@@ -72,6 +72,11 @@ func main() {
 			fmt.Fprintln(os.Stderr, "checkfleet:", err)
 			os.Exit(1)
 		}
+	case "targets":
+		if err := runTargets(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, "checkfleet:", err)
+			os.Exit(1)
+		}
 	case "explain":
 		if err := runExplain(os.Args[2:]); err != nil {
 			fmt.Fprintln(os.Stderr, "checkfleet:", err)
@@ -96,6 +101,7 @@ func usage() {
   checkfleet report-issues --config checkfleet.yml [--forge github|gitlab]     # open/close tracker issues from BAD findings
   checkfleet alert --config checkfleet.yml --provider pagerduty --key-env K    # create/resolve on-call alerts from BAD/ERROR
   checkfleet validate --config checkfleet.yml                                  # validate the config without running the checks
+  checkfleet targets --config checkfleet.yml [--output text|json] [--against hosts.ini [--group web]] [--module certs]   # what is covered
   checkfleet explain [module]                                                 # what a module checks and its thresholds
   checkfleet completion <bash|zsh|fish>                                        # print a shell completion script
   checkfleet version`)
