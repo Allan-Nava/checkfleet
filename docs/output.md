@@ -121,6 +121,41 @@ which is what makes the CI gate reliable, see
 Actions (no `$GITHUB_STEP_SUMMARY`) it just prints the annotations, which is
 handy for eyeballing the format locally.
 
+## `sarif`
+
+[SARIF 2.1.0](https://sarifweb.azurewebsites.net/), the interchange format for
+static-analysis results. Upload it and the findings land in GitHub's **Code
+scanning / Security** tab (and in any other SARIF-aware tool) — see
+[CI integration](ci.md#code-scanning-sarif).
+
+```bash
+checkfleet check all --config checkfleet.yml --output sarif --out-file checkfleet.sarif
+```
+
+| Finding | SARIF level |
+|---|---|
+| BAD, ERROR | `error` |
+| WARN | `warning` |
+| OK | `none` |
+
+Each **module** becomes a rule (`checkfleet/certs`, `checkfleet/http`, …) with
+its description taken from `checkfleet explain`; each **finding** becomes a
+result.
+
+Three details that matter when reading the output:
+
+- **BAD and ERROR share the level `error`** because SARIF has no third failure
+  level. The engine's own status survives in `properties.status`, so a consumer
+  can still tell "the target is unhealthy" from "the check could not measure".
+- **Results are anchored to the config file**, line 1. SARIF is file-oriented
+  and a checkfleet finding is about a network target, so there is no source line
+  to blame; the config is the file that makes the target be checked at all. The
+  real subject is in the message and in `properties.target`. Pass a
+  repo-relative `--config` so the alerts attach to the file in the repo.
+- **Fingerprints ignore severity** (`partialFingerprints` is built from
+  check + target). A certificate going WARN → BAD stays *the same alert getting
+  worse*, instead of appearing as a new one.
+
 ## `prometheus`
 
 The Prometheus text-exposition format (same metrics as `serve`), for a one-shot

@@ -90,7 +90,7 @@ func main() {
 func usage() {
 	fmt.Fprintln(os.Stderr, `usage:
   checkfleet init [--modules certs,http] [--config checkfleet.yml] [--force]     # scaffold a starter config
-  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka|ingest|s3|smtp|elasticsearch|mongodb|mysql|etcd|clickhouse|vault|memcached|cassandra> --config checkfleet.yml [--output text|markdown|json|junit|html|github|prometheus|otlp|csv|slack|discord|teams|telegram|webhook,...] [--out-file PATH] [--no-color] [--only ...] [--min-severity warn] [--target glob] [--watch 5s] [--history F --diff] [--max-concurrency N] [--exit-on warn|bad|error] [--exit-code N]
+  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka|ingest|s3|smtp|elasticsearch|mongodb|mysql|etcd|clickhouse|vault|memcached|cassandra> --config checkfleet.yml [--output text|markdown|json|junit|html|github|sarif|prometheus|otlp|csv|slack|discord|teams|telegram|webhook,...] [--out-file PATH] [--no-color] [--only ...] [--min-severity warn] [--target glob] [--watch 5s] [--history F --diff] [--max-concurrency N] [--exit-on warn|bad|error] [--exit-code N]
   checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s] [--max-concurrency N]   # export Prometheus metrics
   checkfleet report-issues --config checkfleet.yml [--forge github|gitlab]     # open/close tracker issues from BAD findings
   checkfleet alert --config checkfleet.yml --provider pagerduty --key-env K    # create/resolve on-call alerts from BAD/ERROR
@@ -110,7 +110,7 @@ func runCheck(args []string) error {
 	fs := flag.NewFlagSet("check", flag.ExitOnError)
 	configPath := fs.String("config", "checkfleet.yml", "YAML config file")
 	stack := fs.String("stack", "", "comma-separated stack profiles overlaid in order (last wins): checkfleet.<stack>.yml onto the base")
-	format := fs.String("output", "text", "output sink(s), comma-separated to fan out (e.g. text,slack): text, markdown, json, junit, html, github, prometheus, otlp, csv, slack, discord, teams, telegram, webhook")
+	format := fs.String("output", "text", "output sink(s), comma-separated to fan out (e.g. text,slack): text, markdown, json, junit, html, github, sarif, prometheus, otlp, csv, slack, discord, teams, telegram, webhook")
 	outFile := fs.String("out-file", "", "write the output to this file (atomically) instead of stdout")
 	noColor := fs.Bool("no-color", false, "disable ANSI colour in the text output (also honours NO_COLOR)")
 	webhookEnv := fs.String("webhook-env", "SLACK_WEBHOOK", "env var holding the Slack webhook URL (slack output)")
@@ -295,7 +295,7 @@ func runCheck(args []string) error {
 			}
 			fmt.Println("checkfleet: report sent to the webhook")
 		default:
-			rendered, err := render(sink, res, module, color)
+			rendered, err := render(sink, res, renderCtx{module: module, color: color, configPath: *configPath})
 			if err != nil {
 				return err
 			}
@@ -382,8 +382,19 @@ func pingDeadman(ctx context.Context, url string, worst engine.Status) error {
 }
 
 // render turns a run into the printable output for a format (not slack).
-func render(format string, res engine.Result, module string, color bool) (string, error) {
+// renderCtx is the run context a renderer may need beyond the Result itself.
+type renderCtx struct {
+	module     string
+	color      bool
+	configPath string // SARIF anchors its results to this file
+}
+
+func render(format string, res engine.Result, ctx renderCtx) (string, error) {
+	module, color := ctx.module, ctx.color
 	switch format {
+	case "sarif":
+		s, err := output.SARIF(res, output.SARIFOptions{Version: version, ConfigPath: ctx.configPath})
+		return s + "\n", err
 	case "text":
 		if color {
 			return output.TextColor(res), nil

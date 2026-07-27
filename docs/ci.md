@@ -113,6 +113,42 @@ summary file itself, so there is no pipe and nothing to get wrong.
 checkfleet check all --config checkfleet.yml --output github,slack --exit-on bad
 ```
 
+## Code scanning (SARIF)
+
+Upload the SARIF report and the findings become **Code scanning alerts** in the
+Security tab, with history and dismissal, instead of scrolling back through run
+logs:
+
+```yaml
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write     # required to upload SARIF
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+      - run: go install github.com/Allan-Nava/checkfleet/cmd/checkfleet@latest
+      - name: Run checks
+        # No gate here: let the upload happen, then gate in a later step if you
+        # want the build red as well.
+        run: checkfleet check all --config checkfleet.yml --output sarif --out-file checkfleet.sarif
+      - uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: checkfleet.sarif
+```
+
+Keep `--config` **repo-relative** (`checkfleet.yml`, not `/etc/checkfleet.yml`):
+results are anchored to that path, and GitHub attaches each alert to the file it
+names.
+
+Alerts are matched across runs by a fingerprint of check + target that
+deliberately excludes severity, so a certificate sliding from WARN to BAD
+updates the existing alert rather than opening a second one.
+
 ## Gating on JSON
 
 If you'd rather branch in a script, parse the `worst` field:
