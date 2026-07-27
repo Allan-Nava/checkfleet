@@ -90,7 +90,7 @@ func main() {
 func usage() {
 	fmt.Fprintln(os.Stderr, `usage:
   checkfleet init [--modules certs,http] [--config checkfleet.yml] [--force]     # scaffold a starter config
-  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka|ingest|s3|smtp|elasticsearch|mongodb|mysql|etcd|clickhouse|vault|memcached|cassandra> --config checkfleet.yml [--output text|markdown|json|junit|html|prometheus|otlp|csv|slack|discord|teams|telegram|webhook,...] [--out-file PATH] [--no-color] [--only ...] [--min-severity warn] [--target glob] [--watch 5s] [--history F --diff] [--max-concurrency N] [--exit-on-bad]
+  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka|ingest|s3|smtp|elasticsearch|mongodb|mysql|etcd|clickhouse|vault|memcached|cassandra> --config checkfleet.yml [--output text|markdown|json|junit|html|prometheus|otlp|csv|slack|discord|teams|telegram|webhook,...] [--out-file PATH] [--no-color] [--only ...] [--min-severity warn] [--target glob] [--watch 5s] [--history F --diff] [--max-concurrency N] [--exit-on warn|bad|error] [--exit-code N]
   checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s] [--max-concurrency N]   # export Prometheus metrics
   checkfleet report-issues --config checkfleet.yml [--forge github|gitlab]     # open/close tracker issues from BAD findings
   checkfleet alert --config checkfleet.yml --provider pagerduty --key-env K    # create/resolve on-call alerts from BAD/ERROR
@@ -126,7 +126,9 @@ func runCheck(args []string) error {
 	pingURLEnv := fs.String("ping-url-env", "", "env var holding the dead-man's-switch URL (e.g. Healthchecks.io) to ping at the end of the run")
 	watch := fs.Duration("watch", 0, "re-run on this interval with a live terminal view (e.g. 5s); Ctrl-C to stop")
 	diff := fs.Bool("diff", false, "show only what changed vs the previous run (requires --history)")
-	exitOnBad := fs.Bool("exit-on-bad", false, "exit code 2 if any BAD/ERROR finding is present")
+	exitOnBad := fs.Bool("exit-on-bad", false, "alias of --exit-on bad")
+	exitOn := fs.String("exit-on", "", "severity that fails the build: warn|bad|error (empty = never fail on findings)")
+	exitCode := fs.Int("exit-code", defaultExitCode, "exit code to use when --exit-on trips (1-125)")
 	maxConc := fs.Int("max-concurrency", -1, "cap on checks running at once (0 = unbounded); overrides max_concurrency in the config")
 	if err := fs.Parse(args[1:]); err != nil {
 		return err
@@ -137,6 +139,13 @@ func runCheck(args []string) error {
 		return fmt.Errorf("--min-severity %q is not valid (use ok|warn|bad|error)", *minSeverity)
 	}
 	filter := engine.FilterOptions{Only: commaSet(*only), MinSeverity: minSev, TargetGlob: *targetGlob}
+
+	// Parsed before the run, not after: a typo in --exit-on should cost you a
+	// usage error, not a full fleet sweep followed by one.
+	exitGate, err := parseGate(*exitOn, *exitOnBad, *exitCode)
+	if err != nil {
+		return err
+	}
 
 	cfg, err := loadConfig(*configPath, *stack)
 	if err != nil {
@@ -306,11 +315,8 @@ func runCheck(args []string) error {
 		}
 	}
 
-	if *exitOnBad {
-		worst := engine.Worst(res.Findings)
-		if worst == engine.BAD || worst == engine.ERROR {
-			os.Exit(2)
-		}
+	if code := exitGate.exitCode(engine.Worst(res.Findings)); code != 0 {
+		os.Exit(code)
 	}
 	return nil
 }

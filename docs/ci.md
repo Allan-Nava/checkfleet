@@ -7,15 +7,53 @@ checkfleet is built to run in a pipeline. Because a check that ran is a
 *success*, a normal run exits `0` regardless of findings — you decide when a
 finding should fail the build.
 
-## Gate with `--exit-on-bad`
+## Gate with `--exit-on`
 
-The simplest gate: exit `2` when any BAD/ERROR finding is present.
+Pick the severity that should break the build:
 
 ```bash
-checkfleet check all --config checkfleet.yml --exit-on-bad
+checkfleet check all --config checkfleet.yml --exit-on bad
 ```
 
-WARN findings do **not** trip this gate — only BAD and ERROR do.
+| `--exit-on` | Fails on | Use it when |
+|---|---|---|
+| *(unset)* | never | reporting only — the run is a success because it ran |
+| `warn` | WARN, BAD, ERROR | you want the build red on the first sign of drift |
+| `bad` | BAD, ERROR | the common choice: real problems, tolerating WARN |
+| `error` | ERROR only | you only care that the checks could *measure* — a BAD target is someone else's alert |
+
+`--exit-on-bad` is still accepted as an alias of `--exit-on bad`. If both are
+given, the explicit `--exit-on` wins.
+
+`ok` is rejected: it would fail every run, including all-green ones.
+
+### A custom exit code
+
+`--exit-code N` (1–125) changes the code a tripped gate returns, which is how
+you let a wrapper script tell "checkfleet found something" apart from
+"checkfleet itself broke":
+
+```bash
+checkfleet check all --config checkfleet.yml --exit-on bad --exit-code 42
+```
+
+The default stays `2`. Codes outside 1–125 are rejected: `0` would make the gate
+a silent no-op, and 126+ collide with the shell's own "not executable" and
+"killed by signal" range.
+
+### Exit codes at a glance
+
+| Code | Meaning |
+|---|---|
+| `0` | the run completed; no gate was set, or nothing reached the threshold |
+| `2` (or `--exit-code`) | the gate tripped — findings at or above the threshold |
+| `1` | **systemic failure**: unreadable config, unknown module, bad flag |
+
+That last row is the important distinction. A gate that trips is a *result*; a
+`1` means checkfleet could not do its job, and a pipeline that treats the two
+the same will one day report a healthy fleet because the config file was
+missing. Flag errors are caught before the run starts, so a typo in `--exit-on`
+costs you a usage error rather than a full fleet sweep.
 
 ## GitHub Actions
 
@@ -38,7 +76,7 @@ jobs:
       - name: Run checks and post a report
         run: |
           checkfleet check all --config checkfleet.yml --output markdown >> "$GITHUB_STEP_SUMMARY"
-          checkfleet check all --config checkfleet.yml --exit-on-bad
+          checkfleet check all --config checkfleet.yml --exit-on bad
 ```
 
 The first line attaches the ops report to the job summary; the second fails the
@@ -59,7 +97,7 @@ esac
 ## TeamCity
 
 A single command-line build step. Install (or download) checkfleet, run the
-checks, and let `--exit-on-bad` fail the build; emit a TeamCity service message
+checks, and let `--exit-on bad` fail the build; emit a TeamCity service message
 so the failure is readable in the build log.
 
 ```bash
@@ -72,7 +110,7 @@ export PATH="$PATH:$(go env GOPATH)/bin"
 checkfleet check all --config checkfleet.yml --output markdown
 
 # Gate the build; surface a build problem on BAD/ERROR.
-if ! checkfleet check all --config checkfleet.yml --exit-on-bad; then
+if ! checkfleet check all --config checkfleet.yml --exit-on bad; then
   echo "##teamcity[buildProblem description='checkfleet: fleet unhealthy (BAD/ERROR)']"
   exit 1
 fi
@@ -86,5 +124,5 @@ alert there instead.
 
 ```cron
 # hourly, mail the report on BAD/ERROR only
-0 * * * * checkfleet check all --config /etc/checkfleet.yml --exit-on-bad --output markdown || mail -s "checkfleet: fleet unhealthy" ops@example.com
+0 * * * * checkfleet check all --config /etc/checkfleet.yml --exit-on bad --output markdown || mail -s "checkfleet: fleet unhealthy" ops@example.com
 ```

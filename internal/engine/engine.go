@@ -23,6 +23,14 @@ const (
 
 var severity = map[Status]int{OK: 0, WARN: 1, BAD: 2, ERROR: 3}
 
+// AtLeast reports whether s is at or above threshold in the severity order
+// OK < WARN < BAD < ERROR. An empty threshold is satisfied by anything, since
+// severity[""] is the zero value — callers that mean "no threshold at all"
+// must test for "" themselves rather than relying on this.
+func AtLeast(s, threshold Status) bool {
+	return severity[s] >= severity[threshold]
+}
+
 // Finding is one observation about one target.
 //
 // Value/Unit are optional: a module that measures a scalar (latency in ms,

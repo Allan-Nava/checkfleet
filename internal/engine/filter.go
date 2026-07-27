@@ -1,6 +1,9 @@
 package engine
 
-import "path"
+import (
+	"path"
+	"strings"
+)
 
 // FilterOptions narrows a set of findings for output.
 type FilterOptions struct {
@@ -32,16 +35,16 @@ func Filter(findings []Finding, o FilterOptions) []Finding {
 
 // ParseStatus maps a case-insensitive name to a Status ("" input → ("", true)).
 func ParseStatus(s string) (Status, bool) {
-	switch s {
+	switch strings.ToLower(strings.TrimSpace(s)) {
 	case "":
 		return "", true
-	case "ok", "OK":
+	case "ok":
 		return OK, true
-	case "warn", "WARN":
+	case "warn":
 		return WARN, true
-	case "bad", "BAD":
+	case "bad":
 		return BAD, true
-	case "error", "ERROR":
+	case "error":
 		return ERROR, true
 	default:
 		return "", false
