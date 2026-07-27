@@ -149,6 +149,45 @@ Alerts are matched across runs by a fingerprint of check + target that
 deliberately excludes severity, so a certificate sliding from WARN to BAD
 updates the existing alert rather than opening a second one.
 
+## Adopting on a fleet that is already broken
+
+A plain gate is unusable on a fleet with pre-existing problems: the first run is
+red, it stays red, and within a week someone deletes the gate. A **baseline**
+freezes the known debt so the build only fails on what appeared since.
+
+```bash
+# First run: records the current state and does NOT fail.
+checkfleet check all --config checkfleet.yml --baseline checkfleet-baseline.json --fail-on-new
+
+# Every run after: fails only on findings the baseline never saw, or worse ones.
+checkfleet check all --config checkfleet.yml --baseline checkfleet-baseline.json --fail-on-new
+```
+
+Commit the baseline file next to the config. What counts as a failure:
+
+| Baseline | Now | Gated? |
+|---|---|---|
+| BAD | BAD | no — known debt |
+| BAD | WARN | no — it improved |
+| WARN | BAD | **yes** — a regression on a known-imperfect target is still a regression |
+| *(never seen)* | BAD | **yes** — new |
+| OK | BAD | **yes** — new |
+| BAD | *(gone)* | no |
+
+`--fail-on-new` implies `--exit-on bad`; set `--exit-on` explicitly to gate at a
+different severity. When the debt is genuinely paid down (or deliberately
+accepted), re-record it:
+
+```bash
+checkfleet check all --config checkfleet.yml --baseline checkfleet-baseline.json --write-baseline
+```
+
+Two deliberate constraints: `--baseline` on its own never loosens an existing
+gate — narrowing takes `--fail-on-new`, so adding a baseline to a pipeline can't
+quietly disable its protection — and an unreadable or future-version baseline is
+a systemic error (exit 1), not a silently empty one that would let everything
+through.
+
 ## Gating on JSON
 
 If you'd rather branch in a script, parse the `worst` field:

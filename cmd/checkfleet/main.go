@@ -25,6 +25,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/Allan-Nava/checkfleet/internal/baseline"
 	"github.com/Allan-Nava/checkfleet/internal/engine"
 	"github.com/Allan-Nava/checkfleet/internal/history"
 	"github.com/Allan-Nava/checkfleet/internal/output"
@@ -90,7 +91,7 @@ func main() {
 func usage() {
 	fmt.Fprintln(os.Stderr, `usage:
   checkfleet init [--modules certs,http] [--config checkfleet.yml] [--force]     # scaffold a starter config
-  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka|ingest|s3|smtp|elasticsearch|mongodb|mysql|etcd|clickhouse|vault|memcached|cassandra> --config checkfleet.yml [--output text|markdown|json|junit|html|github|sarif|prometheus|otlp|csv|slack|discord|teams|telegram|webhook,...] [--out-file PATH] [--no-color] [--only ...] [--min-severity warn] [--target glob] [--watch 5s] [--history F --diff] [--max-concurrency N] [--exit-on warn|bad|error] [--exit-code N]
+  checkfleet check <all|certs|http|nats|haproxy|stream|patroni|consul|postgres|dns|redis|keycloak|tcp|tls|ntp|rabbitmq|grpc|ldap|kafka|ingest|s3|smtp|elasticsearch|mongodb|mysql|etcd|clickhouse|vault|memcached|cassandra> --config checkfleet.yml [--output text|markdown|json|junit|html|github|sarif|prometheus|otlp|csv|slack|discord|teams|telegram|webhook,...] [--out-file PATH] [--no-color] [--only ...] [--min-severity warn] [--target glob] [--watch 5s] [--history F --diff] [--max-concurrency N] [--baseline F --fail-on-new] [--exit-on warn|bad|error] [--exit-code N]
   checkfleet serve --config checkfleet.yml [--listen :9876] [--interval 60s] [--max-concurrency N]   # export Prometheus metrics
   checkfleet report-issues --config checkfleet.yml [--forge github|gitlab]     # open/close tracker issues from BAD findings
   checkfleet alert --config checkfleet.yml --provider pagerduty --key-env K    # create/resolve on-call alerts from BAD/ERROR
@@ -130,6 +131,9 @@ func runCheck(args []string) error {
 	exitOn := fs.String("exit-on", "", "severity that fails the build: warn|bad|error (empty = never fail on findings)")
 	exitCode := fs.Int("exit-code", defaultExitCode, "exit code to use when --exit-on trips (1-125)")
 	maxConc := fs.Int("max-concurrency", -1, "cap on checks running at once (0 = unbounded); overrides max_concurrency in the config")
+	baselinePath := fs.String("baseline", "", "baseline file of known findings; created on first use")
+	failOnNew := fs.Bool("fail-on-new", false, "gate only on findings absent from --baseline or worse than it (implies --exit-on bad)")
+	writeBaseline := fs.Bool("write-baseline", false, "overwrite --baseline with this run's findings and skip the gate")
 	if err := fs.Parse(args[1:]); err != nil {
 		return err
 	}
@@ -145,6 +149,10 @@ func runCheck(args []string) error {
 	exitGate, err := parseGate(*exitOn, *exitOnBad, *exitCode)
 	if err != nil {
 		return err
+	}
+	exitGate = exitGate.withImpliedThreshold(*failOnNew)
+	if (*failOnNew || *writeBaseline) && *baselinePath == "" {
+		return fmt.Errorf("--fail-on-new and --write-baseline need --baseline FILE")
 	}
 
 	cfg, err := loadConfig(*configPath, *stack)
@@ -330,10 +338,57 @@ func runCheck(args []string) error {
 		}
 	}
 
-	if code := exitGate.exitCode(engine.Worst(res.Findings)); code != 0 {
+	// The baseline runs after the output so the report is emitted either way,
+	// and before the gate because it decides *which* findings the gate sees.
+	gated, skipGate, err := applyBaseline(*baselinePath, *writeBaseline, *failOnNew, res.Findings)
+	if err != nil {
+		return err
+	}
+	if skipGate {
+		return nil
+	}
+
+	if code := exitGate.exitCode(engine.Worst(gated)); code != 0 {
 		os.Exit(code)
 	}
 	return nil
+}
+
+// applyBaseline records or consults the baseline file, returning the findings
+// the gate should judge. It reports skipGate when this run only recorded a
+// baseline: there is nothing to compare against yet, so failing the build on
+// the very run that captured the debt would defeat the purpose.
+func applyBaseline(path string, write, failOnNew bool, findings []engine.Finding) (gated []engine.Finding, skipGate bool, err error) {
+	if path == "" {
+		return findings, false, nil
+	}
+	_, statErr := os.Stat(path)
+	switch {
+	case write, os.IsNotExist(statErr):
+		if err := baseline.Save(path, findings, time.Now()); err != nil {
+			return nil, false, err
+		}
+		fmt.Fprintf(os.Stderr, "checkfleet: baseline recorded in %s (%d findings); the gate is skipped for this run\n",
+			path, len(findings))
+		return findings, true, nil
+	case statErr != nil:
+		return nil, false, statErr
+	}
+
+	base, err := baseline.Load(path)
+	if err != nil {
+		return nil, false, err
+	}
+	if !failOnNew {
+		// --baseline alone is inert on the gate: it takes --fail-on-new to
+		// narrow it. Keeping the two separate means adding a baseline to a
+		// pipeline can never quietly loosen an existing gate.
+		return findings, false, nil
+	}
+	fresh := baseline.NewOrWorse(findings, base)
+	fmt.Fprintf(os.Stderr, "checkfleet: %d finding(s) new or worse than the baseline recorded %s\n",
+		len(fresh), base.Recorded.Format(time.RFC3339))
+	return fresh, false, nil
 }
 
 // runWatch re-runs the selected checks on an interval, redrawing a live text

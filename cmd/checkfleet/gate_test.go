@@ -57,6 +57,24 @@ func TestParseGate(t *testing.T) {
 	}
 }
 
+func TestGateWithImpliedThreshold(t *testing.T) {
+	// --fail-on-new with no --exit-on must still be able to fail.
+	g := gate{threshold: "", code: 2}.withImpliedThreshold(true)
+	if g.threshold != engine.BAD {
+		t.Errorf("threshold = %q, want BAD implied by --fail-on-new", g.threshold)
+	}
+	// An explicit threshold is never widened or narrowed.
+	g = gate{threshold: engine.WARN, code: 2}.withImpliedThreshold(true)
+	if g.threshold != engine.WARN {
+		t.Errorf("threshold = %q, want the explicit WARN preserved", g.threshold)
+	}
+	// Without --fail-on-new, no gate stays no gate.
+	g = gate{threshold: "", code: 2}.withImpliedThreshold(false)
+	if g.threshold != "" {
+		t.Errorf("threshold = %q, want no gate", g.threshold)
+	}
+}
+
 func TestGateExitCode(t *testing.T) {
 	all := []engine.Status{engine.OK, engine.WARN, engine.BAD, engine.ERROR}
 

@@ -44,6 +44,17 @@ func parseGate(exitOn string, exitOnBad bool, code int) (gate, error) {
 	return gate{threshold: threshold, code: code}, nil
 }
 
+// withImpliedThreshold gives --fail-on-new a gate when the caller never set
+// one. "Fail on new findings" without a severity has only one sensible
+// reading, and the alternative — silently never failing — would leave a flag
+// that looks like it works.
+func (g gate) withImpliedThreshold(failOnNew bool) gate {
+	if failOnNew && g.threshold == "" {
+		g.threshold = engine.BAD
+	}
+	return g
+}
+
 // exitCode returns the code to exit with for a run whose worst finding is
 // worst: 0 when no gate is set or the run stayed below the threshold.
 func (g gate) exitCode(worst engine.Status) int {
