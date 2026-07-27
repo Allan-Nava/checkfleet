@@ -1,6 +1,10 @@
 ---
 title: CI integration
 nav_order: 8
+description: >-
+  Gate a pipeline on infrastructure findings — the checkfleet GitHub Action, a
+  GitLab CI snippet, scheduled runs, and how `--exit-on` maps findings to exit
+  codes.
 ---
 
 checkfleet is built to run in a pipeline. Because a check that ran is a

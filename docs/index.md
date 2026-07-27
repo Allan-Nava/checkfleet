@@ -2,7 +2,10 @@
 title: Home
 nav_order: 1
 layout: home
-description: A fleet of domain-aware infrastructure checks in one Go binary.
+description: >-
+  checkfleet is a source-available CLI that runs domain-aware infrastructure
+  health checks — TLS expiry, HTTP, NATS, Kafka, PostgreSQL, Consul, HAProxy and
+  more — from one static Go binary. No agents, no server.
 ---
 
 ## Quickstart

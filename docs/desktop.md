@@ -1,6 +1,10 @@
 ---
 title: Desktop app
 nav_order: 7
+description: >-
+  The checkfleet desktop app — a Wails GUI over the same Go engine, with a
+  status dashboard, run history, trends, grouping and muting for macOS, Linux
+  and Windows.
 ---
 
 A small desktop GUI over the same engine as the CLI. It's a [Wails](https://wails.io)

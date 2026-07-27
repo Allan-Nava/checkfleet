@@ -1,6 +1,10 @@
 ---
 title: Configuration
 nav_order: 3
+description: >-
+  The complete checkfleet.yml reference — global timeouts and retries, every
+  module's options and thresholds, stack overlays, and secrets from the
+  environment.
 ---
 
 checkfleet reads a single YAML file (default `checkfleet.yml`, override with

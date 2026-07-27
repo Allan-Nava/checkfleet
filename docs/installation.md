@@ -1,6 +1,9 @@
 ---
 title: Installation
 nav_order: 2
+description: >-
+  Install checkfleet with go install, the Homebrew tap, the Docker image, or a
+  release archive for Linux, macOS and Windows — then verify the binary.
 ---
 
 ## With `go install`

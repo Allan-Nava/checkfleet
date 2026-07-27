@@ -1,6 +1,10 @@
 ---
 title: Usage
 nav_order: 4
+description: >-
+  checkfleet commands and flags — check, init, validate, serve and
+  report-issues — plus output formats, severity filters, target globs and the
+  exit-code semantics used to gate CI.
 ---
 
 ```

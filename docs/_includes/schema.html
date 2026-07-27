@@ -1,0 +1,137 @@
+{%- comment -%}
+  JSON-LD structured data.
+
+  Search engines use it for rich results; answer engines (ChatGPT, Claude,
+  Perplexity, Google AI Overviews) use it to decide *what this page is* and to
+  attribute a citation. Three nodes:
+
+    - SoftwareApplication + SoftwareSourceCode on the home page (what the tool
+      is, what it costs, what it can check),
+    - BreadcrumbList + TechArticle on every documentation page,
+    - FAQPage on any page that declares a `faq:` list in its front matter.
+
+  Everything is derived from _config.yml and _data/modules.yml so it cannot
+  drift away from the rendered content.
+{%- endcomment -%}
+{%- assign is_home = false -%}
+{%- assign home_url = '/' | relative_url -%}
+{%- if page.url == '/' -%}{%- assign is_home = true -%}{%- endif -%}
+{%- assign og_image = site.image | absolute_url -%}
+
+{%- if is_home %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "@id": {{ site.url | append: site.baseurl | append: '/#software' | jsonify }},
+      "name": {{ site.title | jsonify }},
+      "alternateName": "checkfleet CLI",
+      "url": {{ site.url | append: site.baseurl | append: '/' | jsonify }},
+      "description": {{ site.description | strip_newlines | jsonify }},
+      "applicationCategory": "DeveloperApplication",
+      "applicationSubCategory": "Infrastructure monitoring",
+      "operatingSystem": "Linux, macOS, Windows",
+      "softwareRequirements": "None — a single static binary",
+      "downloadUrl": {{ site.github.repo | append: '/releases' | jsonify }},
+      "installUrl": {{ site.url | append: site.baseurl | append: '/installation/' | jsonify }},
+      "softwareHelp": {{ site.url | append: site.baseurl | append: '/usage/' | jsonify }},
+      "image": {{ og_image | jsonify }},
+      "screenshot": {{ site.url | append: site.baseurl | append: '/assets/desktop-dashboard.png' | jsonify }},
+      "license": "https://polyformproject.org/licenses/noncommercial/1.0.0/",
+      "keywords": {{ site.keywords | join: ', ' | jsonify }},
+      "featureList": [
+        {%- for m in site.data.modules -%}
+        {{ m.title | append: ' — ' | append: m.summary | jsonify }}{%- unless forloop.last -%},{%- endunless -%}
+        {%- endfor -%}
+      ],
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "description": "Free for noncommercial use under the PolyForm Noncommercial License 1.0.0; commercial use requires a separate license."
+      },
+      "author": { "@id": {{ site.author.url | append: '#person' | jsonify }} },
+      "isPartOf": { "@id": {{ site.url | append: site.baseurl | append: '/#website' | jsonify }} }
+    },
+    {
+      "@type": "SoftwareSourceCode",
+      "@id": {{ site.github.repo | append: '#source' | jsonify }},
+      "name": {{ site.title | jsonify }},
+      "codeRepository": {{ site.github.repo | jsonify }},
+      "programmingLanguage": "Go",
+      "runtimePlatform": "Go",
+      "license": "https://polyformproject.org/licenses/noncommercial/1.0.0/",
+      "author": { "@id": {{ site.author.url | append: '#person' | jsonify }} },
+      "targetProduct": { "@id": {{ site.url | append: site.baseurl | append: '/#software' | jsonify }} }
+    },
+    {
+      "@type": "WebSite",
+      "@id": {{ site.url | append: site.baseurl | append: '/#website' | jsonify }},
+      "url": {{ site.url | append: site.baseurl | append: '/' | jsonify }},
+      "name": {{ site.title | jsonify }},
+      "description": {{ site.tagline | jsonify }},
+      "inLanguage": {{ site.lang | jsonify }},
+      "publisher": { "@id": {{ site.author.url | append: '#person' | jsonify }} }
+    },
+    {
+      "@type": "Person",
+      "@id": {{ site.author.url | append: '#person' | jsonify }},
+      "name": {{ site.author.name | jsonify }},
+      "url": {{ site.author.url | jsonify }}
+    }
+  ]
+}
+</script>
+{%- else %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "TechArticle",
+      "@id": {{ page.url | absolute_url | append: '#article' | jsonify }},
+      "headline": {{ page.title | jsonify }},
+      "name": {{ page.title | jsonify }},
+      "description": {{ page.description | default: site.description | strip_newlines | jsonify }},
+      "url": {{ page.url | absolute_url | jsonify }},
+      "inLanguage": {{ site.lang | jsonify }},
+      "image": {{ og_image | jsonify }},
+      "isPartOf": { "@id": {{ site.url | append: site.baseurl | append: '/#website' | jsonify }} },
+      "about": { "@id": {{ site.url | append: site.baseurl | append: '/#software' | jsonify }} },
+      "author": { "@type": "Person", "name": {{ site.author.name | jsonify }}, "url": {{ site.author.url | jsonify }} },
+      "proficiencyLevel": "Beginner",
+      "dependencies": "checkfleet binary and a checkfleet.yml configuration file"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": {{ page.url | absolute_url | append: '#breadcrumbs' | jsonify }},
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "checkfleet", "item": {{ home_url | absolute_url | jsonify }} },
+        { "@type": "ListItem", "position": 2, "name": {{ page.title | jsonify }}, "item": {{ page.url | absolute_url | jsonify }} }
+      ]
+    }
+  ]
+}
+</script>
+{%- endif -%}
+
+{%- if page.faq %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "@id": {{ page.url | absolute_url | append: '#faq' | jsonify }},
+  "mainEntity": [
+    {%- for item in page.faq -%}
+    {
+      "@type": "Question",
+      "name": {{ item.q | jsonify }},
+      "acceptedAnswer": { "@type": "Answer", "text": {{ item.a | strip_newlines | jsonify }} }
+    }{%- unless forloop.last -%},{%- endunless -%}
+    {%- endfor -%}
+  ]
+}
+</script>
+{%- endif -%}

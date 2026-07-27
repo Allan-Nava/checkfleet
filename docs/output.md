@@ -1,6 +1,10 @@
 ---
 title: Output formats
 nav_order: 6
+description: >-
+  How checkfleet renders findings — terminal text, an ops-style Markdown report
+  you can paste into a runbook, JSON with a `worst` field for gating, and Slack
+  Block Kit.
 ---
 
 Pick one with `--output`. Every format renders the same findings, sorted

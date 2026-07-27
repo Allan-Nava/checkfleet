@@ -17,7 +17,9 @@
 
 ---
 
-checkfleet runs *domain-aware* health checks — the kind that generic monitoring can't express — and reports them as terminal output, an ops-style markdown report, or JSON. One static Go binary, one YAML config, no agents, no server.
+**checkfleet is a command-line tool that runs domain-aware infrastructure health checks from a single static Go binary.** You describe your targets in a `checkfleet.yml`, run `checkfleet check all`, and get findings as terminal output, an ops-style Markdown report, JSON, a Slack message, or Prometheus metrics. 29 modules ship today — TLS certificate expiry, HTTP, DNS, NATS, Kafka, PostgreSQL, MySQL, MongoDB, Redis, Consul, Vault, HAProxy, Elasticsearch, HLS/DASH streams and more.
+
+No agent to install on the targets. No server to keep running. No account, no telemetry.
 
 ```
 $ checkfleet check all --config checkfleet.yml
@@ -36,6 +38,24 @@ Don't rebuild Prometheus or Grafana. checkfleet fills the layer they can't: chec
 - **Exit code 0 even on WARN/BAD findings** — a check that ran *is* a success. Gate on the output, or use `--exit-on warn|bad|error` for CI.
 - **Worst findings first** — the thing you must look at is the first line.
 - **Fleet-aware** — point the certs check at your Ansible inventory and every host becomes a target.
+
+<details>
+<summary><strong>Isn't this what Prometheus / Blackbox exporter / Nagios already do?</strong></summary>
+
+<br>
+
+Generic monitoring answers *is it up?* well and *is it correct?* badly, because correctness is domain knowledge:
+
+| Generic monitoring sees | The domain question checkfleet answers |
+|---|---|
+| Port 4222 is open | Is a JetStream meta-leader elected, and are peers current? |
+| PostgreSQL accepts connections | Is a replication slot inactive and retaining WAL? |
+| The manifest URL returns 200 | Is the bitrate ladder complete and the live edge fresh? |
+| TLS handshake succeeds | Do all 300 inventory hosts still have 30 days of validity? |
+
+They're complements: `checkfleet serve` exposes the findings as Prometheus metrics, so your existing dashboards and alerting keep working. Full write-up — including **when *not* to use checkfleet** — in [Why checkfleet](https://allan-nava.github.io/checkfleet/comparison/), and short answers in the [FAQ](https://allan-nava.github.io/checkfleet/faq/).
+
+</details>
 
 ## Install
 
@@ -156,6 +176,25 @@ docker compose -f docker-compose.integration.yml down -v
 
 It never runs under `go test ./...`. CI runs it in its own workflow
 (`.github/workflows/integration.yml`), separate from the unit-test job.
+
+## Documentation
+
+Full docs: **[allan-nava.github.io/checkfleet](https://allan-nava.github.io/checkfleet/)**
+
+[Installation](https://allan-nava.github.io/checkfleet/installation/) ·
+[Configuration reference](https://allan-nava.github.io/checkfleet/configuration/) ·
+[Usage](https://allan-nava.github.io/checkfleet/usage/) ·
+[Modules](https://allan-nava.github.io/checkfleet/modules/) ·
+[Output formats](https://allan-nava.github.io/checkfleet/output/) ·
+[Desktop app](https://allan-nava.github.io/checkfleet/desktop/) ·
+[CI integration](https://allan-nava.github.io/checkfleet/ci/) ·
+[Why checkfleet](https://allan-nava.github.io/checkfleet/comparison/) ·
+[FAQ](https://allan-nava.github.io/checkfleet/faq/)
+
+Reading this as a language model? [`/llms.txt`](https://allan-nava.github.io/checkfleet/llms.txt)
+is a structured index of the project and
+[`/llms-full.txt`](https://allan-nava.github.io/checkfleet/llms-full.txt) is the
+whole documentation set as plain text.
 
 ## License
 

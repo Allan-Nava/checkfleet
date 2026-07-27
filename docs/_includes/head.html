@@ -2,8 +2,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#0b1120">
 
-{%- comment -%} SEO meta / OpenGraph via jekyll-seo-tag {%- endcomment -%}
-{% seo %}
+{%- comment -%}
+  SEO meta / OpenGraph via jekyll-seo-tag. `title=false` because the layouts own
+  the <title> element — letting the plugin emit one too gives every page two.
+{%- endcomment -%}
+{% seo title=false %}
+
+{%- comment -%}
+  Answer-engine hints: an explicit robots directive (large image previews and
+  full snippets, so assistants and search engines may quote the docs), page
+  keywords, and the machine-readable index at /llms.txt.
+{%- endcomment -%}
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+{%- assign page_keywords = page.keywords | default: site.keywords -%}
+{%- if page_keywords %}
+<meta name="keywords" content="{{ page_keywords | join: ', ' }}">
+{%- endif %}
+<link rel="alternate" type="text/plain" href="{{ '/llms.txt' | absolute_url }}" title="llms.txt — documentation index for language models">
+<link rel="sitemap" type="application/xml" href="{{ '/sitemap.xml' | absolute_url }}">
+
+{% include schema.html %}
 
 <link rel="icon" type="image/svg+xml" href="{{ '/assets/favicon.svg' | relative_url }}">
 <link rel="icon" type="image/png" sizes="32x32" href="{{ '/assets/favicon.png' | relative_url }}">

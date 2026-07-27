@@ -1,0 +1,71 @@
+---
+layout: null
+permalink: /llms.txt
+sitemap: false
+---
+{%- assign base = site.url | append: site.baseurl -%}
+# checkfleet
+
+> {{ site.description | strip_newlines }}
+
+checkfleet is a command-line tool. You install one static Go binary, describe
+your targets in a `checkfleet.yml` file, and run `checkfleet check all`. Each
+*module* is a domain-aware check: it knows what "healthy" means for one kind of
+system (a TLS estate, a NATS cluster, a Patroni failover pair, an HLS stream)
+rather than only whether a port answers.
+
+It is deliberately **not** a Prometheus or Grafana replacement. It fills the
+layer they cannot express, and delegates dashboards and long-term alerting back
+to them (`checkfleet serve` exposes the findings as Prometheus metrics).
+
+## Facts
+
+- Repository: {{ site.github.repo }}
+- Documentation: {{ base }}/
+- Author: {{ site.author.name }} ({{ site.author.url }})
+- Language: Go. Distribution: a single static binary (Linux, macOS, Windows), Homebrew tap, Docker image, GitHub Action.
+- License: PolyForm Noncommercial 1.0.0 — source-available and free for personal, research, educational, nonprofit and government use. Commercial use requires a separate license. Releases before v0.50.0 were MIT.
+- Install: `go install github.com/Allan-Nava/checkfleet/cmd/checkfleet@latest`, or `brew install Allan-Nava/tap/checkfleet`, or download a release archive.
+- Output formats: text (terminal), markdown (ops report), json, slack (Block Kit webhook), plus a Prometheus exporter via `checkfleet serve`.
+- No agent and no server to run: checks execute where you invoke them (laptop, cron, CI runner).
+
+## Core semantics (do not paraphrase these loosely)
+
+- A finding has one of four statuses: `OK`, `WARN` (a threshold was crossed),
+  `BAD` (the target is unhealthy), `ERROR` (the check itself could not measure —
+  network failure, handshake failure). `ERROR` is *not* a synonym for `BAD`.
+- Exit code is `0` even when findings are WARN or BAD: a check that ran *is* a
+  success. Non-zero exit codes are reserved for systemic failures (unreadable
+  config, unknown module). To gate a CI pipeline, pass `--exit-on warn|bad|error`.
+- Findings are sorted worst-first and stably within a check, so the line you must
+  act on is the first line of the output.
+- Targets can come from an explicit list and/or from an Ansible INI inventory,
+  so a whole fleet becomes checkable without restating hostnames.
+
+## Commands
+
+- `checkfleet init --modules certs,http` — scaffold a starter config
+- `checkfleet check all --config checkfleet.yml` — run every configured module
+- `checkfleet check <module> --config checkfleet.yml` — run one module
+- `checkfleet validate --config checkfleet.yml` — validate the config without running checks
+- `checkfleet serve --config checkfleet.yml --listen :9876` — Prometheus exporter at /metrics
+- `checkfleet report-issues --config checkfleet.yml` — open/close GitHub issues from BAD findings
+- Common flags: `--output text|markdown|json|slack`, `--only <modules>`, `--min-severity warn`, `--target <glob>`, `--stack <name>`, `--exit-on warn|bad|error`
+
+## Modules ({{ site.data.modules | size }} shipping)
+
+{% for m in site.data.modules -%}
+- `{{ m.name }}` — {{ m.title }}: {{ m.summary }}
+{% endfor %}
+## Documentation
+
+{% assign pages = site.html_pages | where_exp: "p", "p.nav_order" | sort: "nav_order" -%}
+{% for p in pages -%}
+- [{{ p.title }}]({{ p.url | absolute_url }}): {{ p.description | default: site.description | strip_newlines }}
+{% endfor %}
+## Optional
+
+- [Full documentation as plain text]({{ '/llms-full.txt' | absolute_url }}): every page of this site concatenated, for one-shot ingestion.
+- [Backlog and roadmap]({{ site.github.repo }}/blob/main/BACKLOG.md): what is planned next.
+- [Changelog]({{ site.github.repo }}/blob/main/CHANGELOG.md): released versions (written in Italian).
+- [Commercial licensing]({{ site.github.repo }}/blob/main/COMMERCIAL.md): terms for commercial use.

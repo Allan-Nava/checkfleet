@@ -1,5 +1,10 @@
 title: checkfleet
-description: A fleet of domain-aware infrastructure checks in one Go binary.
+tagline: Domain-aware infrastructure checks in one Go binary
+description: >-
+  checkfleet is an open, source-available CLI that runs domain-aware
+  infrastructure health checks — TLS expiry, HTTP probes, NATS, Kafka,
+  PostgreSQL, Consul, HAProxy and 20+ more — from a single Go binary, with
+  text, Markdown, JSON, Slack or Prometheus output. No agents, no server.
 url: https://allan-nava.github.io
 baseurl: /checkfleet
 lang: en
@@ -11,18 +16,53 @@ permalink: pretty
 github:
   repo: https://github.com/Allan-Nava/checkfleet
 
+# Identity used by jekyll-seo-tag and by _includes/schema.html (JSON-LD).
+author:
+  name: Allan Nava
+  url: https://github.com/Allan-Nava
+logo: /assets/logo.png
+image: /assets/og-card.png
+# No `twitter:` block on purpose: without a real handle jekyll-seo-tag emits a
+# bare `twitter:site` of "@". The large-image card still works — see `defaults`.
+social:
+  name: checkfleet
+  links:
+    - https://github.com/Allan-Nava/checkfleet
+
+# Answer-engine surface: keywords are emitted as <meta name="keywords"> and reused
+# in the JSON-LD SoftwareApplication node. Keep them factual, not stuffed.
+keywords:
+  - infrastructure monitoring CLI
+  - TLS certificate expiry checker
+  - health check CLI
+  - Go monitoring tool
+  - CI monitoring gate
+  - Prometheus exporter
+  - Ansible inventory monitoring
+
 # jekyll-relative-links rewrites [text](page.md) links to built page URLs, so the
-# existing cross-references keep working. jekyll-seo-tag emits <head> meta tags.
+# existing cross-references keep working. jekyll-seo-tag emits <head> meta tags
+# (the layouts own <title>, so it is called with title=false).
 plugins:
   - jekyll-relative-links
   - jekyll-seo-tag
 
-# Apply the doc layout to every page unless a page overrides it (index -> home).
+# Apply the doc layout to every page unless a page overrides it (index -> home),
+# and give every page the social card. jekyll-seo-tag reads the image from the
+# page's own front matter (not from `site.image`), so it is injected here — that
+# is also what promotes the Twitter card to summary_large_image.
 defaults:
   - scope:
       path: ""
     values:
       layout: default
+      image:
+        path: /assets/og-card.png
+        width: 1200
+        height: 630
+        alt: >-
+          checkfleet — a fleet of domain-aware infrastructure checks in one Go
+          binary
 
 sass:
   style: compressed

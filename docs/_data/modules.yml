@@ -1,0 +1,97 @@
+# Single source of truth for the module index on the docs site.
+#
+# Rendered as the summary table in modules.md, as the `featureList` of the
+# SoftwareApplication JSON-LD node, and in llms.txt. Keep it in sync with
+# internal/moduledoc/moduledoc.go when a module ships.
+#
+# name:    the module id as used in `checkfleet check <name>` and in the config
+# title:   the human name of the technology being checked
+# summary: one sentence, answer-shaped ("what this check tells you")
+
+- name: certs
+  title: TLS certificates
+  summary: Certificate expiry for explicit targets and every host of an Ansible inventory, with WARN/BAD day thresholds.
+- name: http
+  title: HTTP endpoints
+  summary: HTTP probes with an expected status code, a maximum latency, and an expected body substring.
+- name: nats
+  title: NATS JetStream
+  summary: Cluster health from /varz and /jsz — meta-leader present, offline or lagging peers, ghost peers, mixed versions.
+- name: haproxy
+  title: HAProxy
+  summary: Backend and server state from the CSV stats export — servers DOWN/MAINT/DRAIN, backends with no available server, session saturation.
+- name: stream
+  title: HLS / DASH streams
+  summary: Manifest reachable and valid, a complete bitrate ladder, and a fresh live edge.
+- name: patroni
+  title: Patroni PostgreSQL
+  summary: Cluster topology via the Patroni REST API — a single leader, replica state, replica lag, timeline divergence.
+- name: consul
+  title: HashiCorp Consul
+  summary: Raft leader and quorum, critical/warning service checks, and required KV keys.
+- name: postgres
+  title: PostgreSQL
+  summary: Read-only SQL checks — transaction-ID wraparound risk, connection saturation, inactive replication slots, replica lag.
+- name: dns
+  title: DNS
+  summary: Records resolve, no drift from the expected answers, SOA-serial and answer consistency across resolvers, TTL floor.
+- name: redis
+  title: Redis / Valkey
+  summary: Reachability and role, memory against maxmemory, replication link and lag, RDB/AOF persistence.
+- name: keycloak
+  title: Keycloak
+  summary: Health endpoint UP and per-realm OIDC discovery — token endpoint present, issuer coherent.
+- name: tcp
+  title: TCP services
+  summary: Generic TCP reachability with optional TLS, connect latency, and an optional banner match.
+- name: tls
+  title: TLS handshakes
+  summary: Deep TLS inspection — chain validity, leaf expiry, hostname mismatch, weak negotiated protocol version.
+- name: ntp
+  title: NTP / clock drift
+  summary: Clock offset and stratum over SNTP, because drift silently breaks TLS and JWT validation.
+- name: rabbitmq
+  title: RabbitMQ
+  summary: Nodes running and alarm-free, queue depth thresholds, and backlogs with no consumer attached.
+- name: grpc
+  title: gRPC services
+  summary: The gRPC Health Checking Protocol over HTTP/2 and TLS — SERVING, NOT_SERVING or UNKNOWN.
+- name: ldap
+  title: LDAP directories
+  summary: Connect, bind (anonymous or with credentials from the environment), and an optional sanity search.
+- name: kafka
+  title: Apache Kafka
+  summary: Controller present, broker count, under-replicated partitions, and consumer-group lag.
+- name: ingest
+  title: RTMP / SRT ingest
+  summary: Can a streamer actually publish? RTMP handshake over TCP or SRT induction over UDP, with connect latency.
+- name: s3
+  title: S3 object storage
+  summary: Bucket reachable and an optional sentinel object present and fresh, signed with hand-rolled AWS SigV4.
+- name: smtp
+  title: SMTP relays
+  summary: Connections accepted, 220 greeting, EHLO, optional STARTTLS or implicit TLS and relay certificate expiry — never sends mail.
+- name: elasticsearch
+  title: Elasticsearch / OpenSearch
+  summary: Cluster health green/yellow/red, unassigned shards, expected node count, per-node disk watermark.
+- name: mongodb
+  title: MongoDB
+  summary: Replica-set status — primary present, member health, secondary lag — and connection saturation.
+- name: mysql
+  title: MySQL / MariaDB
+  summary: Reachability, read-only role, connection saturation, replica IO/SQL threads and lag.
+- name: etcd
+  title: etcd
+  summary: /health, a leader present (quorum held), and member count against the expected size.
+- name: clickhouse
+  title: ClickHouse
+  summary: /ping and SELECT version(), plus read-only replicated tables and replication delay.
+- name: vault
+  title: HashiCorp Vault
+  summary: Seal status (sealed or uninitialized), active/standby role, and the running version.
+- name: memcached
+  title: memcached
+  summary: Reachability, memory against limit_maxbytes, evictions since startup, connections and version.
+- name: cassandra
+  title: Cassandra / ScyllaDB
+  summary: Nodes accept CQL via the native-protocol handshake, handshake latency, and cluster size against the expected node count.

@@ -2,7 +2,7 @@
 <html lang="{{ site.lang | default: 'en' }}" data-theme="dark">
 <head>
   {% include head.html %}
-  <title>{% if page.title and page.title != 'Home' %}{{ page.title }} · {{ site.title }}{% else %}{{ site.title }} — {{ site.description }}{% endif %}</title>
+  <title>{% if page.title and page.title != 'Home' %}{{ page.title }} · {{ site.title }}{% else %}{{ site.title }} — {{ site.tagline }}{% endif %}</title>
 </head>
 <body>
   {% include topbar.html %}

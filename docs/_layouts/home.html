@@ -2,7 +2,7 @@
 <html lang="{{ site.lang | default: 'en' }}" data-theme="dark">
 <head>
   {% include head.html %}
-  <title>{{ site.title }} — {{ site.description }}</title>
+  <title>{{ site.title }} — {{ site.tagline }}</title>
 </head>
 <body class="is-home">
   {% include topbar.html %}
@@ -14,9 +14,11 @@
         <div class="hero-copy">
           <span class="badge">Source-available · single Go binary</span>
           <h1>A fleet of <span class="grad">domain-aware</span> infrastructure checks.</h1>
-          <p class="lede">{{ site.description }} Run the checks generic monitoring can't
-          express — TLS estates, HTTP probes, HAProxy backends, HLS/DASH streams —
-          from CI, cron, or your laptop. Text, Markdown or JSON output.</p>
+          <p class="lede"><strong>checkfleet</strong> is a source-available CLI that runs
+          {{ site.data.modules | size }} domain-aware health checks — TLS expiry, HTTP probes, NATS,
+          Kafka, PostgreSQL, Consul, HAProxy, HLS/DASH streams and more — from one static
+          Go binary. Run it from CI, cron, or your laptop; get text, Markdown, JSON,
+          Slack or Prometheus output. No agents, no server.</p>
           <div class="cta">
             <a class="btn btn-primary" href="{{ '/installation/' | relative_url }}">Get started</a>
             <a class="btn btn-ghost" href="{{ site.github.repo }}" target="_blank" rel="noopener">Star on GitHub ↗</a>

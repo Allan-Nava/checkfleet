@@ -1,15 +1,24 @@
 ---
 title: Modules
 nav_order: 5
+description: >-
+  Every checkfleet module and what it actually verifies — TLS certificates,
+  HTTP, DNS, NATS, Kafka, PostgreSQL, MySQL, Redis, MongoDB, Consul, Vault,
+  HAProxy, S3, SMTP and more.
 ---
 
 Each module is a self-contained check that knows what "healthy" means for one
-kind of target. Shipping today: `certs`, `http`, `nats`, `haproxy`, `stream`,
-`patroni`, `consul`, `postgres`, `dns`, `redis`, `keycloak`, `tcp`, `tls`, `ntp`, `rabbitmq`, `grpc`, `ldap`, `kafka`. The
+kind of target. **{{ site.data.modules | size }} modules ship today**; the
 [backlog](https://github.com/Allan-Nava/checkfleet/blob/main/BACKLOG.md) tracks
-what's next (`mongodb`, …).
+what's next.
 
-## `certs`
+| Module | Checks | What it tells you |
+|---|---|---|
+{% for m in site.data.modules -%}
+| [`{{ m.name }}`](#{{ m.name }}) | {{ m.title }} | {{ m.summary }} |
+{% endfor %}
+
+## `certs` — TLS certificates {#certs}
 
 TLS certificate expiry across a fleet.
 
@@ -26,7 +35,7 @@ TLS certificate expiry across a fleet.
 
 See [Configuration → checks.certs](configuration.md#checkscerts).
 
-## `http`
+## `http` — HTTP endpoints {#http}
 
 HTTP endpoint probes.
 
@@ -37,7 +46,7 @@ HTTP endpoint probes.
 
 See [Configuration → checks.http](configuration.md#checkshttp).
 
-## `nats`
+## `nats` — NATS JetStream {#nats}
 
 Preflight/health of a NATS JetStream cluster, read from each node's HTTP
 monitoring port (`/varz` and `/jsz?meta=1`) — the read-only endpoints only, it
@@ -58,7 +67,7 @@ runbook:
 
 See [Configuration → checks.nats](configuration.md#checksnats).
 
-## `haproxy`
+## `haproxy` — HAProxy {#haproxy}
 
 Backend/server health from the HAProxy **CSV stats export** over HTTP (the
 `;csv` stats endpoint) — read-only, it never mutates HAProxy.
@@ -77,7 +86,7 @@ config.
 
 See [Configuration → checks.haproxy](configuration.md#checkshaproxy).
 
-## `stream`
+## `stream` — HLS / DASH streams {#stream}
 
 HLS and DASH stream health, read from the manifest — it fetches only manifests,
 never media segments.
@@ -102,7 +111,7 @@ from the `.mpd` extension, the `dash+xml` content-type, or an `<MPD` root.
 
 See [Configuration → checks.stream](configuration.md#checksstream).
 
-## `patroni`
+## `patroni` — Patroni PostgreSQL {#patroni}
 
 Health of a Patroni-managed PostgreSQL cluster from the Patroni **REST API**
 (`/cluster`) — read-only, it never touches PostgreSQL itself.
@@ -122,7 +131,7 @@ findings are labelled by member name.
 
 See [Configuration → checks.patroni](configuration.md#checkspatroni).
 
-## `consul`
+## `consul` — HashiCorp Consul {#consul}
 
 Consul cluster health via the HTTP API — read-only.
 
@@ -139,7 +148,7 @@ redundancy (an unreachable one is `ERROR`). An ACL token can be supplied via
 
 See [Configuration → checks.consul](configuration.md#checksconsul).
 
-## `postgres`
+## `postgres` — PostgreSQL {#postgres}
 
 PostgreSQL health via **read-only SQL** (using the `pgx` driver — the module's
 own dependency). It never runs DDL or writes.
@@ -162,7 +171,7 @@ target's `password_env` — never stored in the config.
 
 See [Configuration → checks.postgres](configuration.md#checkspostgres).
 
-## `dns`
+## `dns` — DNS {#dns}
 
 DNS resolution health, using a small in-tree DNS client (no third-party
 dependency) so it can query specific resolvers and read TTLs and SOA serials.
@@ -182,7 +191,7 @@ labelled `name/TYPE`, `name/TYPE [consistency]`, `name/TYPE [ttl]`.
 
 See [Configuration → checks.dns](configuration.md#checksdns).
 
-## `redis`
+## `redis` — Redis / Valkey {#redis}
 
 Redis / Valkey health via a minimal in-tree RESP client (no third-party
 dependency) reading `INFO` — read-only commands only.
@@ -202,7 +211,7 @@ is read from `password_env`, never stored in config.
 
 See [Configuration → checks.redis](configuration.md#checksredis).
 
-## `keycloak`
+## `keycloak` — Keycloak {#keycloak}
 
 Keycloak health via HTTP/JSON — read-only, no admin credentials.
 
@@ -219,7 +228,7 @@ Findings are labelled `health` and `realm/<name>`.
 
 See [Configuration → checks.keycloak](configuration.md#checkskeycloak).
 
-## `tcp`
+## `tcp` — TCP services {#tcp}
 
 Generic TCP reachability for anything that speaks TCP.
 
@@ -231,7 +240,7 @@ Generic TCP reachability for anything that speaks TCP.
 
 See [Configuration → checks.tcp](configuration.md#checkstcp).
 
-## `tls`
+## `tls` — TLS handshakes {#tls}
 
 Deep TLS check — complements `certs` (which only reads leaf expiry).
 
@@ -246,7 +255,7 @@ Findings are labelled `target [chain]`, `target [expiry]`, `target [protocol]`.
 
 See [Configuration → checks.tls](configuration.md#checkstls).
 
-## `ntp`
+## `ntp` — NTP / clock drift {#ntp}
 
 NTP clock-offset check via a hand-rolled SNTP query (UDP, zero dependency).
 Clock drift silently breaks TLS validation and JWT expiry.
@@ -257,7 +266,7 @@ Clock drift silently breaks TLS validation and JWT expiry.
 
 See [Configuration → checks.ntp](configuration.md#checksntp).
 
-## `rabbitmq`
+## `rabbitmq` — RabbitMQ {#rabbitmq}
 
 RabbitMQ health via the management HTTP API — read-only.
 
@@ -272,7 +281,7 @@ are labelled `node/<name>` and `queue/<vhost>/<name>`. The password is read from
 
 See [Configuration → checks.rabbitmq](configuration.md#checksrabbitmq).
 
-## `grpc`
+## `grpc` — gRPC services {#grpc}
 
 gRPC Health Checking Protocol (`grpc.health.v1.Health/Check`) over **HTTP/2 +
 TLS**, with the protobuf messages encoded by hand — no gRPC library dependency.
@@ -288,7 +297,7 @@ health. `insecure_skip_verify` for internal self-signed endpoints.
 
 See [Configuration → checks.grpc](configuration.md#checksgrpc).
 
-## `ldap`
+## `ldap` — LDAP directories {#ldap}
 
 LDAP directory health via bind + an optional sanity search (uses `go-ldap`).
 
@@ -301,7 +310,7 @@ LDAP directory health via bind + an optional sanity search (uses `go-ldap`).
 
 See [Configuration → checks.ldap](configuration.md#checksldap).
 
-## `kafka`
+## `kafka` — Apache Kafka {#kafka}
 
 Kafka cluster health via `franz-go`/`kadm` (admin metadata only).
 
@@ -318,7 +327,7 @@ a fake — no real broker in tests.
 
 See [Configuration → checks.kafka](configuration.md#checkskafka).
 
-## `ingest` — RTMP/SRT ingest reachability
+## `ingest` — RTMP / SRT ingest {#ingest}
 
 Answers "can the streamer publish?" by speaking just enough of each protocol to
 prove a real server is listening, not just an open port:
@@ -332,7 +341,7 @@ prove a real server is listening, not just an open port:
 connection or handshake fails, `BAD` on an unknown protocol. Zero dependencies;
 tested against in-test fake RTMP/SRT servers.
 
-## `s3` — object storage
+## `s3` — S3 object storage {#s3}
 
 Checks an S3-compatible bucket (AWS S3, MinIO, Ceph):
 
@@ -345,7 +354,7 @@ SDK); credentials come from `access_key_env`/`secret_key_env` (env only), or it
 falls back to anonymous for public buckets. `path_style: true` for MinIO/Ceph.
 Tested against an in-test fake S3 (`httptest`).
 
-## `smtp` — mail relay reachability
+## `smtp` — SMTP relays {#smtp}
 
 Verifies an SMTP relay is healthy **without ever sending mail**:
 
@@ -370,7 +379,7 @@ tested against in-test fake relays (plain, STARTTLS, implicit TLS).
       - {name: smtps, address: mail.example.com:465, tls: true}
 ```
 
-## `elasticsearch` — cluster health
+## `elasticsearch` — Elasticsearch / OpenSearch {#elasticsearch}
 
 Checks an Elasticsearch or OpenSearch cluster over its HTTP API (any node
 answers cluster-wide):
@@ -397,7 +406,7 @@ clusters. Zero-dep (HTTP/JSON); tested against an in-test fake cluster.
       - {name: logs, url: https://es.example.com:9200, username: elastic, password_env: ES_PASSWORD, expect_nodes: 3}
 ```
 
-## `mongodb` — replica set & connections
+## `mongodb` — MongoDB {#mongodb}
 
 Read-only health check for MongoDB via the **official driver** (any member
 answers cluster-wide):
@@ -424,7 +433,7 @@ logic is unit-tested with a fake collector — no real database in tests.
       - {name: rs0, uri: "mongodb://m1:27017,m2:27017/?replicaSet=rs0", username: monitor, password_env: MONGO_PASSWORD}
 ```
 
-## `mysql` — MySQL / MariaDB
+## `mysql` — MySQL / MariaDB {#mysql}
 
 Read-only health check via the standard `go-sql-driver/mysql` (a motivated
 exception to the zero-dep rule, like `pgx` for Postgres):
@@ -451,7 +460,7 @@ with a fake collector; no real database in tests.
       - {name: primary, dsn: "monitor:${MYSQL_PASSWORD}@tcp(db-01:3306)/"}
 ```
 
-## `etcd` — etcd v3 cluster
+## `etcd` — etcd {#etcd}
 
 Checks an etcd v3 cluster over its **HTTP JSON gateway** — no `clientv3`
 dependency:
@@ -474,7 +483,7 @@ against an in-test fake gateway.
       - {name: etcd-01, url: https://etcd-01:2379, insecure_skip_verify: true}
 ```
 
-## `clickhouse` — ClickHouse
+## `clickhouse` — ClickHouse {#clickhouse}
 
 Checks a ClickHouse server over its HTTP interface (zero-dep):
 
@@ -498,7 +507,7 @@ in-test fake HTTP server.
       - {name: ch-01, url: http://ch-01:8123, username: monitor, password_env: CLICKHOUSE_PASSWORD}
 ```
 
-## `vault` — HashiCorp Vault
+## `vault` — HashiCorp Vault {#vault}
 
 Checks a Vault node over its HTTP API (zero-dep):
 
@@ -517,7 +526,7 @@ Tested against an in-test fake Vault.
       - {name: vault-01, url: https://vault-01:8200}
 ```
 
-## `memcached` — memcached
+## `memcached` — memcached {#memcached}
 
 Checks memcached over its text protocol (zero-dep):
 
@@ -541,7 +550,7 @@ memcached.
     targets: [cache-01, cache-02:11212]
 ```
 
-## `cassandra` — Cassandra / ScyllaDB
+## `cassandra` — Cassandra / ScyllaDB {#cassandra}
 
 Reachability check that speaks the **CQL native protocol** handshake directly —
 no driver, no authentication:

@@ -1,0 +1,30 @@
+---
+layout: null
+permalink: /llms-full.txt
+sitemap: false
+---
+{%- comment -%}
+  Every documentation page as one plain-text file, for assistants that ingest a
+  whole site in a single fetch. Jekyll exposes an already-rendered page as HTML,
+  so the content is stripped back to text and the entities Markdown escaped in
+  code blocks are decoded again — otherwise `<host>` would read as `&lt;host&gt;`.
+{%- endcomment -%}
+{%- assign base = site.url | append: site.baseurl -%}
+# checkfleet — full documentation
+
+> {{ site.description | strip_newlines }}
+> Source: {{ base }}/ · Repository: {{ site.github.repo }}
+> This file is the plain-text concatenation of every page of the documentation
+> site. The structured index lives at {{ '/llms.txt' | absolute_url }}.
+
+{% assign pages = site.html_pages | where_exp: "p", "p.nav_order" | sort: "nav_order" -%}
+{% for p in pages -%}
+{%- assign text = p.content | strip_html | replace: '&lt;', '<' | replace: '&gt;', '>' | replace: '&quot;', '"' | replace: '&#39;', "'" | replace: '&amp;', '&' -%}
+================================================================================
+# {{ p.title }}
+URL: {{ p.url | absolute_url }}
+{% if p.description %}Summary: {{ p.description | strip_newlines }}{% endif %}
+================================================================================
+{{ text | strip }}
+
+{% endfor -%}

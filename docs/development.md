@@ -1,6 +1,9 @@
 ---
 title: Development
 nav_order: 9
+description: >-
+  Contribute to checkfleet — the project layout, the engine.Check contract, and
+  how to add a new module with offline tests against local fixture servers.
 ---
 
 ```bash

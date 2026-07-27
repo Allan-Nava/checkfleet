@@ -1,0 +1,75 @@
+---
+layout: null
+permalink: /robots.txt
+sitemap: false
+---
+# checkfleet documentation — {{ site.url }}{{ site.baseurl }}/
+#
+# NOTE: crawlers only read robots.txt from the host root. This project site is
+# served under {{ site.baseurl }}/, so this file is advisory until checkfleet gets its
+# own domain (then it becomes the live policy, unchanged). The sitemap below can
+# be submitted directly to Google/Bing Search Console regardless.
+#
+# Policy: everything is public documentation for an open, source-available tool.
+# Search crawlers and AI/answer-engine crawlers are explicitly welcome — being
+# quoted accurately by an assistant is the point.
+
+User-agent: *
+Allow: /
+
+# Search + answer engines, named explicitly so the intent is on the record.
+User-agent: Googlebot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: meta-externalagent
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+Sitemap: {{ '/sitemap.xml' | absolute_url }}

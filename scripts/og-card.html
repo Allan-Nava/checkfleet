@@ -1,0 +1,102 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 630px; }
+  body {
+    font-family: -apple-system, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+    background: #0a1020;
+    background-image:
+      radial-gradient(900px 520px at 12% -10%, rgba(45,212,191,.20), transparent 62%),
+      radial-gradient(760px 520px at 108% 118%, rgba(16,185,129,.18), transparent 60%),
+      linear-gradient(150deg, #17274a 0%, #0e1830 55%, #0a1020 100%);
+    color: #e6edf7;
+    position: relative;
+    overflow: hidden;
+  }
+  .grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.030) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.030) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(900px 600px at 30% 40%, #000 30%, transparent 78%);
+    -webkit-mask-image: radial-gradient(900px 600px at 30% 40%, #000 30%, transparent 78%);
+  }
+  .wrap { position: relative; padding: 66px 72px; height: 630px; display: flex; flex-direction: column; }
+  .top { display: flex; align-items: center; gap: 22px; }
+  .name { font-size: 46px; font-weight: 700; letter-spacing: -0.025em; }
+  .badge {
+    margin-left: auto; font-size: 19px; font-weight: 600; letter-spacing: .02em;
+    color: #99f6e4; border: 1px solid rgba(94,234,212,.34);
+    background: rgba(45,212,191,.10); padding: 9px 18px; border-radius: 999px;
+  }
+  h1 {
+    margin-top: 40px; font-size: 66px; line-height: 1.06; font-weight: 700;
+    letter-spacing: -0.032em; max-width: 1010px;
+  }
+  .grad {
+    background: linear-gradient(94deg, #5eead4 0%, #34d399 52%, #10b981 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .lede { margin-top: 24px; font-size: 27px; line-height: 1.42; color: #9fb0cb; max-width: 900px; }
+  .foot { margin-top: auto; display: flex; align-items: center; gap: 16px; font-size: 22px; color: #7f92b0; }
+  .chip {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 21px; color: #cbd8ea;
+    background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.09);
+    padding: 11px 18px; border-radius: 12px;
+  }
+  .chip .p { color: #34d399; }
+  .url { margin-left: auto; font-weight: 600; color: #8ea3c2; }
+  .dots { display: inline-flex; gap: 9px; align-items: center; margin-right: 4px; }
+  .dot { width: 13px; height: 13px; border-radius: 50%; }
+</style>
+</head>
+<body>
+<div class="grid"></div>
+<div class="wrap">
+  <div class="top">
+    <svg width="86" height="86" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="cf-bg" x1="64" y1="24" x2="448" y2="488" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#17274a"/><stop offset="0.55" stop-color="#0e1830"/><stop offset="1" stop-color="#0a1020"/>
+        </linearGradient>
+        <linearGradient id="cf-rim" x1="256" y1="8" x2="256" y2="248" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.16"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="cf-arc" x1="120" y1="150" x2="300" y2="380" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#5eead4"/><stop offset="1" stop-color="#2dd4bf"/>
+        </linearGradient>
+        <linearGradient id="cf-check" x1="170" y1="330" x2="360" y2="180" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#059669"/><stop offset="0.55" stop-color="#10b981"/><stop offset="1" stop-color="#34d399"/>
+        </linearGradient>
+      </defs>
+      <rect x="8" y="8" width="496" height="496" rx="116" fill="url(#cf-bg)"/>
+      <rect x="8" y="8" width="496" height="496" rx="116" fill="url(#cf-rim)"/>
+      <rect x="8.75" y="8.75" width="494.5" height="494.5" rx="115.25" fill="none" stroke="#ffffff" stroke-opacity="0.09" stroke-width="1.5"/>
+      <path d="M334 148 A155 155 0 1 0 334 364" fill="none" stroke="url(#cf-arc)" stroke-width="34" stroke-linecap="round"/>
+      <path d="M175 258 L232 318 L356 190" fill="none" stroke="url(#cf-check)" stroke-width="46" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span class="name">checkfleet</span>
+    <span class="badge">29 modules · one Go binary</span>
+  </div>
+
+  <h1>A fleet of <span class="grad">domain-aware</span><br>infrastructure checks.</h1>
+
+  <p class="lede">TLS expiry, HTTP, NATS, Kafka, PostgreSQL, Consul, HAProxy, HLS —
+  the checks generic monitoring can’t express. No agents, no server.</p>
+
+  <div class="foot">
+    <span class="chip"><span class="dots">
+      <span class="dot" style="background:#ef4444"></span>
+      <span class="dot" style="background:#f59e0b"></span>
+      <span class="dot" style="background:#10b981"></span>
+    </span><span class="p">$</span> checkfleet check all --config checkfleet.yml</span>
+    <span class="url">allan-nava.github.io/checkfleet</span>
+  </div>
+</div>
+</body>
+</html>
