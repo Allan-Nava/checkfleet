@@ -1,0 +1,77 @@
+name: Bug report
+description: Something checkfleet does wrong
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Not for security issues** — use [private vulnerability reporting](https://github.com/Allan-Nava/checkfleet/security/advisories/new) instead. See [SECURITY.md](https://github.com/Allan-Nava/checkfleet/blob/main/SECURITY.md).
+
+        **Redact your config before pasting it.** A checkfleet config points at real infrastructure; replace hostnames, DSNs, tokens and webhook URLs with placeholders.
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `checkfleet version`
+      placeholder: v0.139.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install
+    attributes:
+      label: Installed how?
+      options:
+        - Release archive
+        - Homebrew
+        - Docker / GHCR
+        - go install
+        - GitHub Action
+        - Built from source
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: platform
+    attributes:
+      label: OS and architecture
+      placeholder: macOS 14 arm64 / Ubuntu 24.04 amd64
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you ran, what you got, and what you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Config that reproduces it (secrets redacted)
+      render: yaml
+    validations:
+      required: false
+
+  - type: textarea
+    id: doctor
+    attributes:
+      label: "`checkfleet doctor` output"
+      description: >-
+        `checkfleet doctor --config your.yml` — often the fastest route to a
+        diagnosis. Redact hostnames if they are sensitive.
+      render: shell
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: acknowledgements
+    attributes:
+      label: Before submitting
+      options:
+        - label: I removed every credential, token and real hostname I care about from the text above
+          required: true

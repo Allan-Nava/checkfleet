@@ -1,0 +1,67 @@
+name: New module
+description: Propose a check for a system checkfleet doesn't cover
+labels: [module]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The bar for a module is not "it connects" — a `tcp` check already does that.
+        It is: **does it know something a port check doesn't?** A module should encode
+        the domain knowledge an operator has. Check [BACKLOG.md](https://github.com/Allan-Nava/checkfleet/blob/main/BACKLOG.md)
+        first: it records ideas that were deliberately rejected, with the reasoning.
+
+  - type: input
+    id: system
+    attributes:
+      label: What system
+      placeholder: MinIO, Traefik, Temporal, …
+    validations:
+      required: true
+
+  - type: textarea
+    id: signals
+    attributes:
+      label: What would it check, and why does it matter?
+      description: >-
+        The specific unhealthy states an operator would want to know about, and
+        what each one means in practice. "Is it up" is already covered by `tcp`
+        and `http`.
+      placeholder: |
+        - <state> → this means <consequence>, and nothing else notices it
+        - <state> → …
+    validations:
+      required: true
+
+  - type: textarea
+    id: howto
+    attributes:
+      label: How is that observable?
+      description: >-
+        An HTTP endpoint returning JSON, a stats command, a protocol handshake?
+        Paste an example response if you have one (redacted).
+    validations:
+      required: true
+
+  - type: dropdown
+    id: dependency
+    attributes:
+      label: Does it need a client library?
+      description: >-
+        checkfleet is zero-dependency by default. HTTP/JSON and simple protocols
+        are written by hand; a driver needs a strong argument.
+      options:
+        - "No — HTTP/JSON or a simple protocol"
+        - "Not sure"
+        - "Yes — the protocol is unreasonable to hand-write"
+    validations:
+      required: true
+
+  - type: textarea
+    id: testing
+    attributes:
+      label: Can it be tested offline?
+      description: >-
+        Tests must run against a fixture server created in the test — never real
+        infrastructure. Is the surface simple enough to fake?
+    validations:
+      required: false

@@ -7,13 +7,33 @@ description: >-
 ---
 
 ```bash
-go test ./...    # unit tests + modules against local in-test servers — no network
+go test ./...       # unit tests + modules against local in-test servers — no network
 go vet ./...
+golangci-lint run   # v2 — see below
 go build -o checkfleet ./cmd/checkfleet
 ```
 
-Both `go vet ./...` and `go test ./...` must be green before a change lands —
-they are the same checks CI runs.
+All three must be green before a change lands: they are the checks CI runs, and
+the linter is a **hard gate** there. Leaving it out of the local checklist once
+let 20 consecutive red runs through, which is why it is listed first here.
+
+It has to be **golangci-lint v2** — `.golangci.yml` uses the v2 schema and a v1
+binary silently fails to read it. Install the version CI pins:
+
+```bash
+go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
+```
+
+The desktop app is a separate Go module, excluded from `./...`:
+
+```bash
+cd desktop && go test ./...
+```
+
+See [`CONTRIBUTING.md`](https://github.com/Allan-Nava/checkfleet/blob/main/CONTRIBUTING.md)
+for the rules a change has to respect (offline tests, exit-code semantics, no
+secrets, zero-dependency default) and
+[Compatibility](compatibility.md) for the surfaces that must not break.
 
 ## Layout
 

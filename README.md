@@ -200,6 +200,12 @@ is a structured index of the project and
 [`/llms-full.txt`](https://allan-nava.github.io/checkfleet/llms-full.txt) is the
 whole documentation set as plain text.
 
+## Contributing
+
+Bug reports, module proposals and PRs are welcome — [CONTRIBUTING.md](CONTRIBUTING.md) has the gate (`go vet` + `go test` + `golangci-lint` v2), the rules a change has to respect, and what the bar for a new module is. What must not break between 1.x releases is written down in [Compatibility](https://allan-nava.github.io/checkfleet/compatibility/).
+
+Found a security issue? Don't open an issue — [report it privately](https://github.com/Allan-Nava/checkfleet/security/advisories/new). See [SECURITY.md](SECURITY.md).
+
 ## License
 
 [PolyForm Noncommercial License 1.0.0](LICENSE) — source-available, free for **noncommercial** use (personal, research, education, nonprofits, government). Any commercial use requires a separate license — see [COMMERCIAL.md](COMMERCIAL.md). Releases published before v0.50.0 remain under the MIT license they shipped with.

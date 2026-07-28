@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/Allan-Nava/checkfleet/security/advisories/new
+    about: Report privately — never in a public issue. See SECURITY.md.
+  - name: Commercial licence
+    url: https://github.com/Allan-Nava/checkfleet/blob/main/COMMERCIAL.md
+    about: checkfleet is free for noncommercial use; commercial use needs a licence.
+  - name: Documentation
+    url: https://allan-nava.github.io/checkfleet/
+    about: Configuration reference, per-module docs, CI recipes and the FAQ.
