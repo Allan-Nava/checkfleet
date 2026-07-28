@@ -224,7 +224,14 @@ func recordHistory(path string, res engine.Result, minChanges, window int) ([]en
 	store := history.Open(path)
 	rec := history.Record{Unix: res.Started.Unix()}
 	for _, f := range res.Findings {
-		rec.Entries = append(rec.Entries, history.Entry{Check: f.Check, Target: f.Target, Status: string(f.Status)})
+		// Value/Unit ride along: they are what makes a metric chartable over time
+		// (CF-91). Dropping them here — as this did until CF-157 — meant a history
+		// written by the CLI carried no metric series at all, while one written by
+		// the desktop did, from the same documented format.
+		rec.Entries = append(rec.Entries, history.Entry{
+			Check: f.Check, Target: f.Target, Status: string(f.Status),
+			Value: f.Value, Unit: f.Unit,
+		})
 	}
 	if err := store.Append(rec); err != nil {
 		return nil, err

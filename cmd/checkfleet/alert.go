@@ -37,6 +37,14 @@ func runAlert(args []string) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
+	// Check the provider name before running anything. Until CF-157 a typo was
+	// only caught by sendAlert, so it surfaced *after* a full fleet sweep — and
+	// not at all under --dry-run, which is exactly where you go looking for it.
+	switch *provider {
+	case "pagerduty", "opsgenie", "sns":
+	default:
+		return fmt.Errorf("unknown provider %q (pagerduty|opsgenie|sns)", *provider)
+	}
 
 	cfg, err := loadConfig(*configPath, *stack)
 	if err != nil {

@@ -54,7 +54,6 @@ func postRendered(webhookEnv, name string, render func() (string, error)) error 
 	return nil
 }
 
-// postJSON POSTs a JSON payload to a webhook URL, accepting any 2xx response.
 // postTelegram sends a plain-text message via the Telegram Bot API sendMessage.
 func postTelegram(ctx context.Context, token, chatID, text string) error {
 	payload, err := json.Marshal(map[string]string{"chat_id": chatID, "text": text})
@@ -78,6 +77,7 @@ func postTelegram(ctx context.Context, token, chatID, text string) error {
 	return nil
 }
 
+// postJSON POSTs a JSON payload to a webhook URL, accepting any 2xx response.
 func postJSON(ctx context.Context, url, payload string) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBufferString(payload))
 	if err != nil {
