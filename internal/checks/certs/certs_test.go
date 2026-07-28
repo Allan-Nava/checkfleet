@@ -10,6 +10,10 @@ import (
 	"crypto/x509/pkix"
 	"math/big"
 	"net"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -101,5 +105,69 @@ func TestTargetsFromConfigAndDefaultPort(t *testing.T) {
 	}
 	if targets[0] != "a.example:443" || targets[1] != "b.example:8443" {
 		t.Errorf("targets sbagliati: %v", targets)
+	}
+}
+
+// Run is the path the engine actually calls: target expansion (explicit list +
+// inventory) then a concurrent sweep. Until CF-158 only probe() was covered, so
+// nothing exercised the fan-out or the inventory branch.
+func TestRunCoversEveryTargetConcurrently(t *testing.T) {
+	a := startTLSServer(t, 40)
+	b := startTLSServer(t, 3)
+	c := New(engine.CertsConfig{Targets: []string{a, b}, WarnDays: 30, CritDays: 7})
+
+	findings := c.Run(context.Background())
+	if len(findings) != 2 {
+		t.Fatalf("want one finding per target, got %d: %+v", len(findings), findings)
+	}
+	// The order of findings must follow the order of the targets, not the order
+	// the goroutines happened to finish in — the engine sorts afterwards, and a
+	// racy order here would make the output non-deterministic run to run.
+	if findings[0].Target != a || findings[1].Target != b {
+		t.Errorf("findings must stay in target order, got %q then %q", findings[0].Target, findings[1].Target)
+	}
+	if findings[0].Status != engine.OK || findings[1].Status != engine.BAD {
+		t.Errorf("40 days should be OK and 3 days BAD, got %s and %s", findings[0].Status, findings[1].Status)
+	}
+}
+
+func TestRunAddsInventoryHosts(t *testing.T) {
+	srv := startTLSServer(t, 40)
+	host, port, ok := strings.Cut(srv, ":")
+	if !ok {
+		t.Fatalf("unexpected server address %q", srv)
+	}
+	inv := filepath.Join(t.TempDir(), "hosts.ini")
+	if err := os.WriteFile(inv, []byte("[tls]\nnode1 ansible_host="+host+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	p, err := strconv.Atoi(port)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	c := New(engine.CertsConfig{AnsibleInventory: inv, Port: p, WarnDays: 30, CritDays: 7})
+	findings := c.Run(context.Background())
+	if len(findings) != 1 {
+		t.Fatalf("the inventory host should be probed, got %+v", findings)
+	}
+	if findings[0].Status != engine.OK {
+		t.Errorf("want OK from the inventory host, got %s: %s", findings[0].Status, findings[0].Message)
+	}
+}
+
+// A broken inventory must not silently mean "nothing to check": that would
+// report a healthy fleet from a typo in a path.
+func TestRunReportsUnreadableInventory(t *testing.T) {
+	c := New(engine.CertsConfig{
+		AnsibleInventory: filepath.Join(t.TempDir(), "nope.ini"),
+		WarnDays:         30, CritDays: 7,
+	})
+	findings := c.Run(context.Background())
+	if len(findings) != 1 || findings[0].Status != engine.ERROR {
+		t.Fatalf("want a single ERROR finding for the unreadable inventory, got %+v", findings)
+	}
+	if !strings.Contains(findings[0].Message, "nope.ini") {
+		t.Errorf("the message must name the file: %q", findings[0].Message)
 	}
 }

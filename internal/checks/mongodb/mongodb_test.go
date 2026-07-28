@@ -158,7 +158,7 @@ func TestHostOf(t *testing.T) {
 	cases := map[string]string{
 		"mongodb://h1:27017,h2:27017/admin": "h1:27017,h2:27017",
 		"mongodb://user:pw@h:27017/?x=1":    "h:27017",
-		"mongodb+srv://cluster.example.com":  "cluster.example.com",
+		"mongodb+srv://cluster.example.com": "cluster.example.com",
 	}
 	for in, want := range cases {
 		if got := hostOf(in); got != want {
