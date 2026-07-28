@@ -4,8 +4,18 @@ name: Brew test
 # end on macOS — after every Release (so the freshly-pushed cask is exercised),
 # on demand, and weekly (catches a tap that rots, e.g. a deleted release asset).
 #
-# Casks are macOS-only, so this runs on both Apple Silicon (macos-14) and Intel
-# (macos-13) to cover both branches of the generated cask.
+# Casks are macOS-only, so this runs on both Apple Silicon and Intel to cover
+# both branches of the generated cask.
+#
+# The Intel leg is `macos-15-intel`, NOT `macos-13`: that image was retired on
+# 2025-12-04, and a job asking for a label with no runners behind it does not
+# fail — it sits **queued forever**. That is what happened here (CF-159): the
+# arm64 leg passed in minutes while the Intel leg stayed queued for 13-21 hours,
+# so the workflow never concluded and in practice never verified anything. A
+# green-looking tap that nobody had actually installed is worse than no check.
+#
+# `macos-15-intel` is GitHub's last x86_64 macOS image, available until August
+# 2027; after that the Intel branch of the cask has to be verified by hand.
 
 on:
   workflow_run:
@@ -30,8 +40,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-14, macos-13] # arm64, intel
+        os: [macos-14, macos-15-intel] # arm64, intel
     runs-on: ${{ matrix.os }}
+    # A guard, not an optimisation: the install is a few minutes, so anything
+    # near this means it is hanging (an interactive prompt, a stalled download)
+    # and the run should say so instead of looking busy.
+    timeout-minutes: 20
     env:
       HOMEBREW_NO_AUTO_UPDATE: "1"
       HOMEBREW_NO_INSTALL_CLEANUP: "1"

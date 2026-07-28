@@ -97,6 +97,13 @@ cosign verify-blob \
   checksums.txt
 ```
 
+Recent cosign versions print a deprecation notice for `--certificate` and
+`--signature` (the newer form is a `--bundle`). The command above still verifies
+correctly — the notice is about the flag shape, not the signature — and it is
+kept as-is because it is what works against the artifacts goreleaser publishes
+today. Verified against v0.142.0: `Verified OK`, identity
+`release.yml@refs/tags/v0.142.0`.
+
 Docker images are signed too:
 
 ```bash
