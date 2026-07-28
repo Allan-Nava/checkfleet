@@ -13,6 +13,15 @@ frontend embedded — that **reuses `internal/engine`**: the checks, the
 worst-first sort and the findings are identical to `checkfleet check all`. The
 CLI stays the source of truth; the GUI is just another frontend.
 
+{: .note }
+> **The desktop app is beta and versioned separately from the CLI.** It is not
+> covered by the CLI's [compatibility promise](compatibility.md): its views,
+> bindings and stored preferences can change in any release. Two concrete gaps
+> behind that label — the macOS build is **not code-signed or notarized**, so
+> Gatekeeper will warn on first launch, and there is **no menu-bar/tray icon**
+> (Wails v2 has no systray; it arrives with the v3 port). Everything the CLI
+> guarantees, the CLI guarantees — if you need stability, script the CLI.
+
 ![checkfleet desktop — fleet view](assets/desktop-dark.png)
 
 ## Views, command palette & shortcuts

@@ -44,6 +44,18 @@ faq:
       COMMERCIAL.md in the repository. Releases published before v0.50.0 remain
       under the MIT licence they shipped with. It is not an OSI-approved
       open-source licence.
+  - q: Can I use checkfleet at work? It is only internal, we do not resell it.
+    a: >-
+      If the company is for-profit, that is commercial use and needs a licence —
+      even when checkfleet never leaves your own infrastructure and no customer
+      ever sees it. "Commercial" in the PolyForm Noncommercial License is about
+      the purpose the software serves, not about redistribution, so monitoring
+      the systems that run a for-profit business is covered by it. Evaluating
+      checkfleet before deciding is explicitly free, and so is asking whether
+      your case qualifies. Nonprofits, charities, public research, public
+      safety/health, environmental and government organisations are free
+      regardless of budget. The details, and how to request a licence, are in
+      COMMERCIAL.md.
   - q: How do I install checkfleet?
     a: >-
       Run `go install github.com/Allan-Nava/checkfleet/cmd/checkfleet@latest`,

@@ -128,7 +128,12 @@ homebrew_casks:
           if system_command "/usr/bin/xattr", args: ["-h"], print_stderr: false
             system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/checkfleet"]
           end
-    skip_upload: "false"
+    # "auto" = publish on a normal tag, skip on a **prerelease**. Without this a
+    # v1.0.0-rc.1 tag would push its cask to the tap and `brew install` would
+    # hand every user a release candidate — the opposite of what an rc is for
+    # (CF-160). GitHub still gets the prerelease, so an rc is installable on
+    # purpose from the release archive.
+    skip_upload: "auto"
 
 release:
   draft: false

@@ -209,3 +209,5 @@ Found a security issue? Don't open an issue — [report it privately](https://gi
 ## License
 
 [PolyForm Noncommercial License 1.0.0](LICENSE) — source-available, free for **noncommercial** use (personal, research, education, nonprofits, government). Any commercial use requires a separate license — see [COMMERCIAL.md](COMMERCIAL.md). Releases published before v0.50.0 remain under the MIT license they shipped with.
+
+To be unambiguous about the case people ask about most: **using checkfleet at a for-profit company is commercial use, even if it is purely internal and no customer ever sees it** — "commercial" is about the purpose the software serves, not about redistribution. Evaluating it first is free, and so is asking whether your case qualifies. This is not an OSI-approved open-source license.

@@ -24,6 +24,13 @@ If you are unsure whether your use is covered, ask (see below) — asking is fre
 
 ## You DO need a commercial license for
 
+**The short version: if a for-profit company benefits from checkfleet running,
+that is commercial use — including when it never leaves your own network and no
+customer ever sees it.** "Commercial" here is about the *purpose the software
+serves*, not about whether you redistribute it, so "we only use it internally"
+does not make it noncommercial. That is the single point most people get wrong,
+so it is stated plainly rather than left to be inferred.
+
 Roughly, any use "with an anticipated commercial application", such as:
 
 - Running checkfleet to monitor infrastructure for a **for-profit** company's

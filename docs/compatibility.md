@@ -36,6 +36,20 @@ to ignore fields they do not know. Removing or repurposing one is a major.
 > Before 1.0 every release was tagged as a minor or patch regardless, because no
 > stability was promised yet. The guarantees on this page start at **1.0.0**.
 
+### Getting to 1.0
+
+The 1.0 covers the **CLI** — the binary, its config schema, its outputs and its
+exit codes. The [desktop app](desktop.md) is deliberately not in scope and stays
+beta with its own version.
+
+It ships through a release candidate rather than straight from a `0.x` tag:
+`v1.0.0-rc.1` first, then a stretch of real use on a real fleet, then `v1.0.0`.
+The reason is not ceremony. Everything on this page is a promise that outlives
+the release that makes it, and a schema nobody has run in anger is exactly the
+kind of thing you discover you got wrong the week after you promised not to
+change it. If the rc turns something up, it changes in the next rc — that is what
+the rc is for.
+
 ## What is stable
 
 ### 1. The config schema
@@ -184,8 +198,12 @@ Depending on any of these is fine — just expect it to move in a minor release:
   toolchain itself forbids importing. checkfleet is a tool, not a library.
 - **Text and Markdown layout.** Written for humans; columns and section titles
   get rearranged. Use `json`, `csv` or `junit` for machines.
-- **The desktop app.** Versioned separately and still evolving; the CLI is the
-  source of truth for behaviour.
+- **The desktop app.** Deliberately **outside** the 1.0: it carries its own
+  version, is labelled **beta**, and its views, bindings and stored preferences
+  can change in any release. It is also not code-signed on macOS yet. Promising
+  stability for an unsigned app whose window is still being redesigned would be a
+  promise made to be broken; the CLI is the source of truth for behaviour. See
+  [Desktop app](desktop.md).
 - **`serve` HTML pages** (`/healthz` and `/readyz` bodies are stable; the human
   page is not).
 - **The exact text of errors and warnings on stderr.**
