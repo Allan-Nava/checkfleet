@@ -3,6 +3,7 @@ package engine
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"reflect"
 	"sort"
 	"strings"
@@ -56,7 +57,7 @@ func (p Problem) String() string {
 // cfg may be nil (the config failed to load); the raw-level checks still run.
 func Inspect(path string, cfg *Config) []Problem {
 	var out []Problem
-	out = append(out, unknownKeys(path)...)
+	out = append(out, UnknownKeys(path)...)
 	out = append(out, missingVars(path)...)
 
 	if cfg == nil {
@@ -97,9 +98,32 @@ func yamlKeysOf(t reflect.Type) []string {
 	return out
 }
 
-// unknownKeys reports keys YAML would silently ignore, at the top level and
-// under `checks`, with the closest valid name when there is one.
-func unknownKeys(path string) []Problem {
+// UnknownKeys reports the keys a config file — and the files it includes —
+// declares that YAML silently ignores, with the closest valid name when there is
+// one.
+//
+// It is exported because `check` warns about them too (CF-154), not just the
+// diagnostic commands. This is the one config mistake where silence is worse
+// than noise: an ignored key means the module never runs, and the run then
+// reports a *healthy* fleet because it checked nothing.
+//
+// A missing or unparseable file yields nothing: those are the loader's errors to
+// report, and this must never become a second, worse-worded copy of them.
+func UnknownKeys(path string) []Problem { return unknownKeys(path, map[string]bool{}, true) }
+
+// unknownKeys walks path and its include chain. root marks the file the caller
+// asked about, whose problems read better without a filename in them.
+func unknownKeys(path string, visiting map[string]bool, root bool) []Problem {
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		abs = path
+	}
+	if visiting[abs] {
+		return nil // include cycle: the loader reports it
+	}
+	visiting[abs] = true
+	defer delete(visiting, abs)
+
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		return nil
@@ -114,10 +138,31 @@ func unknownKeys(path string) []Problem {
 		return nil // unparseable: the loader reports it
 	}
 
+	// An included file's problems name the file: the main config looks fine, so
+	// without it the reader has nowhere to go looking.
+	in := ""
+	if !root {
+		in = " of " + filepath.Base(path)
+	}
+
 	var out []Problem
-	out = append(out, unknownIn(m, topLevelKeys(), "top level")...)
+	out = append(out, unknownIn(m, topLevelKeys(), "top level"+in)...)
 	if checks, ok := m["checks"].(map[string]any); ok {
-		out = append(out, unknownIn(checks, moduleKeys(), "`checks`")...)
+		out = append(out, unknownIn(checks, moduleKeys(), "`checks`"+in)...)
+	}
+
+	dir := filepath.Dir(path)
+	for _, inc := range includePaths(m["include"]) {
+		if !filepath.IsAbs(inc) {
+			inc = filepath.Join(dir, inc)
+		}
+		files, err := expandInclude(inc)
+		if err != nil {
+			continue // a broken include is reported by the loader, not here
+		}
+		for _, f := range files {
+			out = append(out, unknownKeys(f, visiting, false)...)
+		}
 	}
 	return out
 }

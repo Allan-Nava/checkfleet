@@ -207,6 +207,20 @@ nearest match by edit distance, or by prefix (`elastic` → `elasticsearch`).
 When nothing is close enough, no suggestion is offered: a confidently wrong
 "did you mean" is worse than none.
 
+You don't have to remember to run `validate` to hear about it. Every command that
+acts on a config — `check`, `serve`, `report-issues`, `alert`, `targets` — prints
+the same notice on **stderr**, following `include:` chains and `--stack` overlays:
+
+```
+checkfleet: warning: unknown key "postgress" at `checks` — it is ignored, so nothing you configured under it runs → did you mean "postgres"?
+```
+
+It stays a warning, not an error: the run continues and the exit code does not
+change, because a config written for a newer checkfleet has to keep working on an
+older one. Stderr rather than stdout so the notice can never end up inside a JSON
+document or a webhook payload. See [Compatibility](compatibility.md) for why that
+tolerance is a deliberate guarantee rather than an oversight.
+
 ### Notes vs problems
 
 Some findings are about **this machine**, not about the config:

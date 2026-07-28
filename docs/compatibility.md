@@ -46,10 +46,14 @@ its default, and what it does. A config that works on 1.0 works on every later
 
 Two properties are part of the contract, not accidents:
 
-- **Unknown keys do not abort the run.** A config written for a newer checkfleet
-  runs on an older one, ignoring what it does not know. Unknown keys *are*
-  reported by [`validate`](usage.md) and `doctor`, which name the key and
-  suggest the closest match — tolerated is not the same as hidden.
+- **Unknown keys do not abort the run and do not change the exit code.** A config
+  written for a newer checkfleet runs on an older one, ignoring what it does not
+  know — that tolerance is the point, and it is why `KnownFields` is deliberately
+  *not* enabled. But tolerated is not the same as hidden: every command that acts
+  on a config prints a notice on **stderr** naming the ignored key and the
+  closest valid name, and [`validate`](usage.md) and `doctor` report them as
+  problems. An ignored key means the module never runs, so the run would
+  otherwise report a healthy fleet having checked nothing.
 - **`${VAR}` interpolation** (`${VAR}`, `${VAR:-default}`, `${file:/path}`,
   `$${` for a literal) is applied to config values before parsing.
 

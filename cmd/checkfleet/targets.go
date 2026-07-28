@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 
@@ -42,6 +43,9 @@ func runTargets(args []string) error {
 	if err != nil {
 		return err
 	}
+	// Coverage is exactly the question a misspelled module gives a wrong answer
+	// to: the target simply isn't there, and nothing says why.
+	warnUnknownKeys(os.Stderr, *configPath, *stack)
 	targets := coverage.Targets(cfg)
 	if *module != "" {
 		var kept []coverage.Target

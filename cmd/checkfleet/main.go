@@ -171,6 +171,7 @@ func runCheck(args []string) error {
 	if err != nil {
 		return err
 	}
+	warnUnknownKeys(os.Stderr, *configPath, *stack)
 
 	base := runOptions(cfg)
 	specs := registry.Modules(cfg)
@@ -682,6 +683,7 @@ func runServe(args []string) error {
 	if err != nil {
 		return err
 	}
+	warnUnknownKeys(os.Stderr, *configPath, *stack)
 	limit := effectiveConcurrency(*maxConc, cfg)
 	jobs := registry.Jobs(cfg, runOptions(cfg))
 	if len(jobs) == 0 {

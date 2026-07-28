@@ -42,6 +42,7 @@ func runAlert(args []string) error {
 	if err != nil {
 		return err
 	}
+	warnUnknownKeys(os.Stderr, *configPath, *stack)
 	checks := registry.Configured(cfg)
 	if len(checks) == 0 {
 		return fmt.Errorf("no module configured in %s", *configPath)
