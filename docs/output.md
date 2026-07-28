@@ -68,12 +68,18 @@ checkfleet check all --config checkfleet.yml --output json | jq '.worst'
 
 ```json
 {
+  "schema": 1,
   "worst": "BAD",
   "findings": [
     { "check": "http", "target": "https://example.com/health", "status": "BAD", "message": "HTTP 404 (want 200), 151ms" }
   ]
 }
 ```
+
+The `schema` field is the version of the document itself, so a consumer can tell
+a format change from a content change. The keys that are safe to depend on — and
+the fact that `message` is *not* one of them, because its wording improves
+between releases — are listed in [Compatibility](compatibility.md).
 
 See [CI integration](ci.md) for using `worst` or `--exit-on-bad` to fail a build.
 

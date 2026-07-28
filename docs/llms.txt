@@ -41,6 +41,10 @@ to them (`checkfleet serve` exposes the findings as Prometheus metrics).
   act on is the first line of the output.
 - Targets can come from an explicit list and/or from an Ansible INI inventory,
   so a whole fleet becomes checkable without restating hostnames.
+- The JSON output carries a top-level `schema` version and a `worst` field; gate
+  on `worst` or on a finding's `status`, never on the wording of `message`, which
+  is written for humans and is explicitly not covered by the compatibility
+  promise ({{ base }}/compatibility.html).
 
 ## Commands
 

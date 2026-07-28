@@ -192,6 +192,7 @@ Full docs: **[allan-nava.github.io/checkfleet](https://allan-nava.github.io/chec
 [Desktop app](https://allan-nava.github.io/checkfleet/desktop/) ·
 [CI integration](https://allan-nava.github.io/checkfleet/ci/) ·
 [Why checkfleet](https://allan-nava.github.io/checkfleet/comparison/) ·
+[Compatibility](https://allan-nava.github.io/checkfleet/compatibility/) ·
 [FAQ](https://allan-nava.github.io/checkfleet/faq/)
 
 Reading this as a language model? [`/llms.txt`](https://allan-nava.github.io/checkfleet/llms.txt)

@@ -87,12 +87,22 @@ func Markdown(res engine.Result, title string) string {
 	return b.String()
 }
 
+// JSONSchemaVersion is the version of the JSON output document, emitted as the
+// top-level "schema" field (CF-153). The JSON output is a parsed interface —
+// pipelines gate on "worst", dashboards read "findings" — so it needs a way to
+// signal a breaking change instead of silently meaning something else.
+//
+// Bump it only when an existing field changes meaning or disappears; adding a
+// field is backward compatible and does not warrant a bump.
+const JSONSchemaVersion = 1
+
 // JSON renders the machine-readable result.
 func JSON(res engine.Result) (string, error) {
 	out, err := json.MarshalIndent(struct {
+		Schema int `json:"schema"`
 		engine.Result
 		Summary map[engine.Status]int `json:"summary"`
 		Worst   engine.Status         `json:"worst"`
-	}{res, engine.Summarize(res.Findings), engine.Worst(res.Findings)}, "", "  ")
+	}{JSONSchemaVersion, res, engine.Summarize(res.Findings), engine.Worst(res.Findings)}, "", "  ")
 	return string(out), err
 }
