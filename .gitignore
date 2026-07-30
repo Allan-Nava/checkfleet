@@ -18,3 +18,10 @@ cover.out
 # node_modules from running the frontend linters locally (CI installs them
 # fresh with --no-save; they must never be committed). See desktop-test.yml.
 node_modules/
+
+# Per-developer Claude Code permissions — machine-local, never shared.
+.claude/settings.local.json
+
+# graphify knowledge graph: derived from the sources, rebuilt with
+# `graphify update .`. See the graphify section in CLAUDE.md.
+graphify-out/
