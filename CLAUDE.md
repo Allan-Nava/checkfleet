@@ -46,3 +46,13 @@ go vet ./...
 - Backlog: `BACKLOG.md` · CI: `.github/workflows/ci.yml` (vet+test su push/PR; tag `v*` → build multipiattaforma in release)
 - Config d'esempio: `checkfleet.example.yml`
 - Repo affini (famiglia Lens/tooling): `~/projects/github.com/ansible-vars-lens`, `nats-lens`, `nomad-lens`
+
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+Rules:
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
