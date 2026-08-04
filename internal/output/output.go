@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Allan-Nava/checkfleet/internal/engine"
+	"github.com/Allan-Nava/checkfleet/internal/insight"
 )
 
 var statusIcon = map[engine.Status]string{
@@ -116,11 +117,34 @@ func Markdown(res engine.Result, title string) string {
 		fmt.Fprintf(&b, "\n")
 	}
 
+	writeClusters(&b, res.Findings)
+
 	fmt.Fprintf(&b, "## All results\n\n| Status | Check | Target | Detail |\n|---|---|---|---|\n")
 	for _, f := range res.Findings {
 		fmt.Fprintf(&b, "| %s %s | %s | `%s` | %s |\n", statusIcon[f.Status], f.Status, f.Check, f.Target, f.Message)
 	}
 	return b.String()
+}
+
+// writeClusters renders the correlated-failure groups (CF-123), collapsed so
+// they add a line to the report rather than a second wall of rows. Nothing is
+// written when no group reaches the threshold — the plain table is already the
+// right shape for a handful of unrelated problems.
+func writeClusters(b *strings.Builder, findings []engine.Finding) {
+	clusters := insight.Correlate(findings)
+	if len(clusters) == 0 {
+		return
+	}
+	fmt.Fprintf(b, "## 🔗 Correlated failures\n\n")
+	for _, c := range clusters {
+		fmt.Fprintf(b, "<details><summary><b>%d failures</b> share the same %s: <code>%s</code></summary>\n\n",
+			c.Size(), c.Dimension, c.Value)
+		fmt.Fprintf(b, "| Status | Check | Target | Detail |\n|---|---|---|---|\n")
+		for _, f := range c.Findings {
+			fmt.Fprintf(b, "| %s %s | %s | `%s` | %s |\n", statusIcon[f.Status], f.Status, f.Check, f.Target, f.Message)
+		}
+		fmt.Fprintf(b, "\n</details>\n\n")
+	}
 }
 
 // JSONSchemaVersion is the version of the JSON output document, emitted as the

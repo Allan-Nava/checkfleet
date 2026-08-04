@@ -79,3 +79,37 @@ func TestJSONOmitsHintsWhenAbsent(t *testing.T) {
 		t.Errorf("empty hints must be omitted, not emitted as empty strings")
 	}
 }
+
+// clusteredResult has one dead host (three modules) plus an unrelated problem.
+func clusteredResult() engine.Result {
+	f := func(check, target string, s engine.Status) engine.Finding {
+		return engine.Finding{Check: check, Target: target, Status: s, Message: "detail"}
+	}
+	return engine.Result{Findings: []engine.Finding{
+		f("postgres", "db-01:5432", engine.BAD),
+		f("redis", "db-01:6379", engine.BAD),
+		f("tcp", "db-01:22", engine.BAD),
+		f("http", "https://web-01/", engine.WARN),
+		f("certs", "a.example:443", engine.OK),
+	}}
+}
+
+func TestMarkdownCollapsesCorrelatedFailures(t *testing.T) {
+	out := Markdown(clusteredResult(), "test")
+	if !strings.Contains(out, "## 🔗 Correlated failures") {
+		t.Fatalf("missing the correlated section:\n%s", out)
+	}
+	if !strings.Contains(out, "<details>") {
+		t.Error("clusters must be collapsed, not a second wall of rows")
+	}
+	if !strings.Contains(out, "<b>3 failures</b> share the same host: <code>db-01</code>") {
+		t.Errorf("cluster summary wrong:\n%s", out)
+	}
+}
+
+func TestMarkdownOmitsTheSectionWithoutAPattern(t *testing.T) {
+	out := Markdown(hintedResult(), "test") // two unrelated problems
+	if strings.Contains(out, "Correlated failures") {
+		t.Error("a handful of unrelated problems must not grow a correlation section")
+	}
+}

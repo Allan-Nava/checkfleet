@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.9.0
+
+- **Correlation / blast-radius: trenta righe rosse che sono un guasto solo (CF-123, M30).** `insight.Correlate` raggruppa i finding non-OK di una run per la dimensione che condividono — **host**, **subnet /24**, **modulo** — e il renderer markdown li mostra come sezione **ripiegabile** sopra la tabella completa:
+
+  ```
+  ## 🔗 Correlated failures
+  <details><summary><b>3 failures</b> share the same host: <code>db-01</code></summary>
+  ```
+
+  Un host morto produce un finding per ogni modulo che lo tocca. Leggerli come eventi separati è il modo in cui un blast radius sparisce nello scroll: la domanda non è "quali check sono rossi" ma "cos'è successo".
+
+  **Ogni finding finisce in un cluster solo, e vince la dimensione più specifica** (host, poi subnet, poi modulo). Riportare lo stesso guasto sotto tre intestazioni sarebbe lo stesso muro di righe con passaggi in più — un test lo verifica contando che la copertura totale sia esatta e che nessun finding compaia due volte.
+
+  Sotto **tre** membri non è un pattern: due finding sullo stesso host li leggi direttamente dalla tabella, e una sezione che si apre per quello è rumore. Senza gruppi la sezione non compare affatto.
+
+  L'estrazione dell'host regge le forme che i moduli producono davvero — `db-01:5432`, `https://user:pw@a.example/health`, `db-01:5432/connections` (le sotto-metriche di postgres) — e rinuncia invece di indovinare. La subnet raggruppa **solo IPv4 letterali**: risolvere un nome per raggrupparlo significherebbe fare DNS dentro un'analisi offline, che è un effetto collaterale che un insight non deve avere.
+
+
 ## 1.8.0
 
 - **Anomaly detection: deviazione dalla propria normalità (CF-122, M30).** `checkfleet insight --anomaly` confronta l'ultimo campione di ogni metrica con la **sua** baseline recente, non con una soglia statica. È la differenza fra "90ms sotto il limite di 500ms, tutto bene" e "90ms su un target che sta a 30ms da una settimana, guardaci".
