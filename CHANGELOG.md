@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.10.0
+
+- **SLO error budget e burn rate (CF-125, M30).** `checkfleet insight --slo 0.99` non dice quanto sei stato su, dice **quanto in fretta stai finendo il margine**:
+
+  ```
+  http  https://api-01/   98.00% up  80% of budget left (burn 0.20x)
+  http  https://web-01/   92.00% up  20% of budget left, fast burn 8.0x → gone 2026-08-05T01:34
+  ```
+
+  Due finestre come da manuale SRE: la **slow burn** sull'intera storia e la **fast burn** sull'ultima frazione (`--fast-window`, default 0.1). Servono a distinguere i due guasti che una percentuale sola confonde — due blip vecchi che hanno consumato un quinto del budget senza urgenza, e un'ora di down in corso che se ne mangia il resto entro sera. La proiezione di esaurimento esce solo dalla fast burn, perché è il ritmo *attuale* la cosa su cui si decide.
+
+  **`WARN` non è downtime.** Contare ogni warning come indisponibilità renderebbe impossibile per costruzione qualunque obiettivo sopra le due nove — è una di quelle scelte che, sbagliata, fa abbandonare la feature dopo una settimana. `BAD` ed `ERROR` sì: se il check non è riuscito a misurare, per l'availability non è "su".
+
+  Niente budget sotto **dieci** run (con una manciata di campioni ogni blip sembra il 100% di burn rate), e `--slo` fuori da (0,1) è un errore esplicito invece di una divisione silenziosa.
+
+  **Due difetti trovati dai test, entrambi tenuti.** Un budget speso *esattamente* usciva dalla divisione con ~1e-16 di margine residuo, cioè riportava "budget rimasto" su un target che l'aveva appena finito — ora c'è una tolleranza, e il verso dell'arrotondamento è quello prudente. E la mia prima aspettativa di test era sbagliata, non il codice: 1 fallimento su 100 run **sfonda** un obiettivo 99.9% di dieci volte, non lo intacca. Corretto il test, non l'implementazione.
+
+
 ## 1.9.0
 
 - **Correlation / blast-radius: trenta righe rosse che sono un guasto solo (CF-123, M30).** `insight.Correlate` raggruppa i finding non-OK di una run per la dimensione che condividono — **host**, **subnet /24**, **modulo** — e il renderer markdown li mostra come sezione **ripiegabile** sopra la tabella completa:
