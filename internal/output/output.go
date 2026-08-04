@@ -96,6 +96,9 @@ func Markdown(res engine.Result, title string) string {
 	fmt.Fprintf(&b, "# checkfleet — %s\n\n", title)
 	fmt.Fprintf(&b, "Generated: %s\n\n", res.Started.Format(time.RFC3339))
 	fmt.Fprintf(&b, "```\n%s\n```\n\n", summaryLine(res))
+	// The fleet index (CF-127). Status-only here: the renderer has no history,
+	// so the instability surcharge is `insight --score`'s job, not this one.
+	fmt.Fprintf(&b, "**Fleet health: %.1f/100**\n\n", insight.FleetScore(res.Findings, nil).Value)
 
 	var problems []engine.Finding
 	for _, f := range res.Findings {

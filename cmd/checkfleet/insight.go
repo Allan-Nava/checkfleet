@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/Allan-Nava/checkfleet/internal/engine"
 	"github.com/Allan-Nava/checkfleet/internal/history"
 	"github.com/Allan-Nava/checkfleet/internal/insight"
 )
@@ -25,6 +26,8 @@ func runInsight(args []string) error {
 	forecast := fs.Bool("forecast", false, "project when each metric crosses --threshold")
 	anomaly := fs.Bool("anomaly", false, "flag metrics deviating from their own recent baseline")
 	zScore := fs.Float64("z", 3, "anomaly: deviations from the baseline before a metric is flagged")
+	score := fs.Bool("score", false, "single 0-100 health index for the fleet, with a per-module breakdown")
+	flapChanges := fs.Int("flap-changes", 3, "score: status changes in the window before a target counts as unstable")
 	recovery := fs.Bool("recovery", false, "MTTR per target and how long the current outage has lasted")
 	slo := fs.Float64("slo", 0, "error budget: target availability, e.g. 0.999 (enables the budget report)")
 	fastFraction := fs.Float64("fast-window", 0.1, "error budget: share of the history treated as the recent burn window")
@@ -36,8 +39,8 @@ func runInsight(args []string) error {
 	if *histPath == "" {
 		return fmt.Errorf("--history is required: insight reads the file `check --history` writes")
 	}
-	if !*forecast && !*anomaly && !*recovery && *slo == 0 {
-		return fmt.Errorf("nothing to do: pass --forecast, --anomaly, --recovery or --slo")
+	if !*forecast && !*anomaly && !*recovery && !*score && *slo == 0 {
+		return fmt.Errorf("nothing to do: pass --forecast, --anomaly, --recovery, --score or --slo")
 	}
 	if *slo != 0 && (*slo <= 0 || *slo >= 1) {
 		return fmt.Errorf("--slo must be between 0 and 1 exclusive, e.g. 0.999 for three nines")
@@ -65,6 +68,11 @@ func runInsight(args []string) error {
 		aRows = anomalyRows(records, *zScore)
 		doc["anomalies"] = aRows
 	}
+	var sDoc *scoreDoc
+	if *score {
+		sDoc = scoreOf(records, *flapChanges)
+		doc["score"] = sDoc
+	}
 	var rRows []recoveryRow
 	if *recovery {
 		rRows = recoveryRows(records, time.Now())
@@ -89,14 +97,20 @@ func runInsight(args []string) error {
 		}
 		printAnomalies(aRows, *zScore, len(records))
 	}
-	if *recovery {
+	if *score {
 		if *forecast || *anomaly {
+			fmt.Println()
+		}
+		printScore(sDoc)
+	}
+	if *recovery {
+		if *forecast || *anomaly || *score {
 			fmt.Println()
 		}
 		printRecovery(rRows, len(records))
 	}
 	if *slo != 0 {
-		if *forecast || *anomaly || *recovery {
+		if *forecast || *anomaly || *recovery || *score {
 			fmt.Println()
 		}
 		printBudgets(bRows, *slo, len(records))
@@ -328,5 +342,59 @@ func printForecasts(rows []forecastRow, threshold float64, runs int) {
 			continue
 		}
 		fmt.Printf("  %s\n", r.Note)
+	}
+}
+
+// scoreDoc is the fleet index plus where it points.
+type scoreDoc struct {
+	Value    float64            `json:"value"`
+	Findings int                `json:"findings"`
+	Unstable int                `json:"unstable_targets"`
+	Modules  map[string]float64 `json:"modules"`
+	Worst    []string           `json:"worst_modules"`
+}
+
+// scoreOf reconstructs the newest run's findings from the history and scores
+// them, penalising targets that flapped across the whole window.
+func scoreOf(records []history.Record, flapChanges int) *scoreDoc {
+	latest := records[len(records)-1]
+	findings := make([]engine.Finding, 0, len(latest.Entries))
+	for _, e := range latest.Entries {
+		findings = append(findings, engine.Finding{
+			Check: e.Check, Target: e.Target, Status: engine.Status(e.Status),
+		})
+	}
+	unstable := insight.UnstableKeys(insight.StatusSeriesFrom(records), flapChanges)
+	fleet := insight.FleetScore(findings, unstable)
+	mods := insight.ModuleScores(findings, unstable)
+
+	d := &scoreDoc{
+		Value: fleet.Value, Findings: fleet.Findings, Unstable: fleet.Unstable,
+		Modules: make(map[string]float64, len(mods)),
+	}
+	for name, s := range mods {
+		d.Modules[name] = s.Value
+	}
+	for _, name := range insight.SortedModules(mods) {
+		if mods[name].Value < 100 {
+			d.Worst = append(d.Worst, name)
+		}
+	}
+	return d
+}
+
+func printScore(d *scoreDoc) {
+	fmt.Printf("Fleet health: %.1f/100 over %d finding(s)", d.Value, d.Findings)
+	if d.Unstable > 0 {
+		fmt.Printf(", %d unstable target(s)", d.Unstable)
+	}
+	fmt.Println()
+	if len(d.Worst) == 0 {
+		fmt.Println("  every module is clean.")
+		return
+	}
+	fmt.Println()
+	for _, name := range d.Worst {
+		fmt.Printf("  %-14s %5.1f\n", name, d.Modules[name])
 	}
 }

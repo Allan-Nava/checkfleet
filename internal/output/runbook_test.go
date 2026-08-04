@@ -113,3 +113,16 @@ func TestMarkdownOmitsTheSectionWithoutAPattern(t *testing.T) {
 		t.Error("a handful of unrelated problems must not grow a correlation section")
 	}
 }
+
+func TestMarkdownCarriesTheFleetScore(t *testing.T) {
+	clean := Markdown(engine.Result{Findings: []engine.Finding{
+		{Check: "http", Target: "a", Status: engine.OK, Message: "m"},
+	}}, "test")
+	if !strings.Contains(clean, "**Fleet health: 100.0/100**") {
+		t.Errorf("an all-green run should score 100:\n%s", clean)
+	}
+	broken := Markdown(clusteredResult(), "test")
+	if strings.Contains(broken, "100.0/100") {
+		t.Error("a run with three BAD findings must not score 100")
+	}
+}

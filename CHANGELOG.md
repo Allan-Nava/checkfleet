@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.12.0
+
+- **Fleet health score (CF-127, M30).** Un indice **0–100** per la flotta, con il breakdown per modulo che gli dà un posto dove puntare:
+
+  ```
+  $ checkfleet insight --history runs.jsonl --score
+  Fleet health: 50.0/100 over 2 finding(s), 1 unstable target(s)
+    http            50.0
+  ```
+
+  E una riga nel report markdown (`**Fleet health: 92.4/100**`), lì status-only: il renderer non ha la history, quindi il sovrapprezzo per instabilità resta un mestiere di `insight --score`.
+
+  **I pesi sono esportati e documentati** (`StatusWeights`, `InstabilityWeight`): un punteggio la cui aritmetica è nascosta è un numero di cui nessuno si fida due volte, e a quel punto tanto valeva non averlo.
+
+  Tre scelte che decidono se l'indice serve. **`ERROR` costa un po' meno di `BAD`** (4 contro 5): "non sono riuscito a misurare" è una brutta notizia sulla sonda e solo *forse* sul target, e pagarli uguale farebbe sembrare un blip di rete durante una run identico a un outage. **Un target che flappa paga un sovrapprezzo** oltre al suo stato: oscillare è peggio di un BAD stabile già triagiato, perché sveglia gente ripetutamente e nasconde le transizioni vere nel rumore. E il punteggio è **normalizzato sul peggio possibile per quella flotta**, quindi due flotte di dimensioni diverse con la stessa proporzione di guasti danno lo stesso numero — un indice che deriva col numero di target non si può guardare nel tempo, che è l'unica ragione per averne uno.
+
+
 ## 1.11.0
 
 - **MTTR e durata dell'outage in corso (CF-126, M30).** `checkfleet insight --recovery` misura le risalite:
