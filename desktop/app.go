@@ -114,6 +114,9 @@ func (a *App) RunChecks(configPath, stack string) Report {
 		Backoff: time.Duration(cfg.RetryBackoffMS) * time.Millisecond,
 	}, cfg.MaxConcurrency)
 	res.Labels = cfg.Labels
+	// Operator hints for the detail drawer (CF-124): same config rules the CLI
+	// reads, so a finding says the same "what to do" in both.
+	res.Findings = engine.ApplyRunbooks(res.Findings, cfg.Runbooks)
 
 	a.mu.Lock()
 	a.last = res

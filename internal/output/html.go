@@ -63,11 +63,33 @@ func HTML(res engine.Result, title string) string {
 func writeTable(b *strings.Builder, findings []engine.Finding) {
 	b.WriteString("<table><thead><tr><th>Status</th><th>Check</th><th>Target</th><th>Message</th></tr></thead><tbody>\n")
 	for _, f := range findings {
-		fmt.Fprintf(b, "<tr><td><span class=\"badge s-%s\">%s</span></td><td class=\"mono\">%s</td><td class=\"mono\">%s</td><td>%s</td></tr>\n",
+		fmt.Fprintf(b, "<tr><td><span class=\"badge s-%s\">%s</span></td><td class=\"mono\">%s</td><td class=\"mono\">%s</td><td>%s%s</td></tr>\n",
 			f.Status, f.Status,
-			html.EscapeString(f.Check), html.EscapeString(f.Target), html.EscapeString(f.Message))
+			html.EscapeString(f.Check), html.EscapeString(f.Target), html.EscapeString(f.Message), hintHTML(f))
 	}
 	b.WriteString("</tbody></table>\n")
+}
+
+// hintHTML renders a finding's operator hints (CF-124) as a second line inside
+// the message cell. The runbook becomes a link only when it is http(s): this
+// report gets pasted into incident docs, so a "javascript:" URL from a config
+// must render as inert text, not as a clickable escalation.
+func hintHTML(f engine.Finding) string {
+	var parts []string
+	if f.Remediation != "" {
+		parts = append(parts, html.EscapeString(f.Remediation))
+	}
+	if u := f.Runbook; u != "" {
+		if strings.HasPrefix(u, "https://") || strings.HasPrefix(u, "http://") {
+			parts = append(parts, fmt.Sprintf("<a href=\"%s\">runbook</a>", html.EscapeString(u)))
+		} else {
+			parts = append(parts, html.EscapeString(u))
+		}
+	}
+	if len(parts) == 0 {
+		return ""
+	}
+	return "<div class=\"hint\">↳ " + strings.Join(parts, " — ") + "</div>"
 }
 
 const htmlCSS = `
@@ -91,5 +113,6 @@ th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05
 .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}
 .badge{font-weight:700;font-size:12px}
 .ok-note{color:var(--ok)}
+.hint{margin-top:4px;font-size:12.5px;color:var(--muted)}.hint a{color:var(--brand)}
 @media (prefers-color-scheme:light){:root{--bg:#fff;--surface:#f4f7fb;--border:rgba(15,23,42,.1);--text:#33415c;--muted:#64748b;--heading:#0f172a;--brand:#059669;--ok:#059669;--warn:#b45309;--bad:#dc2626;--err:#7c3aed}}
 `

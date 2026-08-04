@@ -18,6 +18,7 @@ func runWatch(jobs []engine.Job, cfg *engine.Config, filter engine.FilterOptions
 		res := engine.RunJobsLimited(context.Background(), jobs, limit)
 		res.Labels = cfg.Labels
 		res.Findings = engine.ApplyMaintenance(res.Findings, cfg.Maintenance, time.Now())
+		res.Findings = engine.ApplyRunbooks(res.Findings, cfg.Runbooks)
 		res.Findings = engine.Filter(res.Findings, filter)
 		fmt.Print(watchFrame(res, time.Now(), interval, color))
 		time.Sleep(interval)

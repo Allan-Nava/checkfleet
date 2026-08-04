@@ -1141,6 +1141,7 @@
       <div class="kv"><span>Target</span><b class="mono">${escapeHtml(f.target)}</b></div>
       ${metricRow}
       <p class="drawer-msg">${escapeHtml(f.message)}</p>
+      ${CFRunbook.block(f)}
       ${muteBlock}
       ${issueBlock}
       ${noteBlock}
@@ -1480,6 +1481,10 @@
         closeDrawer();
         return;
       }
+      // open the finding's runbook in the system browser (CF-124). Only http(s)
+      // URLs get this attribute — see CFRunbook.block.
+      const rb = e.target.closest("[data-runbook]");
+      if (rb) { e.preventDefault(); Backend.OpenURL(rb.dataset.runbook); return; }
       // open a tracker issue (CF-113)
       const iss = e.target.closest("[data-issue]");
       if (iss && drawerFinding) { openIssueFor(drawerFinding, iss.dataset.issue); closeDrawer(); return; }

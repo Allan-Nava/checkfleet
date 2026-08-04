@@ -28,6 +28,36 @@ var statusColor = map[engine.Status]string{
 	engine.ERROR: "\x1b[35m", // magenta
 }
 
+// hintLine renders a finding's operator hints (CF-124) as one plain line, or ""
+// when it carries none. Only findings above OK ever carry them.
+func hintLine(f engine.Finding) string {
+	switch {
+	case f.Remediation != "" && f.Runbook != "":
+		return f.Remediation + " — " + f.Runbook
+	case f.Remediation != "":
+		return f.Remediation
+	default:
+		return f.Runbook
+	}
+}
+
+// hintCell renders the hints for a markdown table cell: the note as text and the
+// runbook as a link, on a second line inside the same cell so the four-column
+// shape of the table (a documented surface) is unchanged.
+func hintCell(f engine.Finding) string {
+	var parts []string
+	if f.Remediation != "" {
+		parts = append(parts, f.Remediation)
+	}
+	if f.Runbook != "" {
+		parts = append(parts, "[runbook]("+f.Runbook+")")
+	}
+	if len(parts) == 0 {
+		return ""
+	}
+	return "<br>↳ " + strings.Join(parts, " — ")
+}
+
 func summaryLine(res engine.Result) string {
 	s := engine.Summarize(res.Findings)
 	return fmt.Sprintf("%d checks: %d OK, %d WARN, %d BAD, %d ERROR (in %s)",
@@ -51,6 +81,9 @@ func textRender(res engine.Result, color bool) string {
 			status = statusColor[f.Status] + status + ansiReset
 		}
 		fmt.Fprintf(&b, "%s %s %-8s %-45s %s\n", statusIcon[f.Status], status, f.Check, f.Target, f.Message)
+		if h := hintLine(f); h != "" {
+			fmt.Fprintf(&b, "        ↳ %s\n", h)
+		}
 	}
 	fmt.Fprintf(&b, "\n%s\n", summaryLine(res))
 	return b.String()
@@ -75,7 +108,10 @@ func Markdown(res engine.Result, title string) string {
 	} else {
 		fmt.Fprintf(&b, "| Status | Check | Target | Detail |\n|---|---|---|---|\n")
 		for _, f := range problems {
-			fmt.Fprintf(&b, "| %s %s | %s | `%s` | %s |\n", statusIcon[f.Status], f.Status, f.Check, f.Target, f.Message)
+			// The hints ride in the Detail cell of this section only: it is the
+			// actionable one, and the full table below stays a plain inventory.
+			fmt.Fprintf(&b, "| %s %s | %s | `%s` | %s%s |\n",
+				statusIcon[f.Status], f.Status, f.Check, f.Target, f.Message, hintCell(f))
 		}
 		fmt.Fprintf(&b, "\n")
 	}

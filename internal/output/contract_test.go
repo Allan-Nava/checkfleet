@@ -22,7 +22,8 @@ func contractResult() engine.Result {
 	return engine.Result{
 		Findings: []engine.Finding{
 			{Check: "http", Target: "https://a.example", Status: engine.OK, Message: "200 in 12ms", Value: &v, Unit: "ms"},
-			{Check: "certs", Target: "b.example:443", Status: engine.BAD, Message: "expires in 2 days"},
+			{Check: "certs", Target: "b.example:443", Status: engine.BAD, Message: "expires in 2 days",
+				Runbook: "https://wiki.example/tls", Remediation: "Renew and reload"},
 		},
 		Started:  time.Unix(1700000000, 0).UTC(),
 		Duration: 1500 * time.Millisecond,
@@ -71,13 +72,14 @@ func TestJSONFindingKeys(t *testing.T) {
 	if len(doc.Findings) != 2 {
 		t.Fatalf("want 2 findings, got %d", len(doc.Findings))
 	}
-	// The first finding carries the optional metric, the second does not: value
-	// and unit are omitempty and must stay that way (absent, not null).
+	// Every optional field is omitempty and must stay that way (absent, not
+	// null): the first finding carries the metric and no hints, the second the
+	// operator hints and no metric.
 	if got, want := strings.Join(objectKeys(t, doc.Findings[0]), ","), "check,message,status,target,unit,value"; got != want {
-		t.Errorf("finding keys = %q, want %q — see %s", got, want, docPath)
+		t.Errorf("finding with metric = %q, want %q (runbook/remediation must be omitted) — see %s", got, want, docPath)
 	}
-	if got, want := strings.Join(objectKeys(t, doc.Findings[1]), ","), "check,message,status,target"; got != want {
-		t.Errorf("finding without metric = %q, want %q (value/unit must be omitted, not null)", got, want)
+	if got, want := strings.Join(objectKeys(t, doc.Findings[1]), ","), "check,message,remediation,runbook,status,target"; got != want {
+		t.Errorf("finding with hints = %q, want %q (value/unit must be omitted, not null)", got, want)
 	}
 }
 
@@ -136,6 +138,22 @@ func TestFormatsAreDocumented(t *testing.T) {
 	for _, key := range objectKeys(t, []byte(out)) {
 		if !strings.Contains(doc, "`"+key+"`") {
 			t.Errorf("JSON key %q is not documented in %s", key, docPath)
+		}
+	}
+	// Finding keys too: they are nested, so iterating only the top level let a
+	// new per-finding field land undocumented — which is exactly what this gate
+	// exists to stop.
+	var doc2 struct {
+		Findings []json.RawMessage `json:"findings"`
+	}
+	if err := json.Unmarshal([]byte(out), &doc2); err != nil {
+		t.Fatal(err)
+	}
+	for _, f := range doc2.Findings {
+		for _, key := range objectKeys(t, f) {
+			if !strings.Contains(doc, "`"+key+"`") {
+				t.Errorf("finding key %q is not documented in %s", key, docPath)
+			}
 		}
 	}
 	for _, name := range append(metricNames(Prometheus(contractResult())), metricNames(SelfMetrics(contractResult()))...) {

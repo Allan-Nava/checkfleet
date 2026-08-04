@@ -37,13 +37,20 @@ func AtLeast(s, threshold Status) bool {
 // days-to-expiry, replication lag in seconds) may attach it so the GUI can plot
 // the metric over time (CF-91). They stay nil/"" for modules that don't, and
 // the output renderers ignore them, so this is backward-compatible.
+// Runbook/Remediation are optional operator hints — the procedure URL and a
+// short "what to do" note — attached after the run by ApplyRunbooks from the
+// config (CF-124). Modules never set them: they are operational text from the
+// operator's own config, never credentials. Renderers that don't know about
+// them ignore them, so this stays backward-compatible.
 type Finding struct {
-	Check   string   `json:"check"`
-	Target  string   `json:"target"`
-	Status  Status   `json:"status"`
-	Message string   `json:"message"`
-	Value   *float64 `json:"value,omitempty"`
-	Unit    string   `json:"unit,omitempty"`
+	Check       string   `json:"check"`
+	Target      string   `json:"target"`
+	Status      Status   `json:"status"`
+	Message     string   `json:"message"`
+	Value       *float64 `json:"value,omitempty"`
+	Unit        string   `json:"unit,omitempty"`
+	Runbook     string   `json:"runbook,omitempty"`
+	Remediation string   `json:"remediation,omitempty"`
 }
 
 // Num returns a pointer to v, for setting Finding.Value inline.

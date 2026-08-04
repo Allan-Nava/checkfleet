@@ -11,6 +11,18 @@ labels:
   env: prod
   region: eu
 
+# What to do when a finding is not OK: a procedure URL and a short note, matched
+# by check/target glob and carried into every output and the desktop drawer.
+# First non-empty value wins per field, so a specific rule and the catch-all can
+# each contribute. Operational text only — never a credential.
+runbooks:
+  - check: certs
+    runbook: https://wiki.example.com/runbooks/tls-renewal
+    remediation: Renew with certbot, then reload haproxy
+  - check: postgres
+    target: "db-*"
+    remediation: Check replication lag before failing over
+
 # Per-module overrides of the tuning above (a zero field falls back to the global).
 module_overrides:
   postgres: {timeout_seconds: 10, retries: 2}   # DB checks: shorter deadline, retry transients

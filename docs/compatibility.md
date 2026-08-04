@@ -96,6 +96,12 @@ And within a finding:
 | `message` | string | human-readable detail — **not** stable text, see below |
 | `value` | number | optional scalar metric, omitted when the check has none |
 | `unit` | string | unit of `value` (`ms`, `s`, `days`, `bytes`, …), omitted with it |
+| `runbook` | string | optional procedure URL from the `runbooks:` config, omitted when no rule matches |
+| `remediation` | string | optional short "what to do" note from the same rules, omitted with it |
+
+`runbook` and `remediation` are attached only to findings above `OK` — there is
+nothing to do about a green result — so a consumer must treat them as absent on
+any finding, not only on unconfigured ones.
 
 `message` is stable as a *field*, not as *text*. Finding messages get clearer
 between releases; matching on their wording is the thing this page cannot

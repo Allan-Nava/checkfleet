@@ -659,6 +659,13 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 6px; border-radius
 .mute-block { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
 .mute-label { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
 
+/* runbook hints (CF-124) — "what to do", from the runbooks: config rules */
+.hint-block { display: flex; flex-direction: column; gap: 4px; margin: 14px 0;
+  padding: 10px 12px; border-radius: var(--r-md); background: var(--surface);
+  border: 1px solid var(--border); border-left: 3px solid var(--brand-2); }
+.hint-text { margin: 0; font-size: var(--fs-sm); color: var(--text); }
+.runbook-link { color: var(--brand-2); }
+
 /* operator notes (CF-112) */
 .chip-note { margin-left: 8px; color: var(--brand-2); background: color-mix(in srgb, var(--brand-2) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--brand-2) 26%, transparent); }

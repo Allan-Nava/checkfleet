@@ -627,3 +627,46 @@ maintenance:
     weekdays: [Sat, Sun]
     action: warn
 ```
+
+## Runbooks and remediation hints
+
+A finding tells you *what* is wrong. `runbooks:` attaches *what to do about it*:
+a procedure URL and a short note, carried into the outputs so whoever is on call
+does not have to go and find the wiki page.
+
+Rules match like maintenance windows — `check` and `target` globs, empty meaning
+all — and are read in order.
+
+```yaml
+runbooks:
+  - check: certs
+    runbook: https://wiki.example.com/runbooks/tls-renewal
+    remediation: Renew with certbot, then reload haproxy
+  - check: postgres
+    target: "db-*"
+    remediation: Check replication lag before failing over
+  - runbook: https://wiki.example.com/runbooks/oncall   # catch-all
+```
+
+The first non-empty value wins **per field**, so a specific rule can supply the
+runbook while a catch-all below it still supplies the remediation — as in the
+example above, where a `certs` finding gets both from the first rule but a
+`redis` finding gets only the catch-all URL.
+
+Hints are attached only to findings above `OK`: there is nothing to do about a
+green result, and repeating the URL on every healthy target is noise.
+
+Where they show up:
+
+| Output | How |
+|---|---|
+| `text` | an indented `↳ note — url` line under the finding |
+| `markdown` | a second line in the Detail cell of **Needs attention**, runbook as a link |
+| `json` | the `runbook` and `remediation` fields, omitted when unset |
+| `html` | a muted line under the message, runbook as a link |
+| desktop | a **What to do** block in the finding detail drawer |
+
+> **No secrets.** This is operational text that travels into every output,
+> including the ones that leave the host (Slack, webhooks, issue trackers). Put
+> a URL and a sentence here — never a token, a password or an internal
+> credential path.

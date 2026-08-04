@@ -25,6 +25,10 @@ type Config struct {
 	// downgraded so scheduled work doesn't page. See ApplyMaintenance.
 	Maintenance []MaintenanceWindow `yaml:"maintenance"`
 
+	// Runbooks attach operator hints (a procedure URL, a short remediation note)
+	// to the findings that need attention. See ApplyRunbooks.
+	Runbooks []RunbookRule `yaml:"runbooks"`
+
 	// Per-module overrides of timeout/retries, keyed by module name. A field left
 	// zero falls back to the global setting above. See registry.Jobs.
 	ModuleOverrides map[string]ModuleOverride `yaml:"module_overrides"`
@@ -35,6 +39,21 @@ type ModuleOverride struct {
 	TimeoutSeconds int `yaml:"timeout_seconds"`
 	Retries        int `yaml:"retries"`
 	RetryBackoffMS int `yaml:"retry_backoff_ms"`
+}
+
+// RunbookRule attaches a runbook URL and/or a remediation note to the findings
+// it matches (CF-124). Matching mirrors MaintenanceWindow: globs on check and
+// target, empty meaning "all". Rules are read in order and the first non-empty
+// value wins per field, so a specific rule listed before a catch-all can supply
+// the runbook while the catch-all still supplies the remediation.
+//
+// Operational text only — a URL and a short note. Never put a credential here:
+// it is carried into every output, including the ones that leave the host.
+type RunbookRule struct {
+	Check       string `yaml:"check"`       // glob on the check name; "" = all
+	Target      string `yaml:"target"`      // glob on the target; "" = all
+	Runbook     string `yaml:"runbook"`     // URL of the procedure to follow
+	Remediation string `yaml:"remediation"` // short "what to do" note
 }
 
 // MaintenanceWindow suppresses (or downgrades) findings during a time range.

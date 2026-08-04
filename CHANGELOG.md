@@ -1,5 +1,35 @@
 # Changelog
 
+## 1.1.0
+
+- **Runbook e remediation hint sui finding (CF-124, M30 — insight & intelligence).** Un finding dice *cosa* è rotto; da ora la config può dire anche *cosa farci*. La nuova chiave `runbooks:` è una lista di regole che matchano come le finestre di manutenzione — glob su `check` e `target`, vuoto = tutti — e attaccano al finding un `runbook` (URL della procedura) e una `remediation` (nota breve). Chi è di turno legge il BAD e ha già il link, invece di andare a cercare la pagina del wiki.
+
+  ```yaml
+  runbooks:
+    - check: certs
+      runbook: https://wiki.example.com/runbooks/tls-renewal
+      remediation: Renew with certbot, then reload haproxy
+    - check: postgres
+      target: "db-*"
+      remediation: Check replication lag before failing over
+  ```
+
+  **Il primo valore non vuoto vince per campo, non per regola**: una regola specifica può fornire il runbook e una catch-all sotto di lei riempire la remediation che la prima lascia vuota. È la differenza che rende utile una catch-all invece di costringere a ripetere l'URL su ogni modulo.
+
+  **Solo sui finding sopra `OK`**: su un risultato verde non c'è niente da fare, e ripetere l'URL su ogni target sano è rumore in ogni output — in una flotta grande è la maggior parte delle righe. Un consumatore deve quindi trattare i due campi come assenti su qualunque finding, non solo su quelli non configurati; scritto in `docs/compatibility.md`.
+
+  Dove si vedono: riga indentata `↳ nota — url` in **text**; seconda riga nella cella Detail di *Needs attention* in **markdown**, con il runbook come link; campi `runbook`/`remediation` in **json** (omessi quando assenti); riga smorzata sotto il messaggio in **html**; blocco **What to do** nel detail drawer del **desktop**, che apre l'URL nel browser di sistema. La tabella markdown resta a quattro colonne — la sua forma è una superficie documentata, quindi l'hint viaggia dentro la cella esistente invece di aggiungerne una.
+
+  Il campo JSON è additivo e `omitempty`, quindi **nessun bump di `schema`**: il contratto dice esplicitamente che aggiungere un campo non lo merita. Applicato in `check`, `serve`, `watch` e nel desktop, sempre subito dopo `ApplyMaintenance`, così un finding dice la stessa cosa ovunque.
+
+  **Sicurezza.** L'URL arriva dalla config dell'operatore ma finisce dentro un `href` nel report HTML e nel drawer, e quel report si incolla nei doc d'incidente: solo `http(s)` diventa cliccabile, qualunque altra cosa (`javascript:` in testa) viene resa come testo inerte. Testato in entrambi i renderer, insieme all'escaping di virgolette nell'attributo. E una nota in evidenza in `docs/configuration.md`: qui va testo operativo, mai una credenziale — questi campi viaggiano in ogni output, compresi quelli che escono dall'host (Slack, webhook, issue tracker).
+
+  **Difetto trovato scrivendo i test**: `TestFormatsAreDocumented`, il gate anti-divergenza che impedisce a un formato di cambiare senza aggiornare il contratto, iterava **solo le chiavi top-level** del JSON. Le chiavi *dentro un finding* sono annidate, quindi un campo nuovo per-finding poteva atterrare non documentato — esattamente ciò che quel test esiste per fermare, e `value`/`unit` erano passati di lì. Ora controlla anche quelle.
+
+  Test: sei sull'`ApplyRunbooks` puro (match per check/target, `OK` saltati, primo-non-vuoto per campo, regola inerte, input non mutato), cinque sui renderer, sei headless sul modulo desktop `runbook.js`, più il contratto aggiornato con un finding che porta gli hint e uno che porta la metrica — così l'`omitempty` di entrambe le coppie resta verificato.
+
+- **CF-120 chiuso come già fatto.** Rileggendo il backlog contro il codice: la *flapping detection* che M30 pianificava era già stata consegnata da **CF-32** (`history.Flaps()`, `--flap-changes`/`--flap-window`, finding `flap` WARN, testato) quando chiudeva M8. M30 l'aveva ripianificata da zero. Resta scoperto solo ciò che CF-32 non prometteva — un punteggio di flappiness invece del conteggio secco, e il badge nel desktop — annotato nel backlog come tale invece di restare un item aperto che sembra intero.
+
 ## 1.0.0
 
 - **1.0.0.** `v1.0.0-rc.1` è promossa a stabile senza modifiche: dall'rc non è cambiata nessuna delle sette superfici del contratto di compatibilità, quindi non c'è un rc.2 da fare prima. Da qui in poi vale ciò che `docs/compatibility.md` promette — schema della config, chiavi JSON, nomi delle metriche Prometheus, exit code, identità dei finding, ordinamento worst-first e formato dei file di history/baseline non cambiano significato dentro la 1.x, e una rimozione passa per la deprecation policy.
