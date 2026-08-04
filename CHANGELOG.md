@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.8.0
+
+- **Anomaly detection: deviazione dalla propria normalità (CF-122, M30).** `checkfleet insight --anomaly` confronta l'ultimo campione di ogni metrica con la **sua** baseline recente, non con una soglia statica. È la differenza fra "90ms sotto il limite di 500ms, tutto bene" e "90ms su un target che sta a 30ms da una settimana, guardaci".
+
+  ```
+  $ checkfleet insight --history runs.jsonl --anomaly
+  http   https://a.example    95.00ms  3.2x its norm of 30.15ms (z=+48.0)
+  redis  cache-01            100.00MB  normal (baseline 100.15MB)
+  ```
+
+  Baseline **EWMA** (α 0.3) con varianza incrementale, così il comportamento recente pesa più di quello del mese scorso, e il tutto resta zero-dep — media e varianza a mano in una decina di righe. Soglia configurabile con `--z` (default 3), e la deviazione è **segnata**: un crollo del throughput vale quanto uno spike della latenza, e il test lo verifica.
+
+  **Tre modi in cui questa feature produce rumore, chiusi.** Sotto **sette** campioni non c'è baseline: con due letture "la norma" non esiste e una lettura su tre sembra anomala. Una metrica **perfettamente ferma** ha deviazione zero, quindi lo z-score sarebbe infinito: invece di dividere per zero e dichiarare ogni movimento infinitamente anomalo, quel caso resta a Z finito e il segnale utilizzabile diventa il **rapporto** (`1.8x la norma`), che è anche la formulazione più leggibile delle due. E ogni riga senza verdetto dice perché.
+
+  `--forecast` e `--anomaly` si combinano nella stessa invocazione, e in `--output json` finiscono in due array distinti.
+
+
 ## 1.7.0
 
 - **`internal/insight` e il forecast ETA-to-threshold (CF-121, M30).** Nasce il package che M30 aspettava: funzioni pure sopra la history, zero-dep, statistica scritta a mano — il punto della regola zero-dep è che un binario di monitoring che giri ovunque non si porti dietro uno stack numerico per due regressioni. Ci sono `SeriesFrom`/`StatusSeriesFrom` (raggruppano i record per `check`+`target`, ordinano i punti, ignorano i finding senza metrica) e la prima analisi.

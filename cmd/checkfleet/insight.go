@@ -23,6 +23,8 @@ func runInsight(args []string) error {
 	window := fs.Int("window", 60, "how many recent runs to analyse")
 	threshold := fs.Float64("threshold", 0, "forecast: value to project a crossing of (required for --forecast)")
 	forecast := fs.Bool("forecast", false, "project when each metric crosses --threshold")
+	anomaly := fs.Bool("anomaly", false, "flag metrics deviating from their own recent baseline")
+	zScore := fs.Float64("z", 3, "anomaly: deviations from the baseline before a metric is flagged")
 	minR2 := fs.Float64("min-r2", 0.7, "forecast: suppress projections whose fit is weaker than this")
 	output := fs.String("output", "text", "text|json")
 	if err := fs.Parse(args); err != nil {
@@ -31,10 +33,10 @@ func runInsight(args []string) error {
 	if *histPath == "" {
 		return fmt.Errorf("--history is required: insight reads the file `check --history` writes")
 	}
-	if !*forecast {
-		return fmt.Errorf("nothing to do: pass --forecast (more analyses land with M30)")
+	if !*forecast && !*anomaly {
+		return fmt.Errorf("nothing to do: pass --forecast or --anomaly")
 	}
-	if *threshold == 0 {
+	if *forecast && *threshold == 0 {
 		return fmt.Errorf("--forecast needs --threshold: there is no crossing without a value to cross")
 	}
 
@@ -46,14 +48,86 @@ func runInsight(args []string) error {
 		return fmt.Errorf("no history in %s — run `check --history %s` first", *histPath, *histPath)
 	}
 
-	rows := forecastRows(records, *threshold, *minR2, time.Now())
+	doc := map[string]any{"runs": len(records)}
+	var fRows []forecastRow
+	var aRows []anomalyRow
+	if *forecast {
+		fRows = forecastRows(records, *threshold, *minR2, time.Now())
+		doc["forecasts"] = fRows
+	}
+	if *anomaly {
+		aRows = anomalyRows(records, *zScore)
+		doc["anomalies"] = aRows
+	}
 	if *output == "json" {
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
-		return enc.Encode(map[string]any{"forecasts": rows, "runs": len(records)})
+		return enc.Encode(doc)
 	}
-	printForecasts(rows, *threshold, len(records))
+	if *forecast {
+		printForecasts(fRows, *threshold, len(records))
+	}
+	if *anomaly {
+		if *forecast {
+			fmt.Println()
+		}
+		printAnomalies(aRows, *zScore, len(records))
+	}
 	return nil
+}
+
+// anomalyRow is one metric measured against its own recent normal.
+type anomalyRow struct {
+	Check     string  `json:"check"`
+	Target    string  `json:"target"`
+	Unit      string  `json:"unit,omitempty"`
+	Latest    float64 `json:"latest"`
+	Baseline  float64 `json:"baseline"`
+	Deviation float64 `json:"deviation"`
+	Z         float64 `json:"z"`
+	Ratio     float64 `json:"ratio,omitempty"`
+	Deviating bool    `json:"deviating"`
+	Samples   int     `json:"samples"`
+	Note      string  `json:"note,omitempty"`
+}
+
+func anomalyRows(records []history.Record, z float64) []anomalyRow {
+	var out []anomalyRow
+	for _, s := range insight.SeriesFrom(records) {
+		a, dev := insight.Deviating(s, z)
+		row := anomalyRow{
+			Check: s.Check, Target: s.Target, Unit: s.Unit,
+			Latest: a.Latest, Baseline: a.Baseline, Deviation: a.Deviation,
+			Z: a.Z, Ratio: a.Ratio, Deviating: dev, Samples: a.Samples,
+		}
+		if a.Samples < insight.MinAnomalySamples {
+			row.Latest = s.Points[len(s.Points)-1].Value
+			row.Note = "not enough history for a baseline"
+		}
+		out = append(out, row)
+	}
+	return out
+}
+
+func printAnomalies(rows []anomalyRow, z float64, runs int) {
+	if len(rows) == 0 {
+		fmt.Printf("No metric series in the last %d run(s).\n", runs)
+		return
+	}
+	fmt.Printf("Deviation from each metric's own baseline (z >= %g), over %d run(s):\n\n", z, runs)
+	for _, r := range rows {
+		fmt.Printf("  %-10s %-38s %8.2f%s", r.Check, r.Target, r.Latest, r.Unit)
+		switch {
+		case r.Note != "":
+			fmt.Printf("  %s\n", r.Note)
+		case r.Deviating && r.Ratio > 0:
+			fmt.Printf("  %.1fx its norm of %.2f%s (z=%+.1f)\n", r.Ratio, r.Baseline, r.Unit, r.Z)
+		case r.Deviating:
+			fmt.Printf("  off its norm of %.2f%s (z=%+.1f)\n", r.Baseline, r.Unit, r.Z)
+		default:
+			fmt.Printf("  normal (baseline %.2f%s)\n", r.Baseline, r.Unit)
+		}
+	}
 }
 
 // forecastRow is one metric's projection, shaped for both renderers.

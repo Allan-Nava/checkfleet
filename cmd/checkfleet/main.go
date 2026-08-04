@@ -103,7 +103,7 @@ func usage() {
   checkfleet targets --config checkfleet.yml [--output text|json] [--against hosts.ini [--group web]] [--module certs]   # what is covered
   checkfleet explain [module]                                                 # what a module checks and its thresholds
   checkfleet completion <bash|zsh|fish>                                        # print a shell completion script
-  checkfleet insight --history F --forecast --threshold 90 [--window 60] [--min-r2 0.7] [--output text|json]   # project when a metric crosses
+  checkfleet insight --history F [--forecast --threshold 90 [--min-r2 0.7]] [--anomaly [--z 3]] [--window 60] [--output text|json]   # what the history implies
   checkfleet skill <install|print> [--dir PATH]                                # install the agent skill shipped in this binary
   checkfleet version`)
 }
