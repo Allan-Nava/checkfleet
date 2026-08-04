@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.4.0
+
+- **Reference della skill generati dal codice (CF-150, M34).** I due file che `SKILL.md` carica on-demand — `references/modules.md` (29 moduli, cosa rileva ciascuno) e `references/config-schema.md` (chiavi, tipi, default) — ora li scrive `go run ./cmd/gen-skill` invece di una mano umana. La ragione è concreta e già successa in questo repo: **l'intro di `docs/modules.md` è rimasta ferma a 18 moduli mentre il registry ne aveva 29**. Una copia mantenuta a mano diverge alla prima release, e lo schema della config è esattamente la parte su cui un assistente inventa di più.
+
+  Le sorgenti sono quelle che usa già il binario in produzione: `internal/registry` per l'elenco dei moduli (lo stesso su cui `check` fa dispatch) e `internal/moduledoc` per le descrizioni (le stesse che stampano `checkfleet explain`, le rule SARIF e il desktop).
+
+  **I default non sono letti dai commenti.** Il generatore carica via `engine.LoadBytes` una config che abilita ogni modulo — il che fa applicare i default veri — e poi riflette sul risultato. Quindi `timeout_seconds: 30`, `warn_days: 30`, `crit_days: 7`, `port: 443` nella tabella *sono* i valori che il codice applica, e un default che cambia cambia qui senza che nessuno se lo ricordi. Un test blocca proprio quelle quattro righe: se `applyDefaults` cambia, lo si scopre lì.
+
+  Aggiunta una sezione **Referenced types** che espande `PostgresTarget`, `HTTPTarget` e gli altri: lasciare `CertsTarget` come token opaco è precisamente ciò che porta un assistente a inventarsi i nomi dei campi.
+
+  Sette test: determinismo (cinque giri per file — l'ordine d'iterazione delle mappe è il modo tipico in cui si rompe, e romperlo farebbe fallire il gate CI di CF-152 a ogni run senza motivo), copertura di **ogni** modulo del registry in entrambi i file, ogni modulo ha una descrizione, i default reali, l'espansione dei tipi target, nessun segreto, e che la config di partenza abiliti davvero tutti i moduli invece di saltarne in silenzio.
+
+  `go run ./cmd/gen-skill -check` esce non-zero se i file su disco sono stale — è l'aggancio per il gate di CI.
+
 ## 1.3.0
 
 - **Skill `checkfleet` per gli assistenti agentici (CF-149, M34).** Sorgente in `skills/checkfleet/SKILL.md`, versionata col codice e installata **globalmente** dall'utente — non repo-local: checkfleet si usa *dagli altri* repo e dagli host, mentre qui dentro c'è già `CLAUDE.md` che copre lo sviluppo.
