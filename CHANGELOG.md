@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.3.0
+
+- **Skill `checkfleet` per gli assistenti agentici (CF-149, M34).** Sorgente in `skills/checkfleet/SKILL.md`, versionata col codice e installata **globalmente** dall'utente — non repo-local: checkfleet si usa *dagli altri* repo e dagli host, mentre qui dentro c'è già `CLAUDE.md` che copre lo sviluppo.
+
+  Il corpo resta a **3.9 KB** contro un cap di 6 KB imposto da un test, perché il budget di contesto è la risorsa scarsa e tutto ciò che è sempre caricato lo consuma. Dentro c'è solo quel che un agente sbaglia senza: i comandi, le **due regole di semantica**, e il flusso JSON.
+
+  Le due regole sono la ragione per cui la skill esiste. **Exit code 0 non significa "tutto sano"**: un check che gira è un successo anche se trova un BAD, e per far fallire una pipeline serve `--exit-on bad` esplicito — un agente che deduce salute dall'exit code riporta il contrario del vero. **`ERROR` non è `BAD`**: BAD è "il target è malato", ERROR è "non sono riuscito a misurare", e leggere "il database è giù" da un ERROR è un'affermazione che i dati non sostengono. Terza cosa: **leggere `--output json` e il campo `worst`**, non grepare il testo, la cui formulazione il contratto dichiara esplicitamente instabile.
+
+  La `description` nomina i trigger veri (certificati in scadenza, i nomi dei moduli, il gating in CI) invece di parafrasare il nome — una descrizione tipo "la skill di checkfleet" non matcha nessuna domanda reale, e un test lo verifica.
+
+  **Sei test, di cui uno che verifica il verificatore.** Front matter valido con `name: checkfleet`; dimensione sotto il cap; nessun segreto letterale; le due semantiche presenti; e il gate anti-finzione: ogni subcommand e flag che la skill mostra come eseguibile deve esistere davvero nell'usage del binario — compilato ed eseguito, non una copia. Una skill che cita con sicurezza un flag rinominato è peggio di nessuna skill, perché l'agente continua a riprovarlo e dà la colpa all'ambiente.
+
+  Il gate ha trovato un caso al primo giro (`can checkfleet see X?` in prosa letto come subcommand `see`). Risolto **restringendo l'analisi a fence e span di codice** invece di allargare una lista di eccezioni: l'agente esegue quello, non la prosa, e una lista di eccezioni sarebbe cresciuta a ogni frase nuova finché il gate non controllava più niente. Aggiunto `TestSkillGateCatchesAFakeFlag`, che dimostra che il controllo sa fallire — un validatore che nessuno ha visto rifiutare qualcosa non è un validatore.
+
+  I due file `references/` che la skill cita sono generati da CF-150.
+
 ## 1.2.0
 
 - **mysql, mongodb e kafka nella suite d'integrazione (CF-161, chiude M9-bis).** I quattro moduli col driver vendorizzato (`mysql/driver.go`, `postgres/pgx.go`, `mongodb/mongo.go`, `kafka/kadm.go`) hanno un pezzo che un unit test non può raggiungere: l'adapter parla un wire protocol, quindi o c'è un server vero o non lo si esercita — e falsificare il protocollo a mano sarebbe più codice non testato di quello che copre. Postgres era già nello stack; gli altri tre no. Ora ci sono: **mysql 8.4**, **mongo 7** e **kafka 3.8 in KRaft** (single node, niente ZooKeeper), ciascuno con healthcheck così `--wait` resta deterministico, più i target in `checkfleet.integration.yml` e tre test che asseriscono reachability come gli altri.
