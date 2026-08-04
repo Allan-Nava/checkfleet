@@ -1,5 +1,5 @@
 // Headless unit tests for finding acks/mutes (CF-110).
-// Pure functions, deterministic clock passed in — run with: node --test desktop/frontend/
+// Pure functions, deterministic clock passed in — run from desktop/frontend with: node --test *.test.js
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const A = require("./dist/acks.js");

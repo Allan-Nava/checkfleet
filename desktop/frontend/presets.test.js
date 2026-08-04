@@ -1,5 +1,5 @@
 // Headless unit tests for the saved-views logic (CF-108).
-// Pure functions, no DOM — run with: node --test desktop/frontend/
+// Pure functions, no DOM — run from desktop/frontend with: node --test *.test.js
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const P = require("./dist/presets.js");

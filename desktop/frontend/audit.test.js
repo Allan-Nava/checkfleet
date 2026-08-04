@@ -1,5 +1,5 @@
 // Headless unit tests for the action log (CF-114).
-// Pure functions, deterministic clock passed in — run with: node --test desktop/frontend/
+// Pure functions, deterministic clock passed in — run from desktop/frontend with: node --test *.test.js
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const A = require("./dist/audit.js");

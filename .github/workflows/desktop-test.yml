@@ -56,7 +56,20 @@ jobs:
       - name: html-validate (HTML)
         run: npx html-validate --config desktop/frontend/.htmlvalidate.json desktop/frontend/dist/index.html
       - name: JS syntax (node --check)
-        run: node --check desktop/frontend/dist/main.js
+        run: |
+          for f in desktop/frontend/dist/*.js; do
+            echo "checking $f"; node --check "$f"
+          done
+      # The headless unit tests for the pure frontend modules (acks, notes,
+      # audit, charts, presets, runbook). They existed since CF-112 and nothing
+      # ran them: `node --check` only parses main.js, so 48 assertions on the
+      # mute/note/action-log logic were never executed by CI — the same
+      # tests-that-do-not-count trap CF-157 found on the Go side.
+      # Invoked as a glob from inside the directory: `node --test <dir>` stopped
+      # resolving a directory in Node 22+ and fails with MODULE_NOT_FOUND.
+      - name: Frontend unit tests (node --test)
+        working-directory: desktop/frontend
+        run: node --test *.test.js
       # xmllint is no longer preinstalled on the GitHub-hosted Ubuntu images.
       - name: Install xmllint
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libxml2-utils

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1
+
+- **I test del frontend desktop ora girano in CI (CF-162).** I sei file `desktop/frontend/*.test.js` — 48 asserzioni su mute, note, action log, grafici, preset e i runbook hint appena aggiunti — esistevano dal CF-112 e **nessuno li eseguiva mai**: `desktop-test.yml` faceva `node --check desktop/frontend/dist/main.js`, cioè un parse della sintassi di un solo file. È la stessa trappola che CF-157 aveva trovato sul lato Go (test end-to-end che non contribuivano copertura), qui in forma più netta: non è che contassero poco, è che non partivano. Aggiunto lo step `node --test`, ed esteso `node --check` da `main.js` a tutti i moduli in `dist/` — `runbook.js` era già il sesto file mai controllato.
+
+  Corretta anche l'invocazione scritta negli header dei test: dicevano `node --test desktop/frontend/`, che da **Node 22** non risolve più una directory e fallisce con `MODULE_NOT_FOUND`. Ora dicono la forma che funziona (`node --test *.test.js` dalla directory), che è anche quella usata dal workflow — così la riga nel commento e la riga in CI non possono divergere.
+
 ## 1.1.0
 
 - **Runbook e remediation hint sui finding (CF-124, M30 — insight & intelligence).** Un finding dice *cosa* è rotto; da ora la config può dire anche *cosa farci*. La nuova chiave `runbooks:` è una lista di regole che matchano come le finestre di manutenzione — glob su `check` e `target`, vuoto = tutti — e attaccano al finding un `runbook` (URL della procedura) e una `remediation` (nota breve). Chi è di turno legge il BAD e ha già il link, invece di andare a cercare la pagina del wiki.

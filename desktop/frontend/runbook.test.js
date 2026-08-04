@@ -1,5 +1,5 @@
 // Headless unit tests for the finding runbook hints (CF-124).
-// Pure string logic — run with: node --test desktop/frontend/
+// Pure string logic — run from desktop/frontend with: node --test *.test.js
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const R = require("./dist/runbook.js");

@@ -1,5 +1,5 @@
 // Headless unit tests for operator notes (CF-112).
-// Pure functions, no DOM — run with: node --test desktop/frontend/
+// Pure functions, no DOM — run from desktop/frontend with: node --test *.test.js
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const N = require("./dist/notes.js");
