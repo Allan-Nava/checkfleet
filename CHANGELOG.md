@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.13.0
+
+- **Digest "what changed" (CF-128, chiude M30).** `checkfleet insight --digest` riassume in prosa cosa si è mosso nella finestra, invece di far diffare le righe a mano:
+
+  ```
+  Across the last 100 run(s): 1 new problem(s), 1 flapping.
+
+  New:
+    - http https://web-01/: OK → BAD
+
+  Flapping:
+    - http https://api-01/
+  ```
+
+  Quattro movimenti — **nuovi, peggiorati, migliorati, risolti** — più chi ha iniziato a oscillare. La prima riga porta i conteggi, così il testo è già inoltrabile: ai sink di M22, in una issue, o in cima a un doc d'incidente.
+
+  **Una flotta ferma lo dice in una riga** (`Nothing changed across the last N run(s)`) invece di stampare quattro intestazioni vuote. Sembra un dettaglio: è la differenza fra un digest che si legge ogni mattina e uno che si smette di aprire.
+
+  **Uno stato sconosciuto non diventa mai un problema.** Un record scritto da una build più recente porta uno status che questa non sa ordinare: viene trattato come `OK` nel confronto, invece di essere letto come regressione. Un digest che inventa guasti dopo un upgrade parziale della flotta è peggio di nessun digest, e il test lo blocca.
+
+  **M30 chiusa.** Gli otto item: `internal/insight` e il forecast ETA (CF-121), anomaly EWMA/z-score (CF-122), correlation e blast-radius (CF-123), runbook e remediation hint (CF-124), SLO error budget e burn rate (CF-125), MTTR e outage in corso (CF-126), fleet health score (CF-127), e questo. Più CF-120, chiuso rileggendo il backlog contro il codice: la flapping detection che la milestone pianificava era già stata consegnata da CF-32.
+
+  Tutte le analisi sono funzioni pure in `internal/insight`, zero-dep, con la statistica scritta a mano, e si combinano in una sola invocazione di `checkfleet insight` — che non tocca infrastruttura: legge solo il JSONL che `check --history` già scrive.
+
+
 ## 1.12.0
 
 - **Fleet health score (CF-127, M30).** Un indice **0–100** per la flotta, con il breakdown per modulo che gli dà un posto dove puntare:

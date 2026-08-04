@@ -26,6 +26,7 @@ func runInsight(args []string) error {
 	forecast := fs.Bool("forecast", false, "project when each metric crosses --threshold")
 	anomaly := fs.Bool("anomaly", false, "flag metrics deviating from their own recent baseline")
 	zScore := fs.Float64("z", 3, "anomaly: deviations from the baseline before a metric is flagged")
+	digest := fs.Bool("digest", false, "narrative summary of what changed across the window")
 	score := fs.Bool("score", false, "single 0-100 health index for the fleet, with a per-module breakdown")
 	flapChanges := fs.Int("flap-changes", 3, "score: status changes in the window before a target counts as unstable")
 	recovery := fs.Bool("recovery", false, "MTTR per target and how long the current outage has lasted")
@@ -39,8 +40,8 @@ func runInsight(args []string) error {
 	if *histPath == "" {
 		return fmt.Errorf("--history is required: insight reads the file `check --history` writes")
 	}
-	if !*forecast && !*anomaly && !*recovery && !*score && *slo == 0 {
-		return fmt.Errorf("nothing to do: pass --forecast, --anomaly, --recovery, --score or --slo")
+	if !*forecast && !*anomaly && !*recovery && !*score && !*digest && *slo == 0 {
+		return fmt.Errorf("nothing to do: pass --digest, --forecast, --anomaly, --recovery, --score or --slo")
 	}
 	if *slo != 0 && (*slo <= 0 || *slo >= 1) {
 		return fmt.Errorf("--slo must be between 0 and 1 exclusive, e.g. 0.999 for three nines")
@@ -67,6 +68,11 @@ func runInsight(args []string) error {
 	if *anomaly {
 		aRows = anomalyRows(records, *zScore)
 		doc["anomalies"] = aRows
+	}
+	var dg insight.Digest
+	if *digest {
+		dg = insight.Compare(insight.StatusSeriesFrom(records), *flapChanges)
+		doc["digest"] = dg
 	}
 	var sDoc *scoreDoc
 	if *score {
@@ -97,20 +103,23 @@ func runInsight(args []string) error {
 		}
 		printAnomalies(aRows, *zScore, len(records))
 	}
+	if *digest {
+		fmt.Print(insight.Narrate(dg))
+	}
 	if *score {
-		if *forecast || *anomaly {
+		if *forecast || *anomaly || *digest {
 			fmt.Println()
 		}
 		printScore(sDoc)
 	}
 	if *recovery {
-		if *forecast || *anomaly || *score {
+		if *forecast || *anomaly || *score || *digest {
 			fmt.Println()
 		}
 		printRecovery(rRows, len(records))
 	}
 	if *slo != 0 {
-		if *forecast || *anomaly || *recovery || *score {
+		if *forecast || *anomaly || *recovery || *score || *digest {
 			fmt.Println()
 		}
 		printBudgets(bRows, *slo, len(records))
