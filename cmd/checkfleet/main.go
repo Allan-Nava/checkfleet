@@ -75,6 +75,11 @@ func main() {
 			fmt.Fprintln(os.Stderr, "checkfleet:", err)
 			os.Exit(1)
 		}
+	case "insight":
+		if err := runInsight(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, "checkfleet:", err)
+			os.Exit(1)
+		}
 	case "skill":
 		if err := runSkill(os.Args[2:]); err != nil {
 			fmt.Fprintln(os.Stderr, "checkfleet:", err)
@@ -98,6 +103,7 @@ func usage() {
   checkfleet targets --config checkfleet.yml [--output text|json] [--against hosts.ini [--group web]] [--module certs]   # what is covered
   checkfleet explain [module]                                                 # what a module checks and its thresholds
   checkfleet completion <bash|zsh|fish>                                        # print a shell completion script
+  checkfleet insight --history F --forecast --threshold 90 [--window 60] [--min-r2 0.7] [--output text|json]   # project when a metric crosses
   checkfleet skill <install|print> [--dir PATH]                                # install the agent skill shipped in this binary
   checkfleet version`)
 }

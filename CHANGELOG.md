@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.7.0
+
+- **`internal/insight` e il forecast ETA-to-threshold (CF-121, M30).** Nasce il package che M30 aspettava: funzioni pure sopra la history, zero-dep, statistica scritta a mano — il punto della regola zero-dep è che un binario di monitoring che giri ovunque non si porti dietro uno stack numerico per due regressioni. Ci sono `SeriesFrom`/`StatusSeriesFrom` (raggruppano i record per `check`+`target`, ordinano i punti, ignorano i finding senza metrica) e la prima analisi.
+
+  **Il forecast** fa ai minimi quadrati la retta della serie e proietta quando taglia una soglia — generalizzando l'ETA che oggi hanno solo i certificati: "disk 82% → sfonda 90% tra ~2.5 giorni" è la stessa domanda di "questo cert scade fra 12 giorni", fatta a qualunque metrica che checkfleet già registra. Emette slope, **R²** e la data.
+
+  Nuovo comando, che non tocca infrastruttura (legge solo il JSONL che `check --history` già scrive):
+
+  ```
+  $ checkfleet insight --history runs.jsonl --forecast --threshold 95
+  postgres   db-01     88.00%  crosses in ~3.5 days (+2.00%/day, R²=1.00)
+  ```
+
+  **Le tre cose che questa feature sbaglia se scritta ingenuamente, e che qui non sbaglia.** Con meno di **quattro** campioni non proietta niente: due punti fittano una retta perfettamente (R²=1) e non dicono nulla sul trend, che è esattamente la forma della sciocchezza detta con sicurezza. Una serie **piatta o in allontanamento** non riceve ETA, invece di riceverne uno assurdo. E `--min-r2` (default 0.7) **sopprime** la proiezione quando il fit è debole, dicendo *perché* invece di tacere.
+
+  **Difetto trovato provando il comando su dati veri**, non nei test: una serie che sale verso la soglia ma con campioni vecchi produce un crossing *nel passato*, e il codice lo riportava come "not trending toward the threshold" — cioè diceva "nessun rischio" proprio sul target più vicino alla linea. Ora `Forecast.Due` distingue i due casi e il messaggio è "trend says it should already be over the threshold (history may be stale)". I test sintetici non lo avevano preso perché passavano `now` coerente con la serie; è emerso solo con una history datata.
+
+  Ogni riga senza ETA porta la ragione (`too few samples`, `not trending`, `weak fit`, `already over`): un campo vuoto si legge come "tutto bene", ed è l'errore che questa milestone deve evitare.
+
+
 ## 1.6.0
 
 - **Gate anti-divergenza sulla skill e pagina `docs/agents.md` (CF-152, chiude M34).** La CI ora rigenera i reference e **fallisce se il diff non è vuoto**, stessa logica di un check `go generate`. È la garanzia che rende la skill affidabile invece che plausibile: un modulo nuovo non può entrare lasciando la skill indietro. La trappola non è ipotetica — è quella che ha lasciato l'intro di `docs/modules.md` ferma a 18 moduli mentre il registry ne aveva 29.
