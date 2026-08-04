@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.6.0
+
+- **Gate anti-divergenza sulla skill e pagina `docs/agents.md` (CF-152, chiude M34).** La CI ora rigenera i reference e **fallisce se il diff non è vuoto**, stessa logica di un check `go generate`. È la garanzia che rende la skill affidabile invece che plausibile: un modulo nuovo non può entrare lasciando la skill indietro. La trappola non è ipotetica — è quella che ha lasciato l'intro di `docs/modules.md` ferma a 18 moduli mentre il registry ne aveva 29.
+
+  Verificato che il gate sappia fallire, non solo passare: sporcando `references/modules.md` a mano, `gen-skill -check` esce 1 nominando il file; ripristinato, esce 0.
+
+  Nuova pagina **`docs/agents.md`**: come installare la skill (globale, non nel repo, e da rifare dopo un upgrade), cosa contiene e perché è piccola, e i tre meccanismi che la tengono vera — reference generati, gate CI, e il test che compila il binario per verificare che ogni comando e flag citato esista.
+
+  **E la nota su MCP**, che l'item chiedeva esplicitamente. Non ora, con le ragioni scritte invece che sottintese: checkfleet non tiene stato fra le chiamate e non fa streaming, cioè le due cose per cui MCP è la forma giusta. È un binario che prende una config e stampa un documento — cosa che un tool di shell espone già bene, e che ogni assistente sa eseguire mentre il supporto MCP varia. Un server aggiungerebbe un processo da supervisionare, un transport da debuggare e una seconda superficie da mantenere compatibile, in cambio di niente che la CLI non dia già. Se cambia il presupposto (stato di flotta persistente, subscription sulle transizioni di stato) si riconsidera nel merito.
+
+  **M34 chiusa.** I quattro item: skill sorgente versionata col codice (CF-149), reference generati da registry e struct di config (CF-150), `checkfleet skill install/print` con la skill embeddata (CF-151), e questo.
+
 ## 1.5.0
 
 - **`checkfleet skill` — la skill viaggia dentro il binario (CF-151, M34).** `go:embed` porta `skills/checkfleet/` (SKILL.md più i due reference generati) dentro l'eseguibile; `checkfleet skill install [--dir PATH]` la scrive dove serve — di default `~/.claude/skills/checkfleet/` — e `checkfleet skill print` la manda su stdout per chi ha un installer suo.

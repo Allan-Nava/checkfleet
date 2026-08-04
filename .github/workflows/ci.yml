@@ -29,6 +29,19 @@ jobs:
       - run: go build ./...
       - name: English output guardrail (M15/CF-60)
         run: ./scripts/check-english.sh
+      # Anti-divergence gate for the agent skill (CF-152). The references under
+      # skills/checkfleet/references/ are generated from the registry and the
+      # config structs; regenerating must be a no-op. Without this, a new module
+      # can land while the skill still lists the old set — the trap that left the
+      # intro of docs/modules.md at 18 modules while the registry had 29.
+      - name: Skill references are up to date (CF-152)
+        run: |
+          go run ./cmd/gen-skill
+          if ! git diff --quiet -- skills/; then
+            echo "::error::skills/ is stale — run 'go run ./cmd/gen-skill' and commit the result"
+            git diff -- skills/
+            exit 1
+          fi
 
   # Quality & security gate (CF-57, CF-72). Both are hard gates now: govulncheck
   # fails only on vulnerabilities the code actually reaches (kept clean by staying
