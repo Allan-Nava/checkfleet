@@ -25,6 +25,7 @@ func runInsight(args []string) error {
 	forecast := fs.Bool("forecast", false, "project when each metric crosses --threshold")
 	anomaly := fs.Bool("anomaly", false, "flag metrics deviating from their own recent baseline")
 	zScore := fs.Float64("z", 3, "anomaly: deviations from the baseline before a metric is flagged")
+	recovery := fs.Bool("recovery", false, "MTTR per target and how long the current outage has lasted")
 	slo := fs.Float64("slo", 0, "error budget: target availability, e.g. 0.999 (enables the budget report)")
 	fastFraction := fs.Float64("fast-window", 0.1, "error budget: share of the history treated as the recent burn window")
 	minR2 := fs.Float64("min-r2", 0.7, "forecast: suppress projections whose fit is weaker than this")
@@ -35,8 +36,8 @@ func runInsight(args []string) error {
 	if *histPath == "" {
 		return fmt.Errorf("--history is required: insight reads the file `check --history` writes")
 	}
-	if !*forecast && !*anomaly && *slo == 0 {
-		return fmt.Errorf("nothing to do: pass --forecast, --anomaly or --slo")
+	if !*forecast && !*anomaly && !*recovery && *slo == 0 {
+		return fmt.Errorf("nothing to do: pass --forecast, --anomaly, --recovery or --slo")
 	}
 	if *slo != 0 && (*slo <= 0 || *slo >= 1) {
 		return fmt.Errorf("--slo must be between 0 and 1 exclusive, e.g. 0.999 for three nines")
@@ -64,6 +65,11 @@ func runInsight(args []string) error {
 		aRows = anomalyRows(records, *zScore)
 		doc["anomalies"] = aRows
 	}
+	var rRows []recoveryRow
+	if *recovery {
+		rRows = recoveryRows(records, time.Now())
+		doc["recovery"] = rRows
+	}
 	var bRows []budgetRow
 	if *slo != 0 {
 		bRows = budgetRows(records, *slo, *fastFraction, time.Now())
@@ -83,13 +89,77 @@ func runInsight(args []string) error {
 		}
 		printAnomalies(aRows, *zScore, len(records))
 	}
-	if *slo != 0 {
+	if *recovery {
 		if *forecast || *anomaly {
+			fmt.Println()
+		}
+		printRecovery(rRows, len(records))
+	}
+	if *slo != 0 {
+		if *forecast || *anomaly || *recovery {
 			fmt.Println()
 		}
 		printBudgets(bRows, *slo, len(records))
 	}
 	return nil
+}
+
+// recoveryRow is one target's outage history and current state.
+type recoveryRow struct {
+	Check      string `json:"check"`
+	Target     string `json:"target"`
+	Outages    int    `json:"outages"`
+	MeanSec    int64  `json:"mttr_seconds,omitempty"`
+	P50Sec     int64  `json:"p50_seconds,omitempty"`
+	P90Sec     int64  `json:"p90_seconds,omitempty"`
+	Down       bool   `json:"down"`
+	OngoingSec int64  `json:"ongoing_seconds,omitempty"`
+	Unresolved bool   `json:"started_before_window,omitempty"`
+}
+
+func recoveryRows(records []history.Record, now time.Time) []recoveryRow {
+	var out []recoveryRow
+	for _, s := range insight.StatusSeriesFrom(records) {
+		r := insight.Recoveries(s, now)
+		if len(r.Outages) == 0 && !r.Down {
+			continue // a target that has never been down has nothing to say here
+		}
+		out = append(out, recoveryRow{
+			Check: s.Check, Target: s.Target,
+			Outages: len(r.Outages),
+			MeanSec: int64(r.Mean.Seconds()), P50Sec: int64(r.P50.Seconds()), P90Sec: int64(r.P90.Seconds()),
+			Down: r.Down, OngoingSec: int64(r.Ongoing.Seconds()), Unresolved: r.Unresolved,
+		})
+	}
+	return out
+}
+
+func printRecovery(rows []recoveryRow, runs int) {
+	if len(rows) == 0 {
+		fmt.Printf("No target went down in the last %d run(s).\n", runs)
+		return
+	}
+	fmt.Printf("Recovery, over %d run(s):\n\n", runs)
+	for _, r := range rows {
+		fmt.Printf("  %-10s %-38s", r.Check, r.Target)
+		if r.Down {
+			since := time.Duration(r.OngoingSec) * time.Second
+			if r.Unresolved {
+				fmt.Printf("  down for at least %s (started before the window)", since.Round(time.Minute))
+			} else {
+				fmt.Printf("  down for %s", since.Round(time.Minute))
+			}
+			if r.Outages > 0 {
+				fmt.Printf(", usually back in ~%s", (time.Duration(r.MeanSec) * time.Second).Round(time.Minute))
+			}
+			fmt.Println()
+			continue
+		}
+		fmt.Printf("  up · %d outage(s), MTTR ~%s (p50 %s, p90 %s)\n", r.Outages,
+			(time.Duration(r.MeanSec) * time.Second).Round(time.Minute),
+			(time.Duration(r.P50Sec) * time.Second).Round(time.Minute),
+			(time.Duration(r.P90Sec) * time.Second).Round(time.Minute))
+	}
 }
 
 // budgetRow is one target's error budget and burn rate.

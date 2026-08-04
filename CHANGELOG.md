@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.11.0
+
+- **MTTR e durata dell'outage in corso (CF-126, M30).** `checkfleet insight --recovery` misura le risalite:
+
+  ```
+  http  https://api-01/   up · 2 outage(s), MTTR ~1h0m (p50 1h0m, p90 1h0m)
+  http  https://web-01/   down for 7h3m
+  ```
+
+  Il numero che trasforma una riga rossa in una decisione non è la durata, è il **confronto**: "giù da 47m, di solito torna in ~8m" richiede un intervento diverso da "giù da 47m, di solito ci mette 2h". Quando il target è giù *e* ha uno storico, la riga porta entrambi.
+
+  **Un outage iniziato al bordo della finestra è un limite inferiore, non una durata**, e viene detto (`down for at least 3h (started before the window)`): è cominciato prima dello storico che abbiamo, quindi riportarne la durata come fatto la sottostimerebbe — sistematicamente proprio sugli outage più lunghi, che sono quelli che contano.
+
+  I percentili usano il **nearest-rank**: con tre outage il "p90" è il più lungo dei tre, che è la risposta onesta per un campione piccolo. Interpolare inventerebbe una precisione che tre misure non hanno.
+
+  Stessa definizione di downtime del budget d'errore: `BAD` ed `ERROR` sì, `WARN` no. Un target che non è mai andato giù non compare — una riga che dice "0 outage" è rumore in un report che si legge durante un incidente.
+
+
 ## 1.10.0
 
 - **SLO error budget e burn rate (CF-125, M30).** `checkfleet insight --slo 0.99` non dice quanto sei stato su, dice **quanto in fretta stai finendo il margine**:
