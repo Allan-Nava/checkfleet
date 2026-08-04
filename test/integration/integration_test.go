@@ -23,7 +23,10 @@ import (
 
 	"github.com/Allan-Nava/checkfleet/internal/checks/consul"
 	"github.com/Allan-Nava/checkfleet/internal/checks/haproxy"
+	"github.com/Allan-Nava/checkfleet/internal/checks/kafka"
 	"github.com/Allan-Nava/checkfleet/internal/checks/keycloak"
+	"github.com/Allan-Nava/checkfleet/internal/checks/mongodb"
+	"github.com/Allan-Nava/checkfleet/internal/checks/mysql"
 	"github.com/Allan-Nava/checkfleet/internal/checks/nats"
 	"github.com/Allan-Nava/checkfleet/internal/checks/patroni"
 	"github.com/Allan-Nava/checkfleet/internal/checks/postgres"
@@ -132,4 +135,33 @@ func TestKeycloak(t *testing.T) {
 		t.Skip("keycloak not configured")
 	}
 	assertReachable(t, keycloak.New(*cfg.Checks.Keycloak))
+}
+
+// The three below are the reason this suite matters most (CF-161): mysql,
+// mongodb and kafka reach their server through a vendored driver speaking a
+// wire protocol, so their adapter (driver.go, mongo.go, kadm.go) is the one
+// piece a unit test cannot exercise without a real server. Everything else in
+// those modules is covered offline; this is where the connection itself is.
+func TestMySQL(t *testing.T) {
+	cfg := loadConfig(t)
+	if cfg.Checks.MySQL == nil {
+		t.Skip("mysql not configured")
+	}
+	assertReachable(t, mysql.New(*cfg.Checks.MySQL))
+}
+
+func TestMongoDB(t *testing.T) {
+	cfg := loadConfig(t)
+	if cfg.Checks.MongoDB == nil {
+		t.Skip("mongodb not configured")
+	}
+	assertReachable(t, mongodb.New(*cfg.Checks.MongoDB))
+}
+
+func TestKafka(t *testing.T) {
+	cfg := loadConfig(t)
+	if cfg.Checks.Kafka == nil {
+		t.Skip("kafka not configured")
+	}
+	assertReachable(t, kafka.New(*cfg.Checks.Kafka))
 }

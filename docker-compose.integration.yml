@@ -126,3 +126,56 @@ services:
       interval: 5s
       timeout: 3s
       retries: 40
+
+  # The three services below exist for CF-161: mysql, mongodb and kafka are the
+  # modules whose connection layer is a vendored driver speaking a wire protocol
+  # (go-sql-driver, mongo-driver, franz-go). A unit test cannot reach that
+  # adapter without a real server, and hand-faking a wire protocol would be more
+  # untested code than it covers — so it is covered here instead.
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: mysql
+      MYSQL_DATABASE: checkfleet
+    ports:
+      - "127.0.0.1:3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-pmysql"]
+      interval: 5s
+      timeout: 3s
+      retries: 40
+
+  mongodb:
+    image: mongo:7
+    ports:
+      - "127.0.0.1:27017:27017"
+    healthcheck:
+      # Standalone: replSetGetStatus fails, which the module reports as a
+      # non-ERROR finding ("not a replica set") — reachability is what matters.
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 3s
+      retries: 40
+
+  kafka:
+    image: apache/kafka:3.8.0
+    environment:
+      # Single-node KRaft: no ZooKeeper, broker and controller in one process.
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://127.0.0.1:9092
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
+    ports:
+      - "127.0.0.1:9092:9092"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server 127.0.0.1:9092 >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 10s
+      retries: 40

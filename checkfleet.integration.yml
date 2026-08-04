@@ -46,3 +46,20 @@ checks:
     health_url: http://127.0.0.1:9000/health/ready
     realms:
       - master
+
+  # The three driver-backed modules (CF-161). Their connection layer is a
+  # vendored wire-protocol driver, only reachable with a real server.
+  mysql:
+    targets:
+      - name: mysql-integration
+        dsn: "root:mysql@tcp(127.0.0.1:3306)/checkfleet"
+
+  mongodb:
+    targets:
+      - name: mongo-integration
+        uri: mongodb://127.0.0.1:27017
+
+  kafka:
+    brokers:
+      - 127.0.0.1:9092
+    expect_brokers: 1        # single-node KRaft

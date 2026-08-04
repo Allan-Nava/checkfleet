@@ -14,7 +14,9 @@ on:
 jobs:
   integration:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    # Raised from 25 with CF-161: mysql, mongodb and kafka joined the stack and
+    # the kafka image is the slowest to become healthy (KRaft bootstrap).
+    timeout-minutes: 35
     env:
       COMPOSE_FILE: docker-compose.integration.yml
       CF_PG_PASSWORD: postgres

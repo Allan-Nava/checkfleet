@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.2.0
+
+- **mysql, mongodb e kafka nella suite d'integrazione (CF-161, chiude M9-bis).** I quattro moduli col driver vendorizzato (`mysql/driver.go`, `postgres/pgx.go`, `mongodb/mongo.go`, `kafka/kadm.go`) hanno un pezzo che un unit test non può raggiungere: l'adapter parla un wire protocol, quindi o c'è un server vero o non lo si esercita — e falsificare il protocollo a mano sarebbe più codice non testato di quello che copre. Postgres era già nello stack; gli altri tre no. Ora ci sono: **mysql 8.4**, **mongo 7** e **kafka 3.8 in KRaft** (single node, niente ZooKeeper), ciascuno con healthcheck così `--wait` resta deterministico, più i target in `checkfleet.integration.yml` e tre test che asseriscono reachability come gli altri.
+
+  **Verificato eseguendolo, non assumendolo.** Stack su, suite verde:
+
+  ```
+  mysql   [OK] mysql-integration: reachable, MySQL 8.4.11 (read-write)
+  mongodb [OK] mongo-integration: reachable, MongoDB 7.0.39 (standalone)
+  kafka   [OK] cluster: 1 brokers, controller present
+  ```
+
+  E il profilo di copertura dice esattamente cosa sbloccava. Offline i test toccano **solo i rami d'errore** degli adapter — `driverConnect` 75%, `mongoConnect` 53.8% — mentre `Collect`, `Close`, `statusInt`, `variableInt`, `replicaStatus`, `showStatusRow` e **tutto `kadm.go`** stanno a **0%**: nessun unit test arriva oltre la connessione fallita. Con la suite quei simboli si accendono (`Collect` 84.6% su mysql, 62.5% su mongodb, `kadm.Metadata` 45.5%). `mysql` resta il modulo con la copertura unit più bassa (47.4%) e la ragione è questa, scritta in `docs/development.md` invece che nascosta.
+
+  Resta a 0% `kadm.GroupLag`: la config d'integrazione non dichiara consumer group, quindi il lag non ha niente da misurare. Detto qui perché un numero di copertura che sale non è la stessa cosa di un percorso coperto.
+
+  `timeout-minutes` del workflow da 25 a 35 — l'immagine kafka è la più lenta a diventare healthy (bootstrap KRaft).
+
 ## 1.1.1
 
 - **I test del frontend desktop ora girano in CI (CF-162).** I sei file `desktop/frontend/*.test.js` — 48 asserzioni su mute, note, action log, grafici, preset e i runbook hint appena aggiunti — esistevano dal CF-112 e **nessuno li eseguiva mai**: `desktop-test.yml` faceva `node --check desktop/frontend/dist/main.js`, cioè un parse della sintassi di un solo file. È la stessa trappola che CF-157 aveva trovato sul lato Go (test end-to-end che non contribuivano copertura), qui in forma più netta: non è che contassero poco, è che non partivano. Aggiunto lo step `node --test`, ed esteso `node --check` da `main.js` a tutti i moduli in `dist/` — `runbook.js` era già il sesto file mai controllato.

@@ -69,9 +69,18 @@ docker compose -f docker-compose.integration.yml down -v
 ```
 
 - `docker-compose.integration.yml` brings up redis, nats, consul, haproxy,
-  postgres, patroni (+etcd), and keycloak, each published on `127.0.0.1` with a
-  healthcheck so `--wait` makes readiness deterministic. Support files live in
-  `deploy/integration/` (HAProxy config, the in-compose Patroni image).
+  postgres, patroni (+etcd), keycloak, mysql, mongodb and kafka, each published
+  on `127.0.0.1` with a healthcheck so `--wait` makes readiness deterministic.
+  Support files live in `deploy/integration/` (HAProxy config, the in-compose
+  Patroni image).
+- **This is the only place the driver adapters get covered.** Most modules speak
+  a protocol written by hand and are fully testable offline. Four are not:
+  `mysql/driver.go`, `postgres/pgx.go`, `mongodb/mongo.go` and `kafka/kadm.go`
+  reach the server through a vendored driver, and a unit test cannot cross that
+  boundary without a real server — faking a wire protocol by hand would be more
+  untested code than it covers. Offline, those files show coverage only on their
+  error branches; `Collect`, `Close` and the whole of `kadm.go` are reached here
+  or nowhere.
 - `checkfleet.integration.yml` points every module at those local ports.
 - The suite's contract is deliberately loose: it asserts **reachability** — at
   least one non-`ERROR` finding per module — not exact status (that stays
