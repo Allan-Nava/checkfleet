@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.14.0
+
+- **Una pagina per modulo, generata (CF-147, M33).** `go run ./cmd/gen-docs` produce le **29** pagine `docs/modules/<name>.md` da `docs/_data/modules.yml` (id, titolo, summary) e dalle sezioni già scritte in `docs/modules.md`. Motivo: una pagina da 600 righe compete per un solo termine di testa, mentre il traffico vero è la coda lunga — "checkfleet kafka consumer lag check", "check hls live edge cli" — dove una pagina dedicata vince senza competere con niente. La pagina combinata resta l'indice, e ora linka le singole.
+
+  **Nessuna prosa riscritta a mano.** Le pagine sono una *proiezione* di `modules.md`: la prosa ha una casa sola. Un modulo presente nell'indice ma senza sezione fa **fallire il generatore** con il nome del modulo, invece di pubblicare una pagina vuota — e la CI rigenera e fallisce sul diff, stesso gate dei reference della skill. Verificato che sappia fallire: sporcando `kafka.md` a mano, `-check` esce 1 nominando il file.
+
+  **Difetto nel mio primo controllo, non nel codice**: contando le sezioni con `[a-z]+` ne trovavo 28 contro 29 e sembrava che `modules.md` avesse perso un modulo. Era la regex a perdere **`s3`**, per via della cifra. Le tre sorgenti (registry, `modules.yml`, `modules.md`) erano già allineate — ma il generatore usa `[a-z0-9]+` e c'è un test dedicato a `s3`, perché un pattern che scarta le cifre in silenzio non genererebbe mai quella pagina e nessuno se ne accorgerebbe.
+
+  Le pagine sono `nav_exclude` (29 voci nella sidebar sarebbero peggio dell'indice) con `permalink: /modules/<name>`.
+
+
 ## 1.13.0
 
 - **Digest "what changed" (CF-128, chiude M30).** `checkfleet insight --digest` riassume in prosa cosa si è mosso nella finestra, invece di far diffare le righe a mano:

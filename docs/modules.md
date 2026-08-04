@@ -18,6 +18,10 @@ what's next.
 | [`{{ m.name }}`](#{{ m.name }}) | {{ m.title }} | {{ m.summary }} |
 {% endfor %}
 
+> Each module also has its own page — `/modules/<name>` — with the same detail
+> on one screen: [certs](modules/certs), [http](modules/http), [postgres](modules/postgres),
+> [kafka](modules/kafka), and so on for all 29.
+
 ## `certs` — TLS certificates {#certs}
 
 TLS certificate expiry across a fleet.

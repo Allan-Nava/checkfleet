@@ -42,6 +42,16 @@ jobs:
             git diff -- skills/
             exit 1
           fi
+      # Same gate for the per-module docs pages (CF-147): they are a projection
+      # of docs/modules.md, so editing one by hand must not survive.
+      - name: Module pages are up to date (CF-147)
+        run: |
+          go run ./cmd/gen-docs
+          if ! git diff --quiet -- docs/modules; then
+            echo "::error::docs/modules is stale — run 'go run ./cmd/gen-docs' and commit the result"
+            git diff -- docs/modules
+            exit 1
+          fi
 
   # Quality & security gate (CF-57, CF-72). Both are hard gates now: govulncheck
   # fails only on vulnerabilities the code actually reaches (kept clean by staying
