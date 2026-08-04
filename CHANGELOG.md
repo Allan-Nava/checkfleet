@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.0
+
+- **1.0.0.** `v1.0.0-rc.1` è promossa a stabile senza modifiche: dall'rc non è cambiata nessuna delle sette superfici del contratto di compatibilità, quindi non c'è un rc.2 da fare prima. Da qui in poi vale ciò che `docs/compatibility.md` promette — schema della config, chiavi JSON, nomi delle metriche Prometheus, exit code, identità dei finding, ordinamento worst-first e formato dei file di history/baseline non cambiano significato dentro la 1.x, e una rimozione passa per la deprecation policy.
+
+  Lo scope resta quello dichiarato nell'rc: **il 1.0 copre la CLI**. L'app desktop resta beta con versione propria, per le ragioni scritte in `docs/desktop.md` (build macOS non firmata né notarizzata, nessuna icona nella menu bar fino al port a Wails v3).
+
+  Nessun cambiamento al software in questo tag — è la promozione dell'rc. Le milestone additive rimaste (M30 insight, M34 skill per gli agenti) partono dalla 1.1.
+
 ## 1.0.0-rc.1
 
 - **Release candidate della 1.0** (CF-160, chiude M35). Due decisioni di scope prese invece di rimandate, più il processo per arrivare al tag.
