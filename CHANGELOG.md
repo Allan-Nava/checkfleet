@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.5.0
+
+- **`checkfleet skill` — la skill viaggia dentro il binario (CF-151, M34).** `go:embed` porta `skills/checkfleet/` (SKILL.md più i due reference generati) dentro l'eseguibile; `checkfleet skill install [--dir PATH]` la scrive dove serve — di default `~/.claude/skills/checkfleet/` — e `checkfleet skill print` la manda su stdout per chi ha un installer suo.
+
+  Il punto non è la comodità: **chi ha il binario ha la skill alla versione giusta**. Tutto il valore della skill sta nel citare flag che esistono davvero nel binario che stai eseguendo, e una skill installata una volta da un repo clonato mesi prima è precisamente la cosa che quel valore lo distrugge. `TestEmbeddedSkillMatchesTheSource` verifica che i byte nel binario siano i byte nel repo.
+
+  Il file che fa l'embed sta in `skills/embed.go`, accanto alla sorgente: `go:embed` non può risalire sopra la directory del proprio package, e l'alternativa era una **seconda copia di SKILL.md** sotto `internal/` che sarebbe divergita dalla prima — lo stesso difetto che CF-150 esiste per evitare.
+
+  L'install **sovrascrive**, di proposito e in modo idempotente: dopo un upgrade i file vecchi devono sparire, altrimenti binario e skill litigano su quali flag esistono. Tre test coprono le tre cose che possono andare storte lì (albero scritto, due install = tre file non sei, versione vecchia rimpiazzata). Semantica dell'exit code rispettata: non è un check, quindi 0 salvo errore sistemico — verificato sul binario reale, `print` esce 0 e un subcomando ignoto esce 1 con l'errore che nomina cosa era valido.
+
+  **Difetto trovato aggiungendo il comando**: la lista dei subcomandi nello script di completion era **già stale** — `init`, `alert`, `doctor` e `targets` erano stati rilasciati senza mai diventare completabili, e `skill` si sarebbe aggiunto alla lista dei dimenticati. Corretta, e aggiunto `TestCompletionListsEverySubcommand` che la confronta con l'usage vero invece che con una copia. Il test conta quanti comandi ha esaminato e fallisce se sono meno di dieci: senza quel controllo il loop poteva non guardare niente e passare sempre, che è il modo in cui muoiono i test che leggono la documentazione.
+
 ## 1.4.0
 
 - **Reference della skill generati dal codice (CF-150, M34).** I due file che `SKILL.md` carica on-demand — `references/modules.md` (29 moduli, cosa rileva ciascuno) e `references/config-schema.md` (chiavi, tipi, default) — ora li scrive `go run ./cmd/gen-skill` invece di una mano umana. La ragione è concreta e già successa in questo repo: **l'intro di `docs/modules.md` è rimasta ferma a 18 moduli mentre il registry ne aveva 29**. Una copia mantenuta a mano diverge alla prima release, e lo schema della config è esattamente la parte su cui un assistente inventa di più.

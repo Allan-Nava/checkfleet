@@ -75,6 +75,11 @@ func main() {
 			fmt.Fprintln(os.Stderr, "checkfleet:", err)
 			os.Exit(1)
 		}
+	case "skill":
+		if err := runSkill(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, "checkfleet:", err)
+			os.Exit(1)
+		}
 	default:
 		usage()
 		os.Exit(64)
@@ -93,5 +98,6 @@ func usage() {
   checkfleet targets --config checkfleet.yml [--output text|json] [--against hosts.ini [--group web]] [--module certs]   # what is covered
   checkfleet explain [module]                                                 # what a module checks and its thresholds
   checkfleet completion <bash|zsh|fish>                                        # print a shell completion script
+  checkfleet skill <install|print> [--dir PATH]                                # install the agent skill shipped in this binary
   checkfleet version`)
 }

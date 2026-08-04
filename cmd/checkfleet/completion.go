@@ -9,7 +9,10 @@ import (
 // Module and output lists are injected so completion stays in sync.
 func completionScript(shell string) (string, error) {
 	modules := "all " + strings.Join(moduleNames(), " ")
-	const subcmds = "check serve validate report-issues explain completion version"
+	// Keep in sync with the dispatch in main.go — TestCompletionListsEverySubcommand
+	// asserts it. This list had drifted: init, alert, doctor and targets shipped
+	// without ever being completable.
+	const subcmds = "init check serve report-issues alert validate doctor targets explain completion skill version"
 	const outputs = "text markdown json junit html prometheus slack discord teams webhook"
 	const flags = "--config --stack --output --out-file --webhook-env --only --min-severity --target --history --flap-changes --flap-window --ping-url-env --exit-on-bad"
 
