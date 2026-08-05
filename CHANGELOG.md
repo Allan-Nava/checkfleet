@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.17.0
+
+- **Binding Wails per `internal/insight` (CF-164, M36).** Il desktop può ora chiedere le analisi di M30: `App.Insight(InsightRequest)` legge la history persistita del config attivo e restituisce **la stessa `insight.Report`** che la CLI serializza.
+
+  **Nessuna statistica in JavaScript.** Il frontend riceve numeri già calcolati dal package condiviso, così un insight significa la stessa cosa nella GUI e da riga di comando. Una seconda implementazione in JS divergerebbe entro una release — è esattamente la deriva che CF-163 ha appena chiuso sul post-processing, e non ha senso riaprirla qui.
+
+  La richiesta a campi zero chiede le analisi che non richiedono nulla all'operatore (digest, score, cluster, recovery): è quello che il dashboard carica all'apertura, passando solo il path del config. **`Threshold` e `SLO` restano senza default di proposito**: una proiezione ha bisogno di un valore che valga la pena superare e un budget di una promessa, e inventarne uno metterebbe sullo schermo un numero che nessuno ha scelto — peggio di un pannello vuoto.
+
+  Le analisi su singola run (cluster e score) usano i **finding della run a schermo** quando ce n'è una, non l'ultimo record su disco: descrivono quello che l'utente sta guardando.
+
+  Una history assente non è un errore ma un report vuoto, che la UI renderà come "non c'è ancora abbastanza storia" invece che come un dialogo d'errore su un config appena creato.
+
+  Sette test sul binding con una history sintetica, inclusi i tre casi che in una GUI diventano bug visibili: nessun config selezionato, nessuna history, e un `SLO` fuori range che va ignorato invece di dividere per zero.
+
+
 ## 1.16.0
 
 - **Le analisi di M30 nell'output di `check` (CF-173, M36).** Cinque delle sette vivevano solo nel comando `insight`: chi lanciava `check --history runs.jsonl --output json` non vedeva niente, pur avendo in mano esattamente i dati che servono. Erano due invocazioni per una cosa sola. Ora, quando `--history` è presente, la run porta con sé le analisi:
