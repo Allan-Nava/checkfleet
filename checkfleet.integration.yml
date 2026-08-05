@@ -63,3 +63,9 @@ checks:
     brokers:
       - 127.0.0.1:9092
     expect_brokers: 1        # single-node KRaft
+    # Seeded by the kafka-seed service (CF-172): 10 produced, 5 consumed, so the
+    # group carries a known lag and kadm.GroupLag actually runs.
+    groups:
+      - checkfleet-consumers
+    lag_warn: 100
+    lag_crit: 1000

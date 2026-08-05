@@ -163,11 +163,18 @@ services:
       # Single-node KRaft: no ZooKeeper, broker and controller in one process.
       KAFKA_NODE_ID: "1"
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://127.0.0.1:9092
+      # Two data listeners on purpose. A Kafka client follows the *advertised*
+      # address after bootstrap, so one address cannot serve both sides: HOST is
+      # advertised as 127.0.0.1 for the suite running outside Docker, INTERNAL as
+      # kafka:29092 for containers on the compose network (the seed below).
+      # With only the HOST listener, the seed container would be redirected to
+      # 127.0.0.1 — itself — and hang until the timeout.
+      KAFKA_LISTENERS: HOST://:9092,INTERNAL://:29092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: HOST://127.0.0.1:9092,INTERNAL://kafka:29092
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,HOST:PLAINTEXT,INTERNAL:PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
@@ -179,3 +186,26 @@ services:
       interval: 5s
       timeout: 10s
       retries: 40
+
+  # A topic with a consumer group that has read part of it, so kadm.GroupLag has
+  # something to measure (CF-172). Without this the Kafka adapter's lag path was
+  # the one symbol CF-161 left at 0%: the coverage number went up, that code
+  # path did not. Produces 10 messages and consumes 5, leaving a known lag.
+  kafka-seed:
+    image: apache/kafka:3.8.0
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: "no"
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        B=kafka:29092
+        K=/opt/kafka/bin
+        $$K/kafka-topics.sh --bootstrap-server $$B --create --if-not-exists \
+          --topic checkfleet-lag --partitions 1 --replication-factor 1
+        seq 1 10 | $$K/kafka-console-producer.sh --bootstrap-server $$B --topic checkfleet-lag
+        $$K/kafka-console-consumer.sh --bootstrap-server $$B --topic checkfleet-lag \
+          --group checkfleet-consumers --from-beginning --max-messages 5 --timeout-ms 15000 || true
+        echo "seeded: topic checkfleet-lag, group checkfleet-consumers, lag 5"

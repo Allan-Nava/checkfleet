@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.17.1
+
+- **Consumer group nella suite d'integrazione: `kadm.GroupLag` non è più a zero (CF-172, M36).** Dopo CF-161 la copertura di Kafka era salita ma **quel** percorso no: `checkfleet.integration.yml` non dichiarava nessun gruppo, quindi la funzione che misura il lag non aveva niente da misurare e restava a **0%**. Un numero di copertura che sale non è un percorso coperto.
+
+  Aggiunto un servizio one-shot `kafka-seed` che crea un topic, produce 10 messaggi e ne consuma 5, lasciando un lag **noto**. Verificato eseguendolo:
+
+  ```
+  kafka [OK] group/checkfleet-consumers: total lag 5
+  ```
+
+  `GroupLag` **0% → 66.7%**, `Metadata` 45.5% → 72.7%, il package dal 62.3% al 68.1%.
+
+  **Difetto trovato scrivendo il compose, prima di eseguirlo**: il broker aveva un solo listener, advertised come `127.0.0.1:9092`. Un client Kafka dopo il bootstrap segue l'indirizzo *advertised*, quindi il container di seed sarebbe stato rimandato a 127.0.0.1 — sé stesso — e sarebbe rimasto appeso fino al timeout. Un indirizzo non può servire entrambi i lati: ora ci sono due listener, `HOST` advertised come 127.0.0.1 per la suite che gira fuori da Docker e `INTERNAL` come `kafka:29092` per i container sulla rete compose.
+
+  Verificato anche che `up -d --wait`, l'invocazione che usa la CI, **non si appenda** sul servizio one-shot: il seed esce 0 e lo stack diventa healthy.
+
+
 ## 1.17.0
 
 - **Binding Wails per `internal/insight` (CF-164, M36).** Il desktop può ora chiedere le analisi di M30: `App.Insight(InsightRequest)` legge la history persistita del config attivo e restituisce **la stessa `insight.Report`** che la CLI serializza.
