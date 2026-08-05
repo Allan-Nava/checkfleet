@@ -49,8 +49,7 @@ func runServe(args []string) error {
 	runOnce := func() {
 		res := engine.RunJobsLimited(context.Background(), jobs, limit)
 		res.Labels = cfg.Labels
-		res.Findings = engine.ApplyMaintenance(res.Findings, cfg.Maintenance, time.Now())
-		res.Findings = engine.ApplyRunbooks(res.Findings, cfg.Runbooks)
+		res = engine.PostProcess(res, cfg, time.Now())
 		mu.Lock()
 		latest = res
 		mu.Unlock()

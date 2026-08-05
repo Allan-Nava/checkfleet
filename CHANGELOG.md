@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.15.0
+
+- **`engine.PostProcess`: una pipeline sola dopo la run, e il test che impedisce di ri-divergere (CF-163, M36).** `check`, `serve` e `watch` applicavano a mano `ApplyMaintenance` → `ApplyRunbooks`; il desktop applicava **solo la seconda**. Conseguenza concreta, non teorica: **una finestra di manutenzione attiva silenziava la CLI e non la GUI**, quindi lo stesso `checkfleet.yml` dava due verdetti diversi a seconda di dove lo aprivi. Ora i quattro punti chiamano una funzione sola.
+
+  **Cambio di comportamento nel desktop**: le finestre di manutenzione ora valgono anche lì. Se usavi la GUI per vedere *tutto* mentre la CLI silenziava, ora vedi quello che vede la CLI — che è il punto, ma va saputo.
+
+  L'ordine dentro la pipeline non è casuale ed è documentato: **prima si silenzia, poi si annota**. Annotare per primo spenderebbe lavoro su righe che nessuno vedrà e, peggio, farebbe viaggiare il runbook di un finding silenziato dentro un sink che guarda solo gli hint.
+
+  **Il valore non è la deduplicazione, è `TestPostProcessIsTheOnlyPipeline`.** Il test fa il parsing dell'AST dei sorgenti di `cmd/checkfleet` e `desktop/` e fallisce se uno di essi chiama un passo della pipeline direttamente invece di passare da `PostProcess`. Verificato che sappia fallire reintroducendo esattamente la deriva appena chiusa — rimesso `ApplyRunbooks` a mano in `desktop/app.go`, il test lo nomina e fallisce. Più `TestPipelineStepsAreAllRegistered`, che tiene onesta la lista dei passi: un passo aggiunto a `PostProcess` e non registrato renderebbe il gate cieco proprio ai bypass di quel passo. E un conteggio minimo di file esaminati, perché una walk che non guarda niente passa sempre.
+
+  Questo item apre M36 e viene prima dei binding desktop di proposito: senza, la milestone avrebbe aggiunto sette occasioni nuove di divergere invece di chiuderne una.
+
+- **Docs (backlog): nuovo item CF-173** in M36 — le analisi di M30 nell'output di `check`. Cinque delle sette vivono solo nel comando `insight`, e `Correlate`/`FleetScore` escono solo in markdown mentre il JSON è la superficie su cui si fa gating. Va fatto dopo CF-163 e prima dei binding, perché il desktop consumerà le stesse struct.
+
+
 ## 1.14.1
 
 - **Docs (backlog, planning): nuova milestone M36 — parità CLI/desktop e insight nella GUI.** Nessun cambiamento al software.
