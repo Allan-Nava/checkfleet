@@ -85,6 +85,12 @@ stable:
 | `started` | string | RFC 3339 start time of the run |
 | `duration_ns` | number | run duration in nanoseconds |
 | `labels` | object | global labels from the config, omitted when none are set |
+| `insight` | object | the M30 analyses, present only when `check` ran with `--history`; omitted otherwise |
+
+`insight` is **advisory, not contractual**. Its sub-keys (`score`, `digest`,
+`clusters`, `recovery`, …) may gain fields, and analyses may be added, inside
+1.x — gate on `worst`, never on an insight. It is documented here so its
+*presence* is predictable, not so its shape is frozen.
 
 And within a finding:
 

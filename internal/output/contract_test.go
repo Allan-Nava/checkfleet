@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Allan-Nava/checkfleet/internal/engine"
+	"github.com/Allan-Nava/checkfleet/internal/insight"
 )
 
 // docPath is the compatibility contract these formats are declared in (CF-153).
@@ -160,5 +161,48 @@ func TestFormatsAreDocumented(t *testing.T) {
 		if !strings.Contains(doc, name) {
 			t.Errorf("metric %q is not documented in %s", name, docPath)
 		}
+	}
+}
+
+// TestInsightBlockIsOmittedWithoutHistory guards the additive promise of
+// CF-173: a run with no history must produce byte-identical JSON to before the
+// block existed, which is why the schema version did not move.
+func TestInsightBlockIsOmittedWithoutHistory(t *testing.T) {
+	plain, err := JSON(contractResult())
+	if err != nil {
+		t.Fatal(err)
+	}
+	viaWith, err := JSONWith(contractResult(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if plain != viaWith {
+		t.Error("JSON and JSONWith(nil) must agree")
+	}
+	if strings.Contains(plain, `"insight"`) {
+		t.Errorf("the insight block leaked into a run without history:\n%s", plain)
+	}
+	if got := strings.Join(objectKeys(t, []byte(plain)), ","); got != "duration_ns,findings,labels,schema,started,summary,worst" {
+		t.Errorf("top-level keys changed: %q", got)
+	}
+}
+
+// TestInsightBlockAppearsAndIsDocumented — when it is present, the key must be
+// in the contract doc like every other one.
+func TestInsightBlockAppearsAndIsDocumented(t *testing.T) {
+	rep := &insight.Report{Runs: 3, Score: &insight.ScoreReport{Value: 91.5, Findings: 2}}
+	out, err := JSONWith(contractResult(), rep)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out, `"insight"`) {
+		t.Fatalf("insight block missing:\n%s", out)
+	}
+	raw, err := os.ReadFile(docPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(raw), "`insight`") {
+		t.Errorf("the insight key is not documented in %s", docPath)
 	}
 }

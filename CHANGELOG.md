@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.16.0
+
+- **Le analisi di M30 nell'output di `check` (CF-173, M36).** Cinque delle sette vivevano solo nel comando `insight`: chi lanciava `check --history runs.jsonl --output json` non vedeva niente, pur avendo in mano esattamente i dati che servono. Erano due invocazioni per una cosa sola. Ora, quando `--history` è presente, la run porta con sé le analisi:
+
+  ```
+  3 checks: 2 OK, 0 WARN, 0 BAD, 1 ERROR (in 43ms)
+
+  Nothing changed across the last 5 run(s).
+
+  Fleet health: 83.3/100 over 3 finding(s)
+    http            50.0
+  ```
+
+  Nel JSON come blocco `insight`, in markdown come sezione **📈 Insight**, in text sotto il riepilogo.
+
+  **Solo le analisi che non chiedono niente all'operatore**: digest, fleet score, cluster e recovery. Il forecast ha bisogno di una soglia e il budget di un obiettivo, e indovinarli sarebbe peggio che lasciarli al comando dedicato — `insight --forecast --threshold N` e `--slo` restano lì, e ora la documentazione dice perché il confine sta lì.
+
+  **Il blocco è additivo e `omitempty`, quindi `schema` non si muove.** Una run senza history produce JSON **byte-identico** a prima, e c'è un test che lo verifica confrontando `JSON` con `JSONWith(nil)` e ricontrollando l'elenco delle chiavi top-level. Nel contratto `insight` è dichiarato **advisory, non contrattuale**: le sue sotto-chiavi possono crescere dentro la 1.x, si continua a fare gating su `worst`.
+
+  **Il vero lavoro è stato spostare le struct in `internal/insight`** (`Report`, `Options`, `Analyse`, `Text`). Vivevano in `cmd/checkfleet/insight.go`, cioè nell'unico posto da cui il desktop non può leggerle: definirle una volta è ciò che impedisce a `insight`, al blocco JSON di `check` e ai futuri binding Wails di parlare tre vocabolari diversi degli stessi numeri.
+
+  Aggiunto anche **`insight --clusters`**: `Correlate` era l'unica analisi raggiungibile da un posto solo (il markdown), un'asimmetria senza ragione.
+
+  **Due difetti di resa trovati eseguendolo, non nei test.** Mancava la riga vuota fra digest e score, perché `Narrate` di un digest vuoto non chiudeva con newline. E un outage con tutti i campioni dentro lo stesso minuto stampava `down for at least 0s`: una durata di zero si legge come una misura, mentre il fatto è "down" — ora la durata compare solo quando c'è qualcosa da misurare.
+
+
 ## 1.15.0
 
 - **`engine.PostProcess`: una pipeline sola dopo la run, e il test che impedisce di ri-divergere (CF-163, M36).** `check`, `serve` e `watch` applicavano a mano `ApplyMaintenance` → `ApplyRunbooks`; il desktop applicava **solo la seconda**. Conseguenza concreta, non teorica: **una finestra di manutenzione attiva silenziava la CLI e non la GUI**, quindi lo stesso `checkfleet.yml` dava due verdetti diversi a seconda di dove lo aprivi. Ora i quattro punti chiamano una funzione sola.

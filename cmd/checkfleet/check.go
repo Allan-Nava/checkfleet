@@ -13,6 +13,7 @@ import (
 	"github.com/Allan-Nava/checkfleet/internal/baseline"
 	"github.com/Allan-Nava/checkfleet/internal/engine"
 	"github.com/Allan-Nava/checkfleet/internal/history"
+	"github.com/Allan-Nava/checkfleet/internal/insight"
 	"github.com/Allan-Nava/checkfleet/internal/registry"
 )
 
@@ -119,6 +120,21 @@ func runCheck(args []string) error {
 	res = engine.PostProcess(res, cfg, time.Now())
 	res.Findings = engine.Filter(res.Findings, filter)
 
+	// With a history in hand, the run carries the M30 analyses instead of
+	// requiring a second `checkfleet insight` invocation (CF-173). Only the
+	// analyses that need nothing from the operator: a forecast needs a threshold
+	// and a budget needs an objective, and guessing either would be worse than
+	// leaving them to the dedicated command.
+	var report *insight.Report
+	if *historyPath != "" && !*diff {
+		if recent, err := history.Open(*historyPath).Recent(*flapWindow); err == nil && len(recent) > 0 {
+			r := insight.Analyse(recent, res.Findings, insight.DefaultOptions(time.Now()))
+			if !r.Empty() {
+				report = &r
+			}
+		}
+	}
+
 	if *diff {
 		if *historyPath == "" {
 			return fmt.Errorf("--diff requires --history")
@@ -147,7 +163,7 @@ func runCheck(args []string) error {
 		os.Getenv("NO_COLOR") == "" && isTerminal(os.Stdout)
 
 	if err := emitAll(sinks, res, sinkOptions{
-		renderCtx:  renderCtx{module: module, color: color, configPath: *configPath},
+		renderCtx:  renderCtx{module: module, color: color, configPath: *configPath, insight: report},
 		outFile:    *outFile,
 		webhookEnv: *webhookEnv,
 		tgTokenEnv: *tgTokenEnv,

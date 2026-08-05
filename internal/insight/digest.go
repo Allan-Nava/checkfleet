@@ -95,7 +95,7 @@ func sortChanges(cs []Change) {
 // chat sink, an issue, or the top of an incident doc.
 func Narrate(d Digest) string {
 	if d.Empty() {
-		return fmt.Sprintf("Nothing changed across the last %d run(s).", d.Runs)
+		return fmt.Sprintf("Nothing changed across the last %d run(s).\n", d.Runs)
 	}
 	var parts []string
 	if n := len(d.New); n > 0 {

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/Allan-Nava/checkfleet/internal/engine"
+	"github.com/Allan-Nava/checkfleet/internal/insight"
 	"github.com/Allan-Nava/checkfleet/internal/output"
 )
 
@@ -17,6 +18,9 @@ type renderCtx struct {
 	module     string
 	color      bool
 	configPath string // SARIF anchors its results to this file
+	// insight carries the M30 analyses when `check --history` computed them
+	// (CF-173). nil for a run without history, which renders exactly as before.
+	insight *insight.Report
 }
 
 func render(format string, res engine.Result, ctx renderCtx) (string, error) {
@@ -26,14 +30,11 @@ func render(format string, res engine.Result, ctx renderCtx) (string, error) {
 		s, err := output.SARIF(res, output.SARIFOptions{Version: version, ConfigPath: ctx.configPath})
 		return s + "\n", err
 	case "text":
-		if color {
-			return output.TextColor(res), nil
-		}
-		return output.Text(res), nil
+		return output.TextWith(res, color, ctx.insight), nil
 	case "markdown":
-		return output.Markdown(res, module), nil
+		return output.MarkdownWith(res, module, ctx.insight), nil
 	case "json":
-		s, err := output.JSON(res)
+		s, err := output.JSONWith(res, ctx.insight)
 		return s + "\n", err
 	case "junit":
 		s, err := output.JUnit(res, module)

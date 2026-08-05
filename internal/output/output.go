@@ -67,13 +67,19 @@ func summaryLine(res engine.Result) string {
 }
 
 // Text renders for the terminal: worst findings first (Result is pre-sorted).
-func Text(res engine.Result) string { return textRender(res, false) }
+func Text(res engine.Result) string { return textRender(res, false, nil) }
 
 // TextColor is Text with ANSI colour on the status column. The caller decides
 // when colour is appropriate (a TTY, no NO_COLOR, not redirected to a file).
-func TextColor(res engine.Result) string { return textRender(res, true) }
+func TextColor(res engine.Result) string { return textRender(res, true, nil) }
 
-func textRender(res engine.Result, color bool) string {
+// TextWith is Text plus the M30 analyses under the findings (CF-173). rep may
+// be nil, which is exactly Text.
+func TextWith(res engine.Result, color bool, rep *insight.Report) string {
+	return textRender(res, color, rep)
+}
+
+func textRender(res engine.Result, color bool, rep *insight.Report) string {
 	var b strings.Builder
 	for _, f := range res.Findings {
 		status := fmt.Sprintf("%-5s", f.Status)
@@ -87,11 +93,21 @@ func textRender(res engine.Result, color bool) string {
 		}
 	}
 	fmt.Fprintf(&b, "\n%s\n", summaryLine(res))
+	if rep != nil && !rep.Empty() {
+		fmt.Fprintf(&b, "\n%s", insight.Text(*rep, insight.TextOptions{}))
+	}
 	return b.String()
 }
 
 // Markdown renders an ops-style report: summary, problems, full table.
-func Markdown(res engine.Result, title string) string {
+func Markdown(res engine.Result, title string) string { return markdownWith(res, title, nil) }
+
+// MarkdownWith is Markdown plus the M30 analyses (CF-173). rep may be nil.
+func MarkdownWith(res engine.Result, title string, rep *insight.Report) string {
+	return markdownWith(res, title, rep)
+}
+
+func markdownWith(res engine.Result, title string, rep *insight.Report) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "# checkfleet — %s\n\n", title)
 	fmt.Fprintf(&b, "Generated: %s\n\n", res.Started.Format(time.RFC3339))
@@ -125,6 +141,9 @@ func Markdown(res engine.Result, title string) string {
 	fmt.Fprintf(&b, "## All results\n\n| Status | Check | Target | Detail |\n|---|---|---|---|\n")
 	for _, f := range res.Findings {
 		fmt.Fprintf(&b, "| %s %s | %s | `%s` | %s |\n", statusIcon[f.Status], f.Status, f.Check, f.Target, f.Message)
+	}
+	if rep != nil && !rep.Empty() {
+		fmt.Fprintf(&b, "\n## 📈 Insight\n\n```\n%s```\n", insight.Text(*rep, insight.TextOptions{}))
 	}
 	return b.String()
 }
@@ -160,12 +179,18 @@ func writeClusters(b *strings.Builder, findings []engine.Finding) {
 const JSONSchemaVersion = 1
 
 // JSON renders the machine-readable result.
-func JSON(res engine.Result) (string, error) {
+func JSON(res engine.Result) (string, error) { return JSONWith(res, nil) }
+
+// JSONWith is JSON plus an "insight" block carrying the M30 analyses (CF-173).
+// The field is additive and omitempty, so a run without history produces
+// byte-identical output to before and the schema version does not move.
+func JSONWith(res engine.Result, rep *insight.Report) (string, error) {
 	out, err := json.MarshalIndent(struct {
 		Schema int `json:"schema"`
 		engine.Result
 		Summary map[engine.Status]int `json:"summary"`
 		Worst   engine.Status         `json:"worst"`
-	}{JSONSchemaVersion, res, engine.Summarize(res.Findings), engine.Worst(res.Findings)}, "", "  ")
+		Insight *insight.Report       `json:"insight,omitempty"`
+	}{JSONSchemaVersion, res, engine.Summarize(res.Findings), engine.Worst(res.Findings), rep}, "", "  ")
 	return string(out), err
 }
