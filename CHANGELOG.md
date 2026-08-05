@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.14.1
+
+- **Docs (backlog, planning): nuova milestone M36 — parità CLI/desktop e insight nella GUI.** Nessun cambiamento al software.
+
+  **Prima, una correzione su M30.** I suoi otto item sono marcati chiusi, ma il preambolo prometteva che ogni analisi si affacciasse "in output *e nel desktop*", e i binding desktop non esistono: `grep -rn 'internal/insight' desktop/` non trova niente. Nella GUI sono arrivati solo il drawer di CF-124 e la riga di fleet score nel markdown. M30 ora lo dice in testa (`✅ (lato CLI)`) invece di lasciar credere che sia intera.
+
+  **Il problema sotto è più generale delle sette analisi mancanti.** Le due interfacce sono derivate: `check`, `serve` e `watch` applicano a mano `ApplyMaintenance` → `ApplyRunbooks`, il desktop applica **solo la seconda**. Oggi lo stesso `checkfleet.yml` produce due verdetti diversi a seconda di dove lo apri — una finestra di manutenzione attiva silenzia la CLI e non la GUI — e nessun test se ne accorge. Per questo il primo item di M36 non è una feature ma `engine.PostProcess`, la pipeline condivisa più il **test di parità** che rende la deriva impossibile; e va fatto prima dei binding, altrimenti la milestone aggiunge sette occasioni nuove di divergere.
+
+  Dieci item (CF-163..172): la pipeline condivisa, i binding Wails di `internal/insight`, e poi le sei superfici GUI che le analisi meritavano — tile del fleet health con il trend dell'indice, forecast e banda di baseline sul grafico metrica del drawer, cluster blast-radius ripiegabili nella tabella, card SLO burn rate, MTTR e outage in corso, drawer "what changed" inoltrabile ai sink. Più due code: il punteggio di flappiness col badge (resto di CF-120, che aveva la detection ma non la misura) e il consumer group nella suite d'integrazione, perché `kadm.GroupLag` è rimasto a 0% anche dopo CF-161 — la copertura è salita, quel percorso no.
+
+
 ## 1.14.0
 
 - **Una pagina per modulo, generata (CF-147, M33).** `go run ./cmd/gen-docs` produce le **29** pagine `docs/modules/<name>.md` da `docs/_data/modules.yml` (id, titolo, summary) e dalle sezioni già scritte in `docs/modules.md`. Motivo: una pagina da 600 righe compete per un solo termine di testa, mentre il traffico vero è la coda lunga — "checkfleet kafka consumer lag check", "check hls live edge cli" — dove una pagina dedicata vince senza competere con niente. La pagina combinata resta l'indice, e ora linka le singole.
