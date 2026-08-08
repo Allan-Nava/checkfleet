@@ -446,3 +446,24 @@ wails build -platform darwin/universal      # or linux/amd64, windows/amd64
 
 The app lives in [`desktop/`](https://github.com/Allan-Nava/checkfleet/tree/main/desktop)
 as a separate Go module, so the Wails toolchain never enters the CLI's build.
+
+## Insight panels
+
+With a recorded history the app surfaces the same M30 analyses the CLI prints
+(`checkfleet insight`), computed by the shared `internal/insight` package — no
+statistics run in the GUI, so a number means the same thing in both places.
+
+- a **Fleet health** tile with the index over recent runs beside it;
+- **correlated failures** above the table: click a group to filter the findings
+  down to it (the rows are already below — expanding a copy of them is the wall
+  of text the grouping exists to replace);
+- a **flapping** badge on targets that oscillate, with the score and direction
+  in the tooltip;
+- **What changed** — the narrative digest, with a Copy button because the text
+  is written to be forwarded;
+- in a finding's drawer: **recovery** (how long it has been down, and how long
+  it usually takes), **error budget**, **baseline deviation** and the
+  **forecast** ETA, each saying why it has nothing to show rather than going
+  blank.
+
+Panels appear only once there is enough history to support them.

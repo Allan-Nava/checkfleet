@@ -73,6 +73,20 @@ func Text(r Report, o TextOptions) string {
 				rr.Outages, dur(rr.MeanSec), dur(rr.P50Sec), dur(rr.P90Sec))
 		}
 	}
+	if len(r.Flapping) > 0 {
+		section(&b, b.Len() > 0)
+		fmt.Fprintf(&b, "Instability, over %d run(s):\n", r.Runs)
+		for _, f := range r.Flapping {
+			fmt.Fprintf(&b, "  %-10s %-38s  flappiness %.0f/100 (%s", f.Check, f.Target, f.Score, f.Level)
+			switch {
+			case f.Recent > f.Score+10:
+				b.WriteString(", getting worse")
+			case f.Recent < f.Score-10:
+				b.WriteString(", settling")
+			}
+			fmt.Fprintf(&b, ") — %d changes in %d runs\n", f.Changes, f.Runs)
+		}
+	}
 	if len(r.Anomalies) > 0 {
 		section(&b, b.Len() > 0)
 		fmt.Fprintf(&b, "Deviation from each metric's own baseline (z >= %g), over %d run(s):\n", orFloat(o.Z, 3), r.Runs)

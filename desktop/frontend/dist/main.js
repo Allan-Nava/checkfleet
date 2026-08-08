@@ -128,6 +128,24 @@
     IssueForges: async () => ({ github: true, gitlab: false }),
     OpenIssue: async (forge, check, target) => ({ ok: true, forge, url: "https://example.com/" + forge + "/issues/1", message: "opened issue on " + forge }),
     OpenURL: async () => {},
+    // M36: a small but shaped report, so the browser preview exercises the
+    // tiles, badges and drawers instead of rendering an empty app.
+    Insight: async () => ({
+      runs: 24,
+      score: {
+        value: 78.4, findings: 6, unstable_targets: 1,
+        modules: { certs: 100, http: 50 }, worst_modules: ["http"],
+        trend: [96, 94, 90, 88, 84, 80, 78.4],
+      },
+      digest: {
+        Runs: 24,
+        New: [{ Check: "http", Target: "https://api.example/", From: "OK", To: "BAD" }],
+        Resolved: [], Degraded: [], Improved: [], Flapping: ["redis cache-01"],
+      },
+      clusters: [{ dimension: "host", value: "db-01", size: 3, targets: ["postgres db-01:5432", "redis db-01:6379", "tcp db-01:22"] }],
+      flapping: [{ check: "redis", target: "cache-01", score: 41, recent: 62, changes: 10, runs: 24, level: "medium" }],
+      recovery: [{ check: "http", target: "https://api.example/", outages: 3, down: true, ongoing_seconds: 2820, mttr_seconds: 480, p50_seconds: 300, p90_seconds: 900 }],
+    }),
   };
 
   // Wails event bus (CF-109). In the browser preview there is no runtime, so the
@@ -256,6 +274,7 @@
     const visible = findings.filter((f) => {
       if (!severityAllowed(f.status, min)) return false;
       if (hideMuted && findingMuted(f)) return false;
+      if (clusterFilter && !clusterFilter.includes(f.check + " " + f.target)) return false;
       if (!q) return true;
       return (f.check + " " + f.target + " " + f.message).toLowerCase().includes(q);
     });
@@ -270,9 +289,12 @@
       const noteChip = note
         ? `<span class="chip chip-note" title="${escapeHtml(CFNotes.describe(note))}">note</span>`
         : "";
+      // Instability badge (CF-171): a target that oscillates is worse than a
+      // stable BAD already triaged, and the table is where you notice it.
+      const flapChip = CFInsight.flapBadge(flapIdx[f.check + "\x1f" + f.target]);
       return `
       <tr data-i="${i}"${$("groupBy").checked ? ` data-grp="${escapeHtml(f.check)}"` : ""}${muted ? ` class="row-muted"` : ""}>
-        <td><span class="badge ${f.status}">${f.status}</span>${chip}${noteChip}</td>
+        <td><span class="badge ${f.status}">${f.status}</span>${chip}${noteChip}${flapChip}</td>
         <td class="cell-check">${escapeHtml(f.check)}</td>
         <td class="cell-target">${escapeHtml(f.target)}</td>
         <td class="cell-trend">${sparkFor(f)}</td>
@@ -304,6 +326,8 @@
     } else {
       rows.innerHTML = visible.map(findingRow).join("");
     }
+    renderClusterBar();
+    renderHealthTile();
 
     if (visible.length) $("empty").style.display = "none";
     else emptyState("no-match");
@@ -352,6 +376,7 @@
     // pull the metric series so the table can draw inline per-target sparklines
     if (report && !report.err) {
       try { metricSeries = (await Backend.Metrics($("configPath").value, 60)) || []; } catch (_) {}
+      await refreshInsight(); // M36: badges, tiles and drawers read this
     }
     running = false;
     setBusy(false);
@@ -1104,6 +1129,62 @@
     if (c) { try { c.act(); } catch (_) {} }
   }
 
+  // The M30 analyses for the active config (M36). Refreshed after every run and
+  // on view switches; null until the first successful fetch, which is why every
+  // render path treats an absent report as "no extra chrome" rather than an
+  // error state.
+  let insightReport = null;
+  let flapIdx = {};
+  let clusterFilter = null; // "check target" labels when a cluster row is active
+
+  async function refreshInsight() {
+    const path = $("configPath") ? $("configPath").value : "";
+    if (!path) { insightReport = null; flapIdx = {}; return; }
+    try {
+      insightReport = await Backend.Insight({ configPath: path, window: 60 });
+    } catch (_) {
+      insightReport = null; // an unreadable history is not worth a dialog
+    }
+    flapIdx = CFInsight.flapIndex(insightReport);
+  }
+
+  // renderClusterBar draws the blast-radius groups above the table (CF-167).
+  // Clicking one filters the table to it instead of expanding a copy of the
+  // rows that are already below.
+  function renderClusterBar() {
+    const host = $("clusterBar");
+    if (!host) return;
+    if (clusterFilter) {
+      host.innerHTML = `<button class="cluster-row active" data-cluster="clear">` +
+        `✕ showing 1 group — click to see all findings</button>`;
+      host.hidden = false;
+      return;
+    }
+    const html = CFInsight.clusterRows(insightReport);
+    host.innerHTML = html;
+    host.hidden = !html;
+  }
+
+  // renderHealthTile draws the fleet index and its trend (CF-165).
+  function renderHealthTile() {
+    const host = $("healthTile");
+    if (!host) return;
+    const tile = CFInsight.scoreTile(insightReport);
+    const trend = insightReport && insightReport.score
+      ? CFInsight.scoreTrend(insightReport.score.trend) : "";
+    host.innerHTML = tile + trend;
+    host.hidden = !tile;
+  }
+
+  // openDigest shows the narrative "what changed" drawer (CF-170), with a
+  // button that copies it for forwarding — the text is written to be pasted.
+  function openDigest() {
+    const body = CFInsight.digestHTML(insightReport);
+    const text = CFInsight.digestText(insightReport);
+    openDrawer("What changed", body +
+      (text ? `<button class="btn copy-btn" data-copy="${escapeHtml(text)}">Copy</button>` : ""));
+  }
+
   let drawerFinding = null; // the finding shown in the detail drawer, for mute actions
 
   async function showFindingDetail(f) {
@@ -1140,6 +1221,10 @@
       <div class="kv"><span>Check</span><b class="mono">${escapeHtml(f.check)}</b></div>
       <div class="kv"><span>Target</span><b class="mono">${escapeHtml(f.target)}</b></div>
       ${metricRow}
+      ${CFInsight.recoveryLine(insightReport, f.check, f.target)}
+      ${CFInsight.budgetCard(insightReport, f.check, f.target)}
+      ${CFInsight.anomalyNote(insightReport, f.check, f.target)}
+      ${CFInsight.forecastNote(insightReport, f.check, f.target)}
       <p class="drawer-msg">${escapeHtml(f.message)}</p>
       ${CFRunbook.block(f)}
       ${muteBlock}
@@ -1481,6 +1566,15 @@
         closeDrawer();
         return;
       }
+      // cluster row (CF-167): filter the table to that group, or clear it.
+      const cl = e.target.closest("[data-cluster]");
+      if (cl) {
+        clusterFilter = cl.dataset.cluster === "clear"
+          ? null
+          : CFInsight.clusterTargets(insightReport, +cl.dataset.cluster);
+        render();
+        return;
+      }
       // open the finding's runbook in the system browser (CF-124). Only http(s)
       // URLs get this attribute — see CFRunbook.block.
       const rb = e.target.closest("[data-runbook]");
@@ -1496,6 +1590,7 @@
       if (e.target.closest("[data-view-save-confirm]")) { confirmSaveView(); return; }
       if (e.target.closest("[data-view-import-confirm]")) { confirmImportViews(); }
     });
+    $("digest").addEventListener("click", openDigest);
     $("drawerClose").addEventListener("click", closeDrawer);
     $("drawerScrim").addEventListener("click", closeDrawer);
 

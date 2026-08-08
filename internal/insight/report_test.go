@@ -162,3 +162,24 @@ func TestAnalyseIsDeterministic(t *testing.T) {
 		}
 	}
 }
+
+// TestScoreCarriesItsTrend — an index without direction says much less than one
+// with it, which is the whole reason CF-165 shows a strip and not a number.
+func TestScoreCarriesItsTrend(t *testing.T) {
+	r := Analyse(runs(20, 5), nil, Options{Now: t0, Score: true})
+	if len(r.Score.Trend) != 20 {
+		t.Fatalf("trend has %d points, want one per run", len(r.Score.Trend))
+	}
+	// The last runs are BAD, so the index must end lower than it started.
+	if !(r.Score.Trend[len(r.Score.Trend)-1] < r.Score.Trend[0]) {
+		t.Errorf("trend should fall as the fleet degrades: %v → %v",
+			r.Score.Trend[0], r.Score.Trend[len(r.Score.Trend)-1])
+	}
+}
+
+func TestSingleRunHasNoTrend(t *testing.T) {
+	r := Analyse(runs(1, 0), nil, Options{Now: t0, Score: true})
+	if len(r.Score.Trend) != 0 {
+		t.Errorf("one run is not a trend: %v", r.Score.Trend)
+	}
+}

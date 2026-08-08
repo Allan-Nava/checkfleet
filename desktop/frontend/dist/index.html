@@ -68,6 +68,9 @@
         <div class="tile warn"><b id="cWARN">0</b><span>WARN</span></div>
         <div class="tile bad"><b id="cBAD">0</b><span>BAD</span></div>
         <div class="tile err"><b id="cERROR">0</b><span>ERROR</span></div>
+        <!-- Fleet health index (CF-165), filled from the M30 analyses; hidden
+             until there is enough history to compute one. -->
+        <span id="healthTile" hidden></span>
       </div>
       <div class="meta">
         <div class="meta-row"><span>Findings</span><b id="mTotal">0</b></div>
@@ -88,6 +91,7 @@
       </select>
       <button class="btn" id="validate">Validate</button>
       <button class="btn" id="changes" disabled>Changes</button>
+      <button class="btn" id="digest" title="What changed across the recorded history — forwardable as text">What changed</button>
       <button class="btn" id="trend">Trend</button>
       <button class="btn" id="history">History</button>
       <button class="btn" id="actionsBtn" title="Action log — mutes, notes and issues you've taken">Actions</button>
@@ -124,6 +128,8 @@
 
     <!-- findings table -->
     <main class="table-wrap" id="tableWrap">
+      <!-- Correlated-failure groups (CF-167). Clicking one filters the table. -->
+      <div id="clusterBar" class="cluster-bar" hidden></div>
       <table class="findings">
         <thead><tr><th class="c-status">Status</th><th class="c-check">Check</th><th class="c-target">Target</th><th class="c-trend">Trend</th><th class="c-msg">Message</th></tr></thead>
         <tbody id="rows"></tbody>
@@ -294,6 +300,7 @@
   <script src="notes.js"></script>
   <script src="audit.js"></script>
   <script src="runbook.js"></script>
+  <script src="insight.js"></script>
   <script src="main.js"></script>
 </body>
 </html>

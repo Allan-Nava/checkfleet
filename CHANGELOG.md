@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.18.0
+
+- **Le analisi di M30 arrivano nella GUI, e M36 si chiude (CF-165..171).** Sette item in una release sola, e vale la pena dire perché invece di fingere sette commit: passano tutti per **un modulo solo**, `dist/insight.js`, e per un'unica passata di wiring in `main.js`. Spezzarli avrebbe prodotto release che non stanno in piedi da sole.
+
+  - **CF-165** — tile **Fleet health** con il **trend dell'indice** accanto. Il trend è calcolato in Go, un punto per run sui record della history (non sui finding live), così ogni punto è misurato allo stesso modo. Un valore istantaneo dice molto meno della sua direzione: è tutta la ragione per cui l'indice esiste.
+  - **CF-166** — ETA del forecast e banda di baseline nel drawer di un finding con metrica.
+  - **CF-167** — i cluster blast-radius sopra la tabella. Cliccarne uno **filtra** le righe invece di espanderne una copia: quelle righe sono già sotto, e duplicarle è il muro di testo che il raggruppamento esiste per sostituire.
+  - **CF-168** — card dell'error budget con quanto resta e il burn rate.
+  - **CF-169** — recovery nel drawer: da quanto è giù e quanto ci mette di solito.
+  - **CF-170** — drawer **What changed** con il bottone Copy, perché quel testo è scritto per essere inoltrato.
+  - **CF-171** — badge **flapping**. Il chip porta solo il livello, il punteggio sta nel tooltip: un chip che dice "41" invita a confrontarlo col "44" accanto, una differenza che i dati non reggono. E il punteggio è finalmente una **misura** — il tasso di transizioni sulla finestra — invece del conteggio secco di CF-32: quattro cambi in 10 run e quattro in 60 erano lo stesso numero e due problemi diversi. Un secondo punteggio sull'ultimo terzo distingue "flappava, ora fermo" da "ha appena iniziato".
+
+  **Nessuna statistica in JavaScript.** I numeri arrivano già calcolati dal binding Go; il modulo frontend fa solo markup. Una seconda implementazione in JS divergerebbe entro una release — la stessa deriva che CF-163 ha chiuso per il post-processing, e non aveva senso riaprirla qui.
+
+  **Verificato che renda, non solo che compili**: Chrome headless sul frontend reale mostra la tile in banda `warn`, le 7 barre del trend e la cluster row, senza errori JS. Aggiunto anche lo stub `Insight` al Backend mock, senza il quale l'anteprima nel browser sarebbe morta su `Backend.Insight is not a function` fuori da Wails.
+
+  14 test headless nuovi (61 in totale nel frontend), inclusi l'escaping di valori ostili in ogni superficie e i casi in cui un pannello deve dire **perché** non ha niente da mostrare invece di restare vuoto — una riga bianca si legge come "nessun rischio".
+
+  **M36 chiusa.** Undici item: la pipeline condivisa col gate di parità (CF-163), le analisi nell'output di `check` (CF-173), i binding Wails (CF-164), il consumer group in integrazione (CF-172) e queste sette superfici.
+
+
 ## 1.17.1
 
 - **Consumer group nella suite d'integrazione: `kadm.GroupLag` non è più a zero (CF-172, M36).** Dopo CF-161 la copertura di Kafka era salita ma **quel** percorso no: `checkfleet.integration.yml` non dichiarava nessun gruppo, quindi la funzione che misura il lag non aveva niente da misurare e restava a **0%**. Un numero di copertura che sale non è un percorso coperto.

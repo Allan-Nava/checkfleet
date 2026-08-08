@@ -24,6 +24,7 @@ type Report struct {
 	Clusters  []ClusterRow  `json:"clusters,omitempty"`
 	Anomalies []AnomalyRow  `json:"anomalies,omitempty"`
 	Recovery  []RecoveryRow `json:"recovery,omitempty"`
+	Flapping  []FlappingRow `json:"flapping,omitempty"`
 	Forecasts []ForecastRow `json:"forecasts,omitempty"`
 	Budgets   []BudgetRow   `json:"budgets,omitempty"`
 	Notes     []string      `json:"notes,omitempty"`
@@ -32,7 +33,7 @@ type Report struct {
 // Empty reports whether the analysis found nothing worth showing.
 func (r Report) Empty() bool {
 	return r.Score == nil && r.Digest == nil && len(r.Clusters) == 0 && len(r.Anomalies) == 0 &&
-		len(r.Recovery) == 0 && len(r.Forecasts) == 0 && len(r.Budgets) == 0
+		len(r.Recovery) == 0 && len(r.Forecasts) == 0 && len(r.Budgets) == 0 && len(r.Flapping) == 0
 }
 
 // Options selects which analyses run and tunes them. The zero value asks for
@@ -46,6 +47,7 @@ type Options struct {
 	Clusters bool
 	Anomaly  bool
 	Recovery bool
+	Flapping bool
 
 	// Forecast runs only when Threshold is non-zero.
 	Threshold float64
@@ -62,7 +64,7 @@ type Options struct {
 // `check --history` can attach without asking a question first.
 func DefaultOptions(now time.Time) Options {
 	return Options{
-		Now: now, Score: true, Digest: true, Clusters: true, Recovery: true,
+		Now: now, Score: true, Digest: true, Clusters: true, Recovery: true, Flapping: true,
 		Z: 3, FlapChanges: 3, MinR2: 0.7, FastWindow: 0.1,
 	}
 }
@@ -75,6 +77,10 @@ type ScoreReport struct {
 	Unstable int                `json:"unstable_targets"`
 	Modules  map[string]float64 `json:"modules,omitempty"`
 	Worst    []string           `json:"worst_modules,omitempty"`
+	// Trend is the index for each run in the window, oldest first. The index
+	// exists to be watched over time — a single instantaneous value says much
+	// less than its direction — so the series ships with it.
+	Trend []float64 `json:"trend,omitempty"`
 }
 
 // ClusterRow is one correlated-failure group.
@@ -126,6 +132,17 @@ type BudgetRow struct {
 	Exhausted    string  `json:"exhausted,omitempty"`
 	Samples      int     `json:"samples"`
 	Note         string  `json:"note,omitempty"`
+}
+
+// FlappingRow is one target's oscillation score (CF-171).
+type FlappingRow struct {
+	Check   string  `json:"check"`
+	Target  string  `json:"target"`
+	Score   float64 `json:"score"`
+	Recent  float64 `json:"recent"`
+	Changes int     `json:"changes"`
+	Runs    int     `json:"runs"`
+	Level   string  `json:"level"`
 }
 
 // RecoveryRow is one target's outage history and current state.
@@ -186,6 +203,14 @@ func Analyse(records []history.Record, findings []engine.Finding, o Options) Rep
 				sr.Worst = append(sr.Worst, name)
 			}
 		}
+		// Per-run trend. Computed on the history's own records (not the live
+		// findings) so every point is measured the same way.
+		if len(records) > 1 {
+			sr.Trend = make([]float64, 0, len(records))
+			for _, rec := range records {
+				sr.Trend = append(sr.Trend, FleetScore(findingsOf(rec), unstable).Value)
+			}
+		}
 		r.Score = sr
 	}
 	if o.Digest {
@@ -202,6 +227,18 @@ func Analyse(records []history.Record, findings []engine.Finding, o Options) Rep
 				Check: s.Check, Target: s.Target, Outages: len(rec.Outages),
 				MeanSec: secs(rec.Mean), P50Sec: secs(rec.P50), P90Sec: secs(rec.P90),
 				Down: rec.Down, OngoingSec: secs(rec.Ongoing), Unresolved: rec.Unresolved,
+			})
+		}
+	}
+	if o.Flapping {
+		for _, s := range statusSeries {
+			f, ok := Flapping(s)
+			if !ok || f.Score == 0 {
+				continue // nothing to badge
+			}
+			r.Flapping = append(r.Flapping, FlappingRow{
+				Check: s.Check, Target: s.Target,
+				Score: f.Score, Recent: f.Recent, Changes: f.Changes, Runs: f.Runs, Level: f.Level(),
 			})
 		}
 	}

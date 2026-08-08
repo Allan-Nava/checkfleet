@@ -659,6 +659,50 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 6px; border-radius
 .mute-block { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
 .mute-label { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
 
+/* M30 analyses in the GUI (M36) */
+/* fleet health tile (CF-165) */
+.tile.health b { font-variant-numeric: tabular-nums; }
+.tile.health.ok b { color: var(--ok); }
+.tile.health.warn b { color: var(--warn); }
+.tile.health.bad b { color: var(--bad); }
+.health-trend { display: flex; align-items: flex-end; gap: 2px; height: 26px; margin-top: 4px; }
+.health-trend .hbar { width: 4px; border-radius: 1px; background: var(--muted); }
+.health-trend .hbar.s-ok { background: var(--ok); }
+.health-trend .hbar.s-warn { background: var(--warn); }
+.health-trend .hbar.s-bad { background: var(--bad); }
+
+/* correlated-failure groups (CF-167) */
+.cluster-bar { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 12px 0; }
+.cluster-row { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px;
+  border-radius: var(--r-md); border: 1px solid var(--border-str); background: var(--surface);
+  color: var(--text); font: inherit; font-size: var(--fs-sm); cursor: pointer; }
+.cluster-row:hover { border-color: var(--brand-2); }
+.cluster-row.active { border-color: var(--brand-2); color: var(--brand-2); }
+.cluster-row b { color: var(--bad); }
+
+/* instability badge (CF-171) */
+.chip-flap { margin-left: 8px; }
+.chip-flap.flap-low { color: var(--muted); background: color-mix(in srgb, var(--muted) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--muted) 26%, transparent); }
+.chip-flap.flap-medium { color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warn) 26%, transparent); }
+.chip-flap.flap-high { color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--bad) 30%, transparent); }
+
+/* drawer insights: recovery, budget, baseline, forecast (CF-166/168/169) */
+.budget.s-ok { color: var(--ok); }
+.budget.s-warn { color: var(--warn); }
+.budget.s-bad { color: var(--bad); }
+.kv .s-warn { color: var(--warn); }
+.kv .muted { color: var(--muted); font-weight: 400; }
+
+/* what-changed drawer (CF-170) */
+.digest-h { margin: 14px 0 4px; font-size: 12px; text-transform: uppercase;
+  letter-spacing: .04em; color: var(--muted); }
+.digest-list { margin: 0; padding-left: 18px; font-size: var(--fs-sm); }
+.digest-list li { margin: 2px 0; }
+.digest-list .muted { color: var(--muted); }
+
 /* runbook hints (CF-124) — "what to do", from the runbooks: config rules */
 .hint-block { display: flex; flex-direction: column; gap: 4px; margin: 14px 0;
   padding: 10px 12px; border-radius: var(--r-md); background: var(--surface);
