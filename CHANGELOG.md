@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.18.1
+
+- **Docs (backlog, planning): nuova milestone M37 — meno rumore, più scala.** Nessun cambiamento al software.
+
+  La tesi, dopo M30 e M36: con 29 moduli e sette analisi checkfleet **trova** abbastanza, e il prossimo problema non è trovare di più. Su una flotta vera trova *troppo*, e il file che lo spiega cresce per sempre.
+
+  Tre sintomi, tutti verificati nel codice prima di scriverli invece che assunti. Un host morto produce un finding per ogni modulo che lo tocca e `alert` li apre **tutti**: CF-123 ha insegnato a *mostrarli* come un guasto solo, ma la notifica non lo sa. `alert --provider X` vale per **l'intera run**, quindi o svegli il team sbagliato o non instradi niente. E `--history` è append-only per progetto — la scelta giusta, e senza risposta alla domanda "e fra un anno?".
+
+  Sette item (CF-174..180) in tre gruppi. **Meno rumore**: soppressione per dipendenza (`depends_on`, che agisce su gate e notifiche invece di limitarsi a raggruppare), routing degli alert per label/modulo/severità, e una politica di re-notifica per il BAD che dura tre giorni e oggi o urla a ogni run o viene dimenticato. **Scala**: retention con *downsampling* delle run vecchie invece di cancellarle, e cadenze per modulo (un certificato non cambia in 30 secondi). **Coprire di più senza aggiungere moduli**: scoperta dei target da catalogo Consul e record DNS SRV — riuso di due parser che il repo ha già — e un modulo `flow` multi-passo che dice **quale** passo ha fallito.
+
+  Ogni item porta scritta la trappola che deve evitare, perché è la parte che si dimentica: un finding soppresso resta **visibile e marcato** (uno sparito è indistinguibile da un check che non è girato), i cicli nelle dipendenze si rilevano in `validate` invece di girare, la compattazione resta crash-safe come la scrittura attuale, e il modulo `flow` non esegue codice dalla config — sarebbe una superficie di sicurezza nuova in cambio di comodità.
+
+
 ## 1.18.0
 
 - **Le analisi di M30 arrivano nella GUI, e M36 si chiude (CF-165..171).** Sette item in una release sola, e vale la pena dire perché invece di fingere sette commit: passano tutti per **un modulo solo**, `dist/insight.js`, e per un'unica passata di wiring in `main.js`. Spezzarli avrebbe prodotto release che non stanno in piedi da sole.
