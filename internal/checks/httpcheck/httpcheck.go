@@ -4,6 +4,7 @@ package httpcheck
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"net/http"
@@ -19,8 +20,28 @@ type Check struct {
 }
 
 func New(cfg engine.HTTPConfig) *Check {
-	return &Check{cfg: cfg, client: &http.Client{}}
+	return &Check{cfg: cfg, client: httpClient(cfg)}
 }
+
+// httpClient honours a configured client certificate (CF-183). Without one the
+// zero-value client is kept, so nothing changes for the ordinary case.
+func httpClient(cfg engine.HTTPConfig) *http.Client {
+	if !cfg.ClientTLS.Set() {
+		return &http.Client{}
+	}
+	tc, err := cfg.ClientTLS.Apply(&tls.Config{MinVersion: tls.VersionTLS12})
+	if err != nil {
+		// Surfaced as an ERROR finding on the first request: "the check could
+		// not measure" is the honest status for a certificate it cannot load.
+		return &http.Client{Transport: &errTransport{err: err}}
+	}
+	return &http.Client{Transport: &http.Transport{TLSClientConfig: tc}}
+}
+
+// errTransport fails every request with a fixed error.
+type errTransport struct{ err error }
+
+func (e *errTransport) RoundTrip(*http.Request) (*http.Response, error) { return nil, e.err }
 
 func (c *Check) Name() string { return "http" }
 

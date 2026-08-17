@@ -670,3 +670,41 @@ Where they show up:
 > including the ones that leave the host (Slack, webhooks, issue trackers). Put
 > a URL and a sentence here — never a token, a password or an internal
 > credential path.
+
+## Client certificates (mTLS)
+
+Where a fleet requires mutual TLS, the affected checks need an identity of their
+own. Six modules take it from the config — `http`, `grpc`, `tcp`, `smtp`,
+`elasticsearch`, `kafka` — with the same three keys:
+
+```yaml
+checks:
+  http:
+    client_cert: /etc/checkfleet/client.crt
+    client_key:  /etc/checkfleet/client.key
+    ca_cert:     /etc/checkfleet/ca.crt      # verify the server against this
+    targets:
+      - {url: "https://api.internal/health", expect_status: 200}
+```
+
+**Paths only, never inline PEM.** A private key pasted into `checkfleet.yml`
+would be a secret in a config file, which the no-secrets rule forbids.
+
+Naming a `ca_cert` **turns server verification back on** for the modules that
+skip it by default (`tcp`, `smtp`): a CA you configured on purpose that was then
+ignored would make the setting decorative.
+
+A half-configured pair — `client_cert` without `client_key`, or the reverse — is
+an error naming the missing half, not a silent fall back to no certificate. The
+silent version turns a typo into an hour spent asking why the server rejects
+you.
+
+The three driver-backed modules take the same thing through their own
+connection string, and deliberately do **not** repeat these keys — a second way
+to say it is a knob that can disagree with the first:
+
+| Module | Where |
+|---|---|
+| `postgres` | `sslcert=`, `sslkey=`, `sslrootcert=` in the DSN |
+| `mongodb` | `tlsCertificateKeyFile=`, `tlsCAFile=` in the URI |
+| `mysql` | the driver's TLS parameters in the DSN |

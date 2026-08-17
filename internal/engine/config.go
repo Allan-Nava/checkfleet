@@ -225,6 +225,8 @@ type ElasticsearchConfig struct {
 	Targets     []ElasticsearchTarget `yaml:"targets"`
 	DiskWarnPct int                   `yaml:"disk_warn_pct"` // default 85 (ES low watermark)
 	DiskCritPct int                   `yaml:"disk_crit_pct"` // default 90 (ES high watermark)
+	// Client certificate for mTLS (CF-183); empty leaves the handshake unchanged.
+	ClientTLS ClientTLS `yaml:",inline"`
 }
 
 // ElasticsearchTarget is one cluster endpoint (any node answers cluster-wide).
@@ -248,6 +250,8 @@ type SMTPConfig struct {
 	Targets  []SMTPTarget `yaml:"targets"`
 	WarnDays int          `yaml:"warn_days"`
 	CritDays int          `yaml:"crit_days"`
+	// Client certificate for mTLS (CF-183); empty leaves the handshake unchanged.
+	ClientTLS ClientTLS `yaml:",inline"`
 }
 
 // SMTPTarget is one SMTP relay to probe.
@@ -478,6 +482,8 @@ type KeycloakConfig struct {
 // TCPConfig configures the generic TCP reachability check.
 type TCPConfig struct {
 	Targets []TCPTarget `yaml:"targets"`
+	// Client certificate for mTLS (CF-183); empty leaves the handshake unchanged.
+	ClientTLS ClientTLS `yaml:",inline"`
 }
 
 type TCPTarget struct {
@@ -527,6 +533,8 @@ type RabbitMQConfig struct {
 // GRPCConfig configures the gRPC health-checking-protocol check (TLS/h2 only).
 type GRPCConfig struct {
 	Targets []GRPCTarget `yaml:"targets"`
+	// Client certificate for mTLS (CF-183); empty leaves the handshake unchanged.
+	ClientTLS ClientTLS `yaml:",inline"`
 }
 
 type GRPCTarget struct {
@@ -570,6 +578,8 @@ type KafkaConfig struct {
 	SASLUser        string `yaml:"sasl_user"`
 	SASLMechanism   string `yaml:"sasl_mechanism"`
 	SASLPasswordEnv string `yaml:"sasl_password_env"`
+	// Client certificate for mTLS (CF-183); empty leaves the handshake unchanged.
+	ClientTLS ClientTLS `yaml:",inline"`
 	// Optional expected broker count; fewer is WARN.
 	ExpectBrokers int `yaml:"expect_brokers"`
 	// Consumer groups whose lag to check.
@@ -581,6 +591,8 @@ type KafkaConfig struct {
 // HTTPConfig configures the HTTP probe check.
 type HTTPConfig struct {
 	Targets []HTTPTarget `yaml:"targets"`
+	// Client certificate for mTLS (CF-183); empty leaves the handshake unchanged.
+	ClientTLS ClientTLS `yaml:",inline"`
 }
 
 type HTTPTarget struct {

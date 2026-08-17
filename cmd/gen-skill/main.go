@@ -297,6 +297,10 @@ func writeFields(b *strings.Builder, v reflect.Value, skip map[string]bool) {
 	rows := make([]string, 0, t.NumField())
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
+		if isInline(f) && f.Type.Kind() == reflect.Struct {
+			rows = append(rows, inlineRows(v.Field(i))...)
+			continue
+		}
 		key := yamlKey(f)
 		if key == "" || skip[key] {
 			continue
@@ -312,12 +316,40 @@ func writeFields(b *strings.Builder, v reflect.Value, skip map[string]bool) {
 	b.WriteString("\n")
 }
 
+// inlineRows renders an inlined struct's fields as if they were the parent's.
+func inlineRows(v reflect.Value) []string {
+	t := v.Type()
+	var rows []string
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		key := yamlKey(f)
+		if key == "" {
+			continue
+		}
+		rows = append(rows, fmt.Sprintf("| `%s` | %s | %s |", key, typeName(f.Type), defaultOf(v.Field(i))))
+	}
+	return rows
+}
+
 func yamlKey(f reflect.StructField) string {
 	tag := f.Tag.Get("yaml")
 	if tag == "" || tag == "-" {
 		return ""
 	}
 	return strings.Split(tag, ",")[0]
+}
+
+// isInline reports whether a field is spliced into its parent's key space
+// (`yaml:",inline"`). Its own name is not a key, so writeFields must descend
+// into it — skipping it silently is how client_cert/client_key/ca_cert first
+// landed undocumented, which is the exact failure this reference exists to stop.
+func isInline(f reflect.StructField) bool {
+	for _, opt := range strings.Split(f.Tag.Get("yaml"), ",")[1:] {
+		if opt == "inline" {
+			return true
+		}
+	}
+	return false
 }
 
 // typeName renders a Go type the way a config author thinks about it.

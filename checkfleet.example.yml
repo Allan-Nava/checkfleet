@@ -39,6 +39,11 @@ checks:
     # ansible_inventory: /path/to/inventory   # every host becomes a target on `port`
 
   http:
+    # Client certificate for a target behind mutual TLS (paths only, never
+    # inline PEM). Omit all three when mTLS is not in play.
+    # client_cert: /etc/checkfleet/client.crt
+    # client_key:  /etc/checkfleet/client.key
+    # ca_cert:     /etc/checkfleet/ca.crt
     targets:
       - url: https://example.com/
         expect_status: 200

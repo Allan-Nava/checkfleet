@@ -17,8 +17,12 @@ import (
 // connectKadm is the default cluster: a franz-go client + kadm admin.
 func connectKadm(_ context.Context, cfg engine.KafkaConfig) (cluster, error) {
 	opts := []kgo.Opt{kgo.SeedBrokers(cfg.Brokers...)}
-	if cfg.TLS {
-		opts = append(opts, kgo.DialTLSConfig(&tls.Config{}))
+	if cfg.TLS || cfg.ClientTLS.Set() {
+		tc, err := cfg.ClientTLS.Apply(&tls.Config{MinVersion: tls.VersionTLS12})
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, kgo.DialTLSConfig(tc))
 	}
 	if cfg.SASLUser != "" {
 		pw := os.Getenv(cfg.SASLPasswordEnv)

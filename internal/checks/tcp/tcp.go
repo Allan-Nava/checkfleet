@@ -81,7 +81,14 @@ func (c *Check) probe(ctx context.Context, t engine.TCPTarget) engine.Finding {
 func (c *Check) dial(ctx context.Context, t engine.TCPTarget) (net.Conn, error) {
 	d := net.Dialer{}
 	if t.TLS {
-		return tls.DialWithDialer(&d, "tcp", t.Address, &tls.Config{ServerName: hostOf(t.Address), InsecureSkipVerify: true})
+		// InsecureSkipVerify stays the default: this check answers "is the port
+		// open", not "is the chain valid" (that is the tls module's job). A
+		// configured ca_cert turns verification back on — see ClientTLS.Apply.
+		cfg, err := c.cfg.ClientTLS.Apply(&tls.Config{ServerName: hostOf(t.Address), InsecureSkipVerify: true})
+		if err != nil {
+			return nil, err
+		}
+		return tls.DialWithDialer(&d, "tcp", t.Address, cfg)
 	}
 	return d.DialContext(ctx, "tcp", t.Address)
 }

@@ -100,3 +100,32 @@ func TestFullConfigEnablesEveryModule(t *testing.T) {
 		t.Errorf("fullConfig enabled %d modules, want all %d — the schema would silently skip the rest", got, want)
 	}
 }
+
+// TestInlinedKeysAreDocumented is a regression guard for CF-183. ClientTLS is
+// spliced into six module configs with `yaml:",inline"`, and the generator used
+// to skip such fields because their own yaml key is empty — so client_cert,
+// client_key and ca_cert shipped absent from the reference an assistant reads
+// to avoid inventing key names. Exactly the drift this file exists to prevent.
+func TestInlinedKeysAreDocumented(t *testing.T) {
+	schema := schemaDoc()
+	for _, key := range []string{"`client_cert`", "`client_key`", "`ca_cert`"} {
+		if !strings.Contains(schema, key) {
+			t.Errorf("%s is missing from the config schema", key)
+		}
+	}
+	// Present under every module that takes it, not just the first.
+	for _, mod := range []string{"checks.http", "checks.grpc", "checks.tcp", "checks.smtp", "checks.elasticsearch", "checks.kafka"} {
+		i := strings.Index(schema, "### `"+mod+"`")
+		if i < 0 {
+			t.Errorf("%s section missing", mod)
+			continue
+		}
+		rest := schema[i:]
+		if j := strings.Index(rest[5:], "### `"); j >= 0 {
+			rest = rest[:j+5]
+		}
+		if !strings.Contains(rest, "client_cert") {
+			t.Errorf("%s does not document client_cert", mod)
+		}
+	}
+}

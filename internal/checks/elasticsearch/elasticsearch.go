@@ -82,7 +82,7 @@ func (c *Check) probe(ctx context.Context, t engine.ElasticsearchTarget) []engin
 	// Expected node count (a shrunk cluster is a problem even if still green).
 	if t.ExpectNodes > 0 && h.NumberOfNodes < t.ExpectNodes {
 		findings = append(findings, engine.Finding{Check: c.Name(), Target: label + "/nodes",
-			Status: engine.BAD,
+			Status:  engine.BAD,
 			Message: fmt.Sprintf("%d nodes present, expected %d", h.NumberOfNodes, t.ExpectNodes)})
 	}
 
@@ -147,13 +147,28 @@ func (c *Check) get(ctx context.Context, t engine.ElasticsearchTarget, path stri
 }
 
 func (c *Check) clientFor(t engine.ElasticsearchTarget) *http.Client {
+	base := &tls.Config{MinVersion: tls.VersionTLS12}
 	if t.Insecure {
-		return &http.Client{Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}}
+		base.InsecureSkipVerify = true
 	}
-	return &http.Client{}
+	if !c.cfg.ClientTLS.Set() && !t.Insecure {
+		return &http.Client{}
+	}
+	// A bad certificate path surfaces as an ERROR finding on the first request
+	// rather than here: this constructor has nowhere to report, and an ERROR is
+	// the honest status for "the check could not measure".
+	cfg, err := c.cfg.ClientTLS.Apply(base)
+	if err != nil {
+		return &http.Client{Transport: &errTransport{err: err}}
+	}
+	return &http.Client{Transport: &http.Transport{TLSClientConfig: cfg}}
 }
+
+// errTransport fails every request with a fixed error, so a misconfigured
+// client certificate reads as an ERROR finding naming the problem.
+type errTransport struct{ err error }
+
+func (e *errTransport) RoundTrip(*http.Request) (*http.Response, error) { return nil, e.err }
 
 func hostOf(raw string) string {
 	if u, err := url.Parse(raw); err == nil && u.Host != "" {

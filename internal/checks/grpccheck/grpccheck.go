@@ -32,6 +32,9 @@ type Check struct {
 }
 
 func New(cfg engine.GRPCConfig) *Check {
+	if cfg.ClientTLS.Set() {
+		return &Check{cfg: cfg, client: clientWith(cfg.ClientTLS)}
+	}
 	return &Check{cfg: cfg, client: defaultClient}
 }
 
@@ -123,6 +126,28 @@ func defaultClient(insecure bool, host string) *http.Client {
 		TLSClientConfig:   &tls.Config{ServerName: host, InsecureSkipVerify: insecure},
 	}}
 }
+
+// clientWith presents a configured client certificate (CF-183). gRPC servers
+// behind mTLS are the common case for this module, since the health service is
+// often the only unauthenticated RPC and the transport carries the identity.
+func clientWith(ct engine.ClientTLS) func(bool, string) *http.Client {
+	return func(insecure bool, host string) *http.Client {
+		cfg, err := ct.Apply(&tls.Config{ServerName: host, InsecureSkipVerify: insecure})
+		if err != nil {
+			return &http.Client{Transport: &errTransport{err: err}}
+		}
+		return &http.Client{Transport: &http.Transport{
+			ForceAttemptHTTP2: true,
+			TLSClientConfig:   cfg,
+		}}
+	}
+}
+
+// errTransport fails every request with a fixed error, so a bad certificate
+// path reads as an ERROR finding that names it.
+type errTransport struct{ err error }
+
+func (e *errTransport) RoundTrip(*http.Request) (*http.Response, error) { return nil, e.err }
 
 // ---------- protobuf / gRPC framing (hand-rolled) ----------
 

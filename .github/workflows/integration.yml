@@ -19,7 +19,12 @@ jobs:
     timeout-minutes: 35
     env:
       COMPOSE_FILE: docker-compose.integration.yml
-      CF_PG_PASSWORD: postgres
+      # The least-privilege users the stack creates (CF-181), not the superuser.
+      # These are job-level env vars, so they WIN over the test's t.Setenv
+      # fallback — which is why the suite passed locally (unset) and failed here
+      # with "password authentication failed for user checkfleet".
+      CF_PG_PASSWORD: checkfleet
+      CF_MONGO_PASSWORD: checkfleet
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5

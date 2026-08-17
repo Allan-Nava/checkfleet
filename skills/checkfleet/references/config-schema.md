@@ -75,6 +75,9 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `targets` | list of `ElasticsearchTarget` |  |
 | `disk_warn_pct` | `int` | `85` |
 | `disk_crit_pct` | `int` | `90` |
+| `client_cert` | `string` |  |
+| `client_key` | `string` |  |
+| `ca_cert` | `string` |  |
 
 ### `checks.etcd`
 
@@ -88,6 +91,9 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | Key | Type | Default |
 |---|---|---|
 | `targets` | list of `GRPCTarget` |  |
+| `client_cert` | `string` |  |
+| `client_key` | `string` |  |
+| `ca_cert` | `string` |  |
 
 ### `checks.haproxy`
 
@@ -107,6 +113,9 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | Key | Type | Default |
 |---|---|---|
 | `targets` | list of `HTTPTarget` |  |
+| `client_cert` | `string` |  |
+| `client_key` | `string` |  |
+| `ca_cert` | `string` |  |
 
 ### `checks.ingest`
 
@@ -123,6 +132,9 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `sasl_user` | `string` |  |
 | `sasl_mechanism` | `string` |  |
 | `sasl_password_env` | `string` |  |
+| `client_cert` | `string` |  |
+| `client_key` | `string` |  |
+| `ca_cert` | `string` |  |
 | `expect_brokers` | `int` |  |
 | `groups` | list of `string` |  |
 | `lag_warn` | `int64` | `1000` |
@@ -254,6 +266,9 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `targets` | list of `SMTPTarget` |  |
 | `warn_days` | `int` | `30` |
 | `crit_days` | `int` | `7` |
+| `client_cert` | `string` |  |
+| `client_key` | `string` |  |
+| `ca_cert` | `string` |  |
 
 ### `checks.stream`
 
@@ -266,6 +281,9 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | Key | Type | Default |
 |---|---|---|
 | `targets` | list of `TCPTarget` |  |
+| `client_cert` | `string` |  |
+| `client_key` | `string` |  |
+| `ca_cert` | `string` |  |
 
 ### `checks.tls`
 

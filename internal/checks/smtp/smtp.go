@@ -69,7 +69,12 @@ func (c *Check) probe(ctx context.Context, t engine.SMTPTarget) engine.Finding {
 
 	// Implicit TLS (smtps): wrap immediately, greeting comes over TLS.
 	if t.TLS {
-		tconn := tls.Client(conn, &tls.Config{ServerName: hostOf(addr), InsecureSkipVerify: true})
+		tcfg, terr := c.cfg.ClientTLS.Apply(&tls.Config{ServerName: hostOf(addr), InsecureSkipVerify: true})
+		if terr != nil {
+			f.Status, f.Message = engine.ERROR, fmt.Sprintf("client certificate: %v", terr)
+			return f
+		}
+		tconn := tls.Client(conn, tcfg)
 		if dl, ok := ctx.Deadline(); ok {
 			_ = tconn.SetDeadline(dl)
 		}
@@ -132,7 +137,12 @@ func (c *Check) probe(ctx context.Context, t engine.SMTPTarget) engine.Finding {
 			f.Status, f.Message = engine.BAD, fmt.Sprintf("STARTTLS refused %d: %s", code, resp)
 			return f
 		}
-		tconn := tls.Client(conn, &tls.Config{ServerName: hostOf(addr), InsecureSkipVerify: true})
+		tcfg, terr := c.cfg.ClientTLS.Apply(&tls.Config{ServerName: hostOf(addr), InsecureSkipVerify: true})
+		if terr != nil {
+			f.Status, f.Message = engine.ERROR, fmt.Sprintf("client certificate: %v", terr)
+			return f
+		}
+		tconn := tls.Client(conn, tcfg)
 		if dl, ok := ctx.Deadline(); ok {
 			_ = tconn.SetDeadline(dl)
 		}

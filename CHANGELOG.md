@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.21.0
+
+- **Certificati client (mTLS) dove il protocollo li prevede (CF-183, M38).** Prima, nessun modulo sapeva presentarne uno: in una flotta con mTLS obbligatorio quei check **non si collegavano affatto** — un no binario, non un degrado. Sei moduli — `http`, `grpc`, `tcp`, `smtp`, `elasticsearch`, `kafka` — accettano ora `client_cert`, `client_key` e `ca_cert`, con un tipo condiviso `engine.ClientTLS`.
+
+  **Percorsi, mai PEM inline.** Una chiave privata incollata in `checkfleet.yml` sarebbe un segreto in un file di config, che è precisamente ciò che la regola del progetto vieta.
+
+  Tre decisioni che cambiano cosa succede quando qualcosa va storto. Una **coppia a metà** (`client_cert` senza `client_key`) è un errore che nomina la metà mancante, non un ritorno silenzioso a "nessun certificato" — che trasformerebbe un typo in un'ora passata a chiedersi perché il server rifiuta. Un `ca_cert` **riattiva la verifica** sui moduli che la saltano di default (`tcp`, `smtp`): una CA configurata apposta e poi ignorata renderebbe l'impostazione decorativa. E un percorso illeggibile diventa un finding **ERROR** che lo nomina, invece di un panic o di un fallback che somiglia a un rifiuto del server.
+
+  **Verificato contro un server che il certificato lo pretende davvero**, non solo che il codice compili: un `httptest` con `ClientAuth: RequireAnyClientCert` dà ERROR senza certificato e un risultato misurato con.
+
+  **Postgres, mongodb e mysql non prendono queste chiavi, di proposito** — e l'ho verificato invece di assumerlo. Il loro driver possiede la stringa di connessione e mTLS ci passa già attraverso: due test nuovi asseriscono che `pgx.ParseConfig` con `sslcert`/`sslkey`/`sslrootcert` produca un `tls.Config` con il certificato caricato, e che il driver Mongo faccia lo stesso da `tlsCertificateKeyFile`. Aggiungere una seconda manopola sarebbe stata una manopola capace di contraddire la prima.
+
+  **Due difetti trovati mentre lo facevo.** Il linter chiedeva `cfg.Set()` al posto di `cfg.ClientTLS.Set()` per via del campo embedded — ma su un `KafkaConfig` `cfg.Set()` si legge come un'assurdità, quindi il campo è diventato **nominato** con `yaml:",inline"`, e un test verifica che il binding inline regga per tutti e sei i moduli. E il generatore di `config-schema.md` **saltava i campi inline**, perché la loro yaml key è vuota: le tre chiavi nuove erano finite fuori dal reference che un assistente legge proprio per non inventarsi i nomi. Corretto, con un test di regressione che le cerca sotto ognuno dei sei moduli.
+
+- **CI: corretto il workflow Integration (fallout di CF-181).** Il job esportava `CF_PG_PASSWORD: postgres` a livello di env, che **vince** sul `t.Setenv` del test (che interviene solo se la variabile è vuota): in locale la suite passava, in CI falliva con `password authentication failed for user "checkfleet"`. Riprodotto in locale forzando la stessa variabile, poi corretto insieme a `CF_MONGO_PASSWORD`. Un gate locale non vede le env del workflow.
+
+
 ## 1.20.0
 
 - **`checkfleet perms` (CF-182, M38).** Il comando che risponde alla domanda del security team stampando gli statement da eseguire, invece di rimandare a una pagina:
