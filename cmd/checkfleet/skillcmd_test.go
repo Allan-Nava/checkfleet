@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 
@@ -19,6 +20,7 @@ func TestSkillInstallWritesTheTree(t *testing.T) {
 		"checkfleet/SKILL.md",
 		"checkfleet/references/modules.md",
 		"checkfleet/references/config-schema.md",
+		"checkfleet/references/permissions.md",
 	} {
 		if _, err := os.Stat(filepath.Join(dir, rel)); err != nil {
 			t.Errorf("missing %s: %v", rel, err)
@@ -29,12 +31,29 @@ func TestSkillInstallWritesTheTree(t *testing.T) {
 // TestSkillInstallIsIdempotent: re-running after an upgrade must land on the
 // same tree, not accumulate or fail on existing files.
 func TestSkillInstallIsIdempotent(t *testing.T) {
+	// Compare the tree after one install with the tree after two, rather than
+	// against a fixed count: adding a reference file is a normal thing to do and
+	// should not make this test fail for the wrong reason.
 	dir := t.TempDir()
-	for i := 0; i < 2; i++ {
-		if err := runSkill([]string{"install", "--dir", dir}); err != nil {
-			t.Fatalf("install run %d: %v", i, err)
-		}
+	if err := runSkill([]string{"install", "--dir", dir}); err != nil {
+		t.Fatalf("first install: %v", err)
 	}
+	first := treeOf(t, dir)
+	if len(first) < 2 {
+		t.Fatalf("the install wrote %d files; the walk is broken, not the code", len(first))
+	}
+	if err := runSkill([]string{"install", "--dir", dir}); err != nil {
+		t.Fatalf("second install: %v", err)
+	}
+	second := treeOf(t, dir)
+	if strings.Join(first, ",") != strings.Join(second, ",") {
+		t.Errorf("re-installing changed the tree:\n first: %v\nsecond: %v", first, second)
+	}
+}
+
+// treeOf lists the files under dir, relative and sorted.
+func treeOf(t *testing.T, dir string) []string {
+	t.Helper()
 	var got []string
 	err := filepath.Walk(dir, func(p string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -49,9 +68,8 @@ func TestSkillInstallIsIdempotent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got) != 3 {
-		t.Errorf("after two installs the tree holds %d files (%v), want 3", len(got), got)
-	}
+	sort.Strings(got)
+	return got
 }
 
 // TestSkillInstallOverwritesAnOldVersion — an upgrade must replace the shipped
@@ -93,7 +111,7 @@ func TestSkillPrintEmitsTheSkill(t *testing.T) {
 // TestEmbeddedSkillMatchesTheSource is the reason to embed rather than copy:
 // the bytes in the binary must be the bytes in the repo.
 func TestEmbeddedSkillMatchesTheSource(t *testing.T) {
-	for _, rel := range []string{"SKILL.md", "references/modules.md", "references/config-schema.md"} {
+	for _, rel := range []string{"SKILL.md", "references/modules.md", "references/config-schema.md", "references/permissions.md"} {
 		onDisk, err := os.ReadFile(filepath.Join("..", "..", "skills", "checkfleet", rel))
 		if err != nil {
 			t.Fatalf("read %s: %v", rel, err)

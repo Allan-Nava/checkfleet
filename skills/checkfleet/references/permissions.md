@@ -5,6 +5,10 @@
 What each check needs on the system it watches, and what it does **not**.
 Derived from the queries and endpoints the modules actually issue.
 
+`checkfleet perms --config checkfleet.yml` prints the subset below for the
+modules you actually run, in text, markdown or JSON — send that to whoever
+owns the system instead of this whole page.
+
 Every module is read-only: no check writes to the system it inspects.
 Credentials always come from the environment (`*_env`, `${VAR}`), never
 from the config file.

@@ -75,6 +75,11 @@ func main() {
 			fmt.Fprintln(os.Stderr, "checkfleet:", err)
 			os.Exit(1)
 		}
+	case "perms":
+		if err := runPerms(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, "checkfleet:", err)
+			os.Exit(1)
+		}
 	case "insight":
 		if err := runInsight(os.Args[2:]); err != nil {
 			fmt.Fprintln(os.Stderr, "checkfleet:", err)
@@ -101,6 +106,7 @@ func usage() {
   checkfleet validate --config checkfleet.yml                                  # validate the config without running the checks
   checkfleet doctor --config checkfleet.yml [--output text|json] [--no-probe]   # preflight: unset ${ENV}, bad targets, unreachable hosts
   checkfleet targets --config checkfleet.yml [--output text|json] [--against hosts.ini [--group web]] [--module certs]   # what is covered
+  checkfleet perms [module] [--config checkfleet.yml] [--output text|markdown|json]   # least privilege each check needs
   checkfleet explain [module]                                                 # what a module checks and its thresholds
   checkfleet completion <bash|zsh|fish>                                        # print a shell completion script
   checkfleet insight --history F [--digest] [--score] [--clusters] [--anomaly] [--recovery] [--forecast --threshold N] [--slo 0.999] [--output text|json]   # what the history implies

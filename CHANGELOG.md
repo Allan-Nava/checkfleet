@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.20.0
+
+- **`checkfleet perms` (CF-182, M38).** Il comando che risponde alla domanda del security team stampando gli statement da eseguire, invece di rimandare a una pagina:
+
+  ```
+  $ checkfleet perms postgres
+  postgres
+    Connects to one database and reads server statistics: …
+      CREATE ROLE checkfleet LOGIN PASSWORD '<from your secret store>';
+      GRANT pg_monitor TO checkfleet;
+      GRANT CONNECT ON DATABASE postgres TO checkfleet;
+    Not needed: No SELECT on any user table, no schema access, no SUPERUSER…
+  ```
+
+  **Con `--config` copre solo i moduli configurati**, che è il caso utile: una flotta che ne usa sei non deve consegnare al DBA i grant per ventinove. Tre formati — `text`, `markdown` per incollarlo in un ticket, `json` per chi genera il proprio runbook.
+
+  I **diciassette moduli che non richiedono credenziali** finiscono su **una riga sola** invece che uno per uno: elencarli per esteso seppellisce i dodici che invece qualcosa la richiedono. E una flotta che non ha bisogno di nessun grant lo sente dire (`Nothing to grant: every configured module reads what the target already exposes`) invece di ricevere output vuoto.
+
+  Semantica exit code invariata: non è un check, quindi 0 salvo errore sistemico — un modulo sconosciuto o un formato ignoto escono 1 nominando cosa era valido. **Nessuna credenziale nell'output**: genera statement, e un test verifica che ogni riga che imposta una password porti il placeholder.
+
+  Il gate che l'item chiedeva: **ogni modulo del registry o produce statement, o dichiara di non richiedere credenziali, o dichiara che serve giudizio**. Il silenzio è il modo di fallire — un modulo che non risponde sembra non aver bisogno di niente, ed è così che un requisito di privilegio viene rilasciato non documentato.
+
+  **Difetto trovato provando il comando, non nei test**: `checkfleet perms redis --output json` **ignorava il formato** e stampava testo. Il pacchetto `flag` di Go smette di parsare al primo argomento non-flag, quindi `--output` non veniva mai letto — e quello è l'ordine naturale in cui si scrive il comando. Ora il modulo posizionale viene estratto prima, la stessa forma che usa `check <module> --flags`, e un test copre entrambi gli ordini.
+
+  Corretto anche `TestSkillInstallIsIdempotent`, che confrontava l'albero installato con il numero fisso **3**: aggiungere un reference è una cosa normale e non deve rompere un test per il motivo sbagliato. Ora confronta l'albero dopo un install con quello dopo due, che è ciò che il test voleva dire.
+
+
 ## 1.19.0
 
 - **Reference dei privilegi minimi, per modulo (CF-181, M38).** Per tutti e 29 i moduli: cosa serve davvero sul sistema controllato, e cosa **non** serve. Sorgente unica in `internal/moduledoc` accanto alle descrizioni, generato da `cmd/gen-skill` in `skills/checkfleet/references/permissions.md` e in `docs/permissions.md`, sotto lo stesso gate anti-divergenza di CF-152.

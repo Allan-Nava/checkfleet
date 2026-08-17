@@ -50,6 +50,10 @@ text renderer, whose wording the
 [compatibility contract]({{ '/compatibility' | relative_url }}) explicitly does
 *not* freeze.
 
+`checkfleet perms` answers the access question directly, and the skill points at
+the same data, so an assistant asked "what does this need on my database?"
+replies with the grant instead of guessing.
+
 Two references load on demand: `references/modules.md` (every module and what it
 detects) and `references/config-schema.md` (keys, types, defaults).
 
