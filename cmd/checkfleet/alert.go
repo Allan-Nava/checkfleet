@@ -32,6 +32,7 @@ func runAlert(args []string) error {
 	awsAccessEnv := fs.String("aws-access-key-env", "AWS_ACCESS_KEY_ID", "env var with the AWS access key id (sns provider)")
 	awsSecretEnv := fs.String("aws-secret-key-env", "AWS_SECRET_ACCESS_KEY", "env var with the AWS secret access key (sns provider)")
 	historyPath := fs.String("history", "", "JSONL history: resolve alerts that recovered since the previous run")
+	statePath := fs.String("alert-state", "", "JSON file remembering what was last notified, for renotify_after (CF-176)")
 	source := fs.String("source", "checkfleet", "alert source label (PagerDuty)")
 	dryRun := fs.Bool("dry-run", false, "print the events without sending")
 	if err := fs.Parse(args); err != nil {
@@ -65,7 +66,7 @@ func runAlert(args []string) error {
 	// provider its rule names. Without them the flags below behave exactly as
 	// before, so nobody who has not asked for this sees a change.
 	if len(cfg.AlertRoutes) > 0 {
-		return sendRouted(ctx, cfg, events, res.Labels, *source, *dryRun)
+		return sendRouted(ctx, cfg, events, res.Labels, *source, *statePath, *dryRun)
 	}
 
 	// SNS is a stateless pub/sub sink: it needs a topic ARN + AWS creds and only
@@ -203,14 +204,31 @@ func sendOpsgenie(ctx context.Context, key string, e alert.Event) error {
 // where things go, and quietly defaulting would deliver a database alert to
 // whoever happens to be first in the list.
 func sendRouted(ctx context.Context, cfg *engine.Config, events []alert.Event,
-	labels map[string]string, source string, dryRun bool) error {
+	labels map[string]string, source, statePath string, dryRun bool) error {
 
-	var sent, unrouted int
+	state, err := alert.LoadState(statePath)
+	if err != nil {
+		return err
+	}
+	now := time.Now()
+
+	var sent, unrouted, held int
 	for _, e := range events {
 		r, ok := alert.Match(cfg.AlertRoutes, e, labels)
 		if !ok {
 			unrouted++
 			fmt.Fprintf(os.Stderr, "checkfleet: alert: no route for %s %s\n", e.Action, e.DedupKey)
+			continue
+		}
+		// A resolve always goes, and clears the memory so the next occurrence
+		// is a first notification rather than an old timer.
+		if e.Action == "resolve" {
+			state.Forget(e.DedupKey)
+		} else if send, why := alert.Decide(state.Sent[e.DedupKey], e.Severity, now, policyOf(r)); !send {
+			held++
+			if dryRun {
+				fmt.Printf("  %-7s %-40s · held (%s)\n", e.Action, e.DedupKey, why)
+			}
 			continue
 		}
 		if dryRun {
@@ -223,10 +241,31 @@ func sendRouted(ctx context.Context, cfg *engine.Config, events []alert.Event,
 		if err := sendVia(ctx, r, source, e); err != nil {
 			return err
 		}
+		if e.Action == "trigger" {
+			state.Record(e.DedupKey, now, e.Severity)
+		}
 		sent++
 	}
-	fmt.Printf("alert: %d events routed, %d unrouted (dry-run=%v)\n", sent, unrouted, dryRun)
+	if !dryRun {
+		if err := alert.SaveState(statePath, state); err != nil {
+			return err
+		}
+	}
+	fmt.Printf("alert: %d events routed, %d held, %d unrouted (dry-run=%v)\n", sent, held, unrouted, dryRun)
 	return nil
+}
+
+// policyOf reads the re-notification policy off a route (CF-176). An
+// unparseable duration was already reported by validate, so it degrades to
+// "never" here rather than aborting a run that is trying to page someone.
+func policyOf(r engine.AlertRoute) alert.Policy {
+	p := alert.Policy{OnWorsening: r.RenotifyOnWorsening}
+	if r.RenotifyAfter != "" {
+		if d, err := time.ParseDuration(r.RenotifyAfter); err == nil {
+			p.After = d
+		}
+	}
+	return p
 }
 
 // routeLabel describes a route for the dry-run line.

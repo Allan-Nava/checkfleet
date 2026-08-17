@@ -825,4 +825,46 @@ a rule placed **after** a catch-all where it can never fire — a mistake whose
 symptom (alerts arriving in the wrong place) looks exactly like the routing not
 working at all.
 
-With no `alert_routes`, the `alert` flags behave exactly as before.
+### Re-notifying about a problem that stays open
+
+`alert` deduplicates by check+target, which is right for the first notification
+and useless afterwards: a `BAD` that lasts three days either re-fires on every
+run — so people mute the channel — or never fires again and is forgotten.
+Neither is a decision anyone made.
+
+```yaml
+alert_routes:
+  - provider: pagerduty
+    key_env: PD_ONCALL
+    renotify_after: 4h            # ping again while it is still open
+    renotify_on_worsening: true   # and immediately if it gets worse
+```
+
+`renotify_after` needs somewhere to remember what was last sent:
+
+```bash
+checkfleet alert --config checkfleet.yml --alert-state /var/lib/checkfleet/alerts.json
+```
+
+That file is separate from `--history` on purpose: the history is a
+[contractual format](compatibility.md) other things read, and notification
+bookkeeping is neither interesting to them nor stable enough to freeze. It is
+written atomically and with no group or other access.
+
+`renotify_on_worsening` fires the moment the status deteriorates
+(`WARN`→`BAD`→`ERROR`) regardless of the interval: a situation that got worse is
+new information, and holding it for the timer is the wrong trade.
+
+A **resolve always goes**, and clears the memory — so a problem that returns a
+month later is a first notification again, not something judged against an
+ancient timer.
+
+`--dry-run` says what the policy did rather than leaving you to infer it from
+silence:
+
+```
+  trigger tcp/10.0.0.5:22    · held (notified 12m ago, waiting for 4h0m0s)
+```
+
+With no `alert_routes`, the `alert` flags behave exactly as before, including
+notifying once and staying quiet.

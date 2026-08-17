@@ -217,6 +217,13 @@ func schemaDoc() string {
 
 	b.WriteString("## Top level\n\n")
 	writeFields(&b, reflect.ValueOf(*cfg), map[string]bool{"checks": true})
+	// The top-level list types (alert_routes, depends_on, maintenance,
+	// runbooks) are structs too, and their keys were missing from this
+	// reference for the same reason the inlined ones were: nothing walked into
+	// them. That is exactly the gap this file exists to close.
+	nested := map[string]reflect.Type{}
+	collectStructs(reflect.TypeOf(*cfg), nested)
+	delete(nested, "ChecksConfig")
 
 	b.WriteString("\n## Per module (under `checks:`)\n\n")
 	checks := reflect.ValueOf(cfg.Checks)
@@ -234,7 +241,6 @@ func schemaDoc() string {
 		mods = append(mods, mod{key, checks.Field(i)})
 	}
 	sort.Slice(mods, func(i, j int) bool { return mods[i].key < mods[j].key })
-	nested := map[string]reflect.Type{}
 	for _, m := range mods {
 		v := m.val
 		if v.Kind() == reflect.Pointer {

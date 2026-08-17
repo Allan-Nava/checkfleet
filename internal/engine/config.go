@@ -79,6 +79,13 @@ type AlertRoute struct {
 	Provider    string            `yaml:"provider"`     // pagerduty|opsgenie|sns
 	KeyEnv      string            `yaml:"key_env"`      // env var with the routing/API key
 	SNSTopicARN string            `yaml:"sns_topic_arn"`
+	// RenotifyAfter re-sends an alert that is still open after this long
+	// ("4h", "24h"). Empty means notify once and stay quiet until it recovers,
+	// which is the historical behaviour (CF-176).
+	RenotifyAfter string `yaml:"renotify_after"`
+	// RenotifyOnWorsening re-sends immediately when the status deteriorates,
+	// regardless of the interval.
+	RenotifyOnWorsening bool `yaml:"renotify_on_worsening"`
 }
 
 // MaintenanceWindow suppresses (or downgrades) findings during a time range.

@@ -305,6 +305,27 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 
 ## Referenced types
 
+### `AlertRoute`
+
+| Key | Type | Default |
+|---|---|---|
+| `check` | `string` |  |
+| `target` | `string` |  |
+| `labels` | map of `string` |  |
+| `min_severity` | `string` |  |
+| `provider` | `string` |  |
+| `key_env` | `string` |  |
+| `sns_topic_arn` | `string` |  |
+| `renotify_after` | `string` |  |
+| `renotify_on_worsening` | `bool` |  |
+
+### `CassandraConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `CassandraTarget` |  |
+| `expect_nodes` | `int` |  |
+
 ### `CassandraTarget`
 
 | Key | Type | Default |
@@ -312,6 +333,24 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `name` | `string` |  |
 | `address` | `string` |  |
 | `max_latency_ms` | `int` |  |
+
+### `CertsConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `warn_days` | `int` |  |
+| `crit_days` | `int` |  |
+| `port` | `int` |  |
+| `targets` | list of `string` |  |
+| `ansible_inventory` | `string` |  |
+
+### `ClickHouseConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `ClickHouseTarget` |  |
+| `delay_warn_seconds` | `int` |  |
+| `delay_crit_seconds` | `int` |  |
 
 ### `ClickHouseTarget`
 
@@ -323,6 +362,26 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `password_env` | `string` |  |
 | `insecure_skip_verify` | `bool` |  |
 
+### `ConsulConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `string` |  |
+| `port` | `int` |  |
+| `scheme` | `string` |  |
+| `ansible_inventory` | `string` |  |
+| `expect_peers` | `int` |  |
+| `token_env` | `string` |  |
+| `kv_keys` | list of `string` |  |
+
+### `DNSConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `resolvers` | list of `string` |  |
+| `min_ttl_seconds` | `uint32` |  |
+| `targets` | list of `DNSTarget` |  |
+
 ### `DNSTarget`
 
 | Key | Type | Default |
@@ -330,6 +389,27 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `name` | `string` |  |
 | `type` | `string` |  |
 | `expect` | list of `string` |  |
+
+### `DependsRule`
+
+| Key | Type | Default |
+|---|---|---|
+| `check` | `string` |  |
+| `target` | `string` |  |
+| `on_check` | `string` |  |
+| `on_target` | `string` |  |
+| `same_host` | `bool` |  |
+
+### `ElasticsearchConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `ElasticsearchTarget` |  |
+| `disk_warn_pct` | `int` |  |
+| `disk_crit_pct` | `int` |  |
+| `client_cert` | `string` |  |
+| `client_key` | `string` |  |
+| `ca_cert` | `string` |  |
 
 ### `ElasticsearchTarget`
 
@@ -343,6 +423,13 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `insecure_skip_verify` | `bool` |  |
 | `expect_nodes` | `int` |  |
 
+### `EtcdConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `EtcdTarget` |  |
+| `expect_members` | `int` |  |
+
 ### `EtcdTarget`
 
 | Key | Type | Default |
@@ -353,6 +440,15 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `password_env` | `string` |  |
 | `insecure_skip_verify` | `bool` |  |
 
+### `GRPCConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `GRPCTarget` |  |
+| `client_cert` | `string` |  |
+| `client_key` | `string` |  |
+| `ca_cert` | `string` |  |
+
 ### `GRPCTarget`
 
 | Key | Type | Default |
@@ -361,6 +457,28 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `address` | `string` |  |
 | `service` | `string` |  |
 | `insecure_skip_verify` | `bool` |  |
+
+### `HAProxyConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `string` |  |
+| `port` | `int` |  |
+| `scheme` | `string` |  |
+| `path` | `string` |  |
+| `ansible_inventory` | `string` |  |
+| `session_warn_pct` | `int` |  |
+| `auth_user` | `string` |  |
+| `auth_pass_env` | `string` |  |
+
+### `HTTPConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `HTTPTarget` |  |
+| `client_cert` | `string` |  |
+| `client_key` | `string` |  |
+| `ca_cert` | `string` |  |
 
 ### `HTTPTarget`
 
@@ -371,6 +489,12 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `max_latency_ms` | `int` |  |
 | `expect_body` | `string` |  |
 
+### `IngestConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `IngestTarget` |  |
+
 ### `IngestTarget`
 
 | Key | Type | Default |
@@ -379,6 +503,37 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `address` | `string` |  |
 | `protocol` | `string` |  |
 | `max_latency_ms` | `int` |  |
+
+### `KafkaConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `brokers` | list of `string` |  |
+| `tls` | `bool` |  |
+| `sasl_user` | `string` |  |
+| `sasl_mechanism` | `string` |  |
+| `sasl_password_env` | `string` |  |
+| `client_cert` | `string` |  |
+| `client_key` | `string` |  |
+| `ca_cert` | `string` |  |
+| `expect_brokers` | `int` |  |
+| `groups` | list of `string` |  |
+| `lag_warn` | `int64` |  |
+| `lag_crit` | `int64` |  |
+
+### `KeycloakConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `base_url` | `string` |  |
+| `health_url` | `string` |  |
+| `realms` | list of `string` |  |
+
+### `LDAPConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `LDAPTarget` |  |
 
 ### `LDAPTarget`
 
@@ -394,6 +549,44 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `filter` | `string` |  |
 | `min_entries` | `int` |  |
 
+### `MaintenanceWindow`
+
+| Key | Type | Default |
+|---|---|---|
+| `check` | `string` |  |
+| `target` | `string` |  |
+| `from` | `string` |  |
+| `to` | `string` |  |
+| `action` | `string` |  |
+| `daily` | `string` |  |
+| `weekdays` | list of `string` |  |
+
+### `MemcachedConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `string` |  |
+| `port` | `int` |  |
+| `mem_warn_pct` | `int` |  |
+| `evictions_warn` | `int64` |  |
+
+### `ModuleOverride`
+
+| Key | Type | Default |
+|---|---|---|
+| `timeout_seconds` | `int` |  |
+| `retries` | `int` |  |
+| `retry_backoff_ms` | `int` |  |
+
+### `MongoDBConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `MongoDBTarget` |  |
+| `conn_warn_pct` | `int` |  |
+| `lag_warn_seconds` | `int` |  |
+| `lag_crit_seconds` | `int` |  |
+
 ### `MongoDBTarget`
 
 | Key | Type | Default |
@@ -404,12 +597,67 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `password_env` | `string` |  |
 | `auth_source` | `string` |  |
 
+### `MySQLConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `MySQLTarget` |  |
+| `conn_warn_pct` | `int` |  |
+| `lag_warn_seconds` | `int` |  |
+| `lag_crit_seconds` | `int` |  |
+
 ### `MySQLTarget`
 
 | Key | Type | Default |
 |---|---|---|
 | `name` | `string` |  |
 | `dsn` | `string` |  |
+
+### `NATSConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `string` |  |
+| `port` | `int` |  |
+| `ansible_inventory` | `string` |  |
+| `scheme` | `string` |  |
+| `expect_meta_leader` | `string` |  |
+| `expect_peers` | list of `string` |  |
+| `lag_warn` | `int` |  |
+| `lag_crit` | `int` |  |
+
+### `NTPConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `string` |  |
+| `port` | `int` |  |
+| `offset_warn_ms` | `int` |  |
+| `offset_crit_ms` | `int` |  |
+
+### `PatroniConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `string` |  |
+| `port` | `int` |  |
+| `scheme` | `string` |  |
+| `ansible_inventory` | `string` |  |
+| `lag_warn_bytes` | `int64` |  |
+| `lag_crit_bytes` | `int64` |  |
+
+### `PostgresConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `PostgresTarget` |  |
+| `lag_warn_bytes` | `int64` |  |
+| `lag_crit_bytes` | `int64` |  |
+| `conn_warn_pct` | `int` |  |
+| `wraparound_warn_age` | `int64` |  |
+| `wraparound_crit_age` | `int64` |  |
+| `slot_warn_bytes` | `int64` |  |
+| `slot_crit_bytes` | `int64` |  |
 
 ### `PostgresTarget`
 
@@ -418,6 +666,47 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `name` | `string` |  |
 | `dsn` | `string` |  |
 | `password_env` | `string` |  |
+
+### `RabbitMQConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `string` |  |
+| `port` | `int` |  |
+| `scheme` | `string` |  |
+| `username` | `string` |  |
+| `password_env` | `string` |  |
+| `queue_warn_depth` | `int` |  |
+| `queue_crit_depth` | `int` |  |
+
+### `RedisConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `string` |  |
+| `port` | `int` |  |
+| `ansible_inventory` | `string` |  |
+| `tls` | `bool` |  |
+| `username` | `string` |  |
+| `password_env` | `string` |  |
+| `mem_warn_pct` | `int` |  |
+| `lag_warn_bytes` | `int64` |  |
+| `lag_crit_bytes` | `int64` |  |
+
+### `RunbookRule`
+
+| Key | Type | Default |
+|---|---|---|
+| `check` | `string` |  |
+| `target` | `string` |  |
+| `runbook` | `string` |  |
+| `remediation` | `string` |  |
+
+### `S3Config`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `S3Target` |  |
 
 ### `S3Target`
 
@@ -433,6 +722,17 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `secret_key_env` | `string` |  |
 | `path_style` | `bool` |  |
 
+### `SMTPConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `SMTPTarget` |  |
+| `warn_days` | `int` |  |
+| `crit_days` | `int` |  |
+| `client_cert` | `string` |  |
+| `client_key` | `string` |  |
+| `ca_cert` | `string` |  |
+
 ### `SMTPTarget`
 
 | Key | Type | Default |
@@ -443,6 +743,12 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `starttls` | `bool` |  |
 | `expect_banner` | `string` |  |
 | `max_latency_ms` | `int` |  |
+
+### `StreamConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `StreamTarget` |  |
 
 ### `StreamTarget`
 
@@ -455,6 +761,15 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `max_age_warn_seconds` | `int` |  |
 | `max_age_crit_seconds` | `int` |  |
 
+### `TCPConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `TCPTarget` |  |
+| `client_cert` | `string` |  |
+| `client_key` | `string` |  |
+| `ca_cert` | `string` |  |
+
 ### `TCPTarget`
 
 | Key | Type | Default |
@@ -464,6 +779,22 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `tls` | `bool` |  |
 | `expect_banner` | `string` |  |
 | `max_latency_ms` | `int` |  |
+
+### `TLSConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `string` |  |
+| `port` | `int` |  |
+| `warn_days` | `int` |  |
+| `crit_days` | `int` |  |
+| `ansible_inventory` | `string` |  |
+
+### `VaultConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `VaultTarget` |  |
 
 ### `VaultTarget`
 

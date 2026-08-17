@@ -1,6 +1,9 @@
 package engine
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 // ValidateAlertRoutes reports rules that would silently misroute (CF-175).
 //
@@ -27,6 +30,12 @@ func ValidateAlertRoutes(routes []AlertRoute) []string {
 		default:
 			problems = append(problems, fmt.Sprintf(
 				"alert_routes[%d]: unknown provider %q (pagerduty|opsgenie|sns)", i, r.Provider))
+		}
+		if r.RenotifyAfter != "" {
+			if _, err := time.ParseDuration(r.RenotifyAfter); err != nil {
+				problems = append(problems, fmt.Sprintf(
+					"alert_routes[%d]: renotify_after %q is not a duration (e.g. 4h, 30m)", i, r.RenotifyAfter))
+			}
 		}
 		if r.MinSeverity != "" {
 			if _, ok := ParseStatus(r.MinSeverity); !ok {

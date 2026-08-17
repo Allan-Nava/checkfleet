@@ -106,6 +106,23 @@ func TestFullConfigEnablesEveryModule(t *testing.T) {
 // to skip such fields because their own yaml key is empty — so client_cert,
 // client_key and ca_cert shipped absent from the reference an assistant reads
 // to avoid inventing key names. Exactly the drift this file exists to prevent.
+func TestTopLevelListTypesAreDocumented(t *testing.T) {
+	// alert_routes, depends_on, maintenance and runbooks are lists of structs
+	// hanging off the root. Their keys were missing for the same reason the
+	// inlined ones were — nothing walked into them — and an assistant reading
+	// this reference would have invented the names.
+	schema := schemaDoc()
+	for _, want := range []string{
+		"### `AlertRoute`", "`renotify_after`", "`key_env`",
+		"### `DependsRule`", "`on_check`", "`same_host`",
+		"### `MaintenanceWindow`", "### `RunbookRule`",
+	} {
+		if !strings.Contains(schema, want) {
+			t.Errorf("%s is missing from the config schema", want)
+		}
+	}
+}
+
 func TestInlinedKeysAreDocumented(t *testing.T) {
 	schema := schemaDoc()
 	for _, key := range []string{"`client_cert`", "`client_key`", "`ca_cert`"} {

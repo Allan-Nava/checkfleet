@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.27.0
+
+- **Politica di re-notifica (CF-176, M37).** `alert` deduplica per check+target, che e' giusto per la prima notifica e inutile dopo: un `BAD` che dura tre giorni o ri-notifica a ogni run — e la gente silenzia il canale — o non notifica mai piu' e viene dimenticato. Nessuna delle due e' una decisione che qualcuno ha preso; sono quello che ottieni quando non c'e' modo di dirlo.
+
+  ```yaml
+  alert_routes:
+    - provider: pagerduty
+      key_env: PD_ONCALL
+      renotify_after: 4h
+      renotify_on_worsening: true
+  ```
+
+  **`renotify_on_worsening` scatta subito** quando lo stato peggiora, a prescindere dall'intervallo: una situazione deteriorata e' informazione nuova, e trattenerla per il timer e' il compromesso sbagliato.
+
+  La decisione e' una **funzione pura** su `(ultima notifica, stato attuale, adesso, policy)`, testata su sequenze sintetiche — inclusa una che cammina tre giorni ora per ora, cosi' la policy e' giudicata sul comportamento con cui un operatore convive davvero, non su casi isolati.
+
+  **Un resolve va sempre, e azzera la memoria**: un problema che torna un mese dopo e' di nuovo una prima notifica, non qualcosa giudicato contro un timer antico.
+
+  Lo stato vive in `--alert-state`, un file separato da `--history` di proposito: la history e' un formato contrattuale che altri leggono, e la contabilita' delle notifiche non e' ne' interessante per loro ne' abbastanza stabile da congelare. Scritto atomicamente — un file scritto a meta' farebbe credere alla run successiva che non sia stato mandato niente, e ripagherebbe l'intera flotta — e senza accesso per gruppo o altri.
+
+  `--dry-run` dice **cosa ha fatto la policy** invece di lasciartelo dedurre dal silenzio: `held (notified 12m ago, waiting for 4h0m0s)`.
+
+  **Terzo buco della stessa famiglia nel generatore dello schema**, trovato controllando che le chiavi nuove ci fossero: i tipi delle liste top-level (`alert_routes`, `depends_on`, `maintenance`, `runbooks`) non venivano espansi, perche' la raccolta dei tipi annidati partiva solo dai moduli. Le loro chiavi erano assenti dal reference che un assistente legge per non inventarsele. Corretto, con un test che le cerca per nome.
+
+
 ## 1.26.0
 
 - **Routing degli alert per modulo, target, label e severita' (CF-175, M37).** `alert --provider X` valeva per l'intera run: o svegli la squadra sbagliata o non instradi niente. Ora `alert_routes` manda ogni alert dove deve andare — postgres al DBA, haproxy alla rete, tutto il resto a un catch-all.
