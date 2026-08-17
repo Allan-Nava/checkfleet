@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+	"sort"
 	"time"
 )
 
@@ -55,5 +56,26 @@ func ValidateAlertRoutes(routes []AlertRoute) []string {
 			catchAll = i
 		}
 	}
+	return problems
+}
+
+// ValidateHistoryRetention reports durations that would silently do nothing
+// (CF-177). A typo in "30d" — which Go does not parse — would otherwise leave
+// the file growing while the config claims a limit.
+func ValidateHistoryRetention(h HistoryRetention) []string {
+	var problems []string
+	for name, v := range map[string]string{"max_age": h.MaxAge, "downsample_after": h.DownsampleAfter} {
+		if v == "" {
+			continue
+		}
+		if _, err := time.ParseDuration(v); err != nil {
+			problems = append(problems, fmt.Sprintf(
+				"history_retention.%s %q is not a duration — Go has no day unit, use hours (720h for 30 days)", name, v))
+		}
+	}
+	if h.MaxRuns < 0 {
+		problems = append(problems, "history_retention.max_runs cannot be negative")
+	}
+	sort.Strings(problems)
 	return problems
 }

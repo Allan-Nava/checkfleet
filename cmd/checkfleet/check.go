@@ -116,6 +116,17 @@ func runCheck(args []string) error {
 			fmt.Fprintln(os.Stderr, "checkfleet: history:", err)
 		}
 		res.Findings = append(res.Findings, flaps...)
+		// Compaction runs after this run is written, so the newest record is
+		// never the one thinned away (CF-177). A failure here is reported and
+		// not fatal: a history that grew too large is a smaller problem than a
+		// check run that refused to finish.
+		if cfg.HistoryRetention.Set() {
+			if dropped, err := compactHistory(*historyPath, cfg.HistoryRetention); err != nil {
+				fmt.Fprintln(os.Stderr, "checkfleet: history retention:", err)
+			} else if dropped > 0 {
+				fmt.Fprintf(os.Stderr, "checkfleet: history: %d old record(s) compacted\n", dropped)
+			}
+		}
 	}
 	res = engine.PostProcess(res, cfg, time.Now())
 	res.Findings = engine.Filter(res.Findings, filter)
@@ -264,4 +275,22 @@ func recordHistory(path string, res engine.Result, minChanges, window int) ([]en
 		})
 	}
 	return flaps, nil
+}
+
+// compactHistory applies the configured retention to the history file (CF-177).
+// The durations were validated at load time; an unparseable one here degrades
+// to "no limit" rather than aborting a run that has already done its work.
+func compactHistory(path string, r engine.HistoryRetention) (int, error) {
+	p := history.RetentionPolicy{MaxRuns: r.MaxRuns}
+	if r.MaxAge != "" {
+		if d, err := time.ParseDuration(r.MaxAge); err == nil {
+			p.MaxAge = d
+		}
+	}
+	if r.DownsampleAfter != "" {
+		if d, err := time.ParseDuration(r.DownsampleAfter); err == nil {
+			p.DownsampleAfter = d
+		}
+	}
+	return history.Open(path).Compact(p, time.Now())
 }

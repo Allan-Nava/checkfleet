@@ -18,6 +18,7 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `max_concurrency` | `int` |  |
 | `labels` | map of `string` |  |
 | `maintenance` | list of `MaintenanceWindow` |  |
+| `history_retention` | `HistoryRetention` |  |
 | `alert_routes` | list of `AlertRoute` |  |
 | `depends_on` | list of `DependsRule` |  |
 | `runbooks` | list of `RunbookRule` |  |
@@ -488,6 +489,14 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `expect_status` | `int` |  |
 | `max_latency_ms` | `int` |  |
 | `expect_body` | `string` |  |
+
+### `HistoryRetention`
+
+| Key | Type | Default |
+|---|---|---|
+| `max_runs` | `int` |  |
+| `max_age` | `string` |  |
+| `downsample_after` | `string` |  |
 
 ### `IngestConfig`
 

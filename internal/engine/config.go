@@ -25,6 +25,10 @@ type Config struct {
 	// downgraded so scheduled work doesn't page. See ApplyMaintenance.
 	Maintenance []MaintenanceWindow `yaml:"maintenance"`
 
+	// HistoryRetention bounds the --history file, which is otherwise append-only
+	// forever. Empty keeps every record at full resolution.
+	HistoryRetention HistoryRetention `yaml:"history_retention"`
+
 	// AlertRoutes send different findings to different on-call providers, so a
 	// database problem reaches the DBA and a network one reaches the network
 	// team. Empty keeps the single-provider behaviour of the `alert` flags.
@@ -63,6 +67,23 @@ type RunbookRule struct {
 	Target      string `yaml:"target"`      // glob on the target; "" = all
 	Runbook     string `yaml:"runbook"`     // URL of the procedure to follow
 	Remediation string `yaml:"remediation"` // short "what to do" note
+}
+
+// HistoryRetention bounds the history file (CF-177). Durations are Go
+// durations ("720h" for thirty days).
+//
+// DownsampleAfter is the one that matters: past that age a run per day is kept
+// instead of every run, so a year of hourly checks keeps its shape without
+// keeping its bulk. Deleting outright is what the other two do.
+type HistoryRetention struct {
+	MaxRuns         int    `yaml:"max_runs"`
+	MaxAge          string `yaml:"max_age"`
+	DownsampleAfter string `yaml:"downsample_after"`
+}
+
+// Set reports whether anything was configured.
+func (h HistoryRetention) Set() bool {
+	return h.MaxRuns > 0 || h.MaxAge != "" || h.DownsampleAfter != ""
 }
 
 // AlertRoute sends the alerts it matches to one provider (CF-175). Rules are

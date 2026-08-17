@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.28.0
+
+- **Retention e compattazione della history (CF-177, M37).** `--history` e' append-only, che e' il default giusto — perdere una run per una rotazione dimenticata e' peggio di un file grande — ma "e fra un anno?" non aveva risposta, e le analisi di M30 rileggono tutto il file.
+
+  ```yaml
+  history_retention:
+    downsample_after: 168h   # oltre una settimana, una run al giorno
+    max_age: 8760h
+  ```
+
+  **`downsample_after` assottiglia invece di cancellare**, ed e' l'impostazione che conta. Un anno di check orari sono 8.760 record il cui dettaglio minuto per minuto non guardera' nessuno, mentre la *forma* dell'anno e' esattamente cio' che serve a un trend. Oltre la finestra resta una run al giorno — **l'ultima** del giorno, perche' e' quello che significa "com'era martedi'" — quindi il trend sopravvive e la mole no.
+
+  L'assottigliamento viene **prima** dei limiti di eta' e conteggio: tagliare a `max_runs` per primo spenderebbe tutto il budget sul dettaglio recente e non lascerebbe storia.
+
+  La compattazione gira **dopo** che la run corrente e' stata scritta, cosi' il record piu' nuovo non e' mai quello assottigliato. Riscrive su file temporaneo + rename, quindi un crash lascia intatto l'originale, e **rifiuta di riscrivere una history che non ha letto pulita**: scartare in silenzio righe scritte da un checkfleet piu' recente sarebbe peggio di un file grande. Un fallimento va su stderr e non fa fallire la run.
+
+  `validate` prende `30d`, che Go non sa parsare — senza il controllo il file crescerebbe mentre il config dichiara un limite.
+
+  **Due volte il test aveva torto, non il codice**, ed entrambe sul confine della finestra: il giorno che la attraversa ha come rappresentante l'ultimo record *prima* del cutoff, non l'ultimo del giorno (quello sta dentro la finestra ed e' tenuto intero); e il cutoff stesso conta come dentro. Corretto il test e scritto il perche', perche' e' il punto in cui questa logica si legge male.
+
+
 ## 1.27.0
 
 - **Politica di re-notifica (CF-176, M37).** `alert` deduplica per check+target, che e' giusto per la prima notifica e inutile dopo: un `BAD` che dura tre giorni o ri-notifica a ogni run — e la gente silenzia il canale — o non notifica mai piu' e viene dimenticato. Nessuna delle due e' una decisione che qualcuno ha preso; sono quello che ottieni quando non c'e' modo di dirlo.

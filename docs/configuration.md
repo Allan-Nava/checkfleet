@@ -868,3 +868,38 @@ silence:
 
 With no `alert_routes`, the `alert` flags behave exactly as before, including
 notifying once and staying quiet.
+
+## History retention
+
+`--history` is append-only, which is the right default — losing a run to a
+rotation you forgot is worse than a large file. But "and in a year?" needs an
+answer, and the [insight](usage.md) analyses re-read the whole file.
+
+```yaml
+history_retention:
+  downsample_after: 168h   # past a week, keep one run per day
+  max_age: 8760h           # and drop anything older than a year
+  max_runs: 0              # (optional) hard cap on records
+```
+
+**`downsample_after` thins rather than deletes**, and it is the setting that
+matters. A year of hourly checks is 8,760 records whose minute-by-minute detail
+nobody will look at, while the *shape* of the year is exactly what a trend
+needs. Past the window one run per day is kept — the day's **last** one, since
+that is what "how was it on Tuesday" means — so the trend survives and the bulk
+does not.
+
+Thinning is applied **before** the age and count limits: cutting to `max_runs`
+first would spend the whole budget on recent detail and leave no history at all.
+
+Compaction runs after the current run is recorded, so the newest record is never
+the one thinned away. It rewrites through a temporary file and a rename, so a
+crash leaves the original intact, and it **refuses to rewrite a history it could
+not read cleanly** — silently discarding lines written by a newer checkfleet
+would be a worse outcome than a large file. A failure is reported on stderr and
+does not fail the run.
+
+{: .note }
+> Durations are Go durations, which have **no day unit**: write `720h`, not
+> `30d`. `validate` catches the mistake, which would otherwise leave the file
+> growing while the config claims a limit.
