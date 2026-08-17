@@ -71,6 +71,11 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_PASSWORD: postgres
+    # Least-privilege user created at init (CF-181): the suite connects as
+    # `checkfleet` with exactly the grants docs/permissions.md publishes, so a
+    # document that promises too little fails the build instead of the reader.
+    volumes:
+      - ./deploy/integration/leastpriv/postgres.sql:/docker-entrypoint-initdb.d/10-checkfleet.sql:ro
     ports:
       - "127.0.0.1:5432:5432"
     healthcheck:
@@ -137,6 +142,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: mysql
       MYSQL_DATABASE: checkfleet
+    volumes:
+      - ./deploy/integration/leastpriv/mysql.sql:/docker-entrypoint-initdb.d/10-checkfleet.sql:ro
     ports:
       - "127.0.0.1:3306:3306"
     healthcheck:
@@ -147,12 +154,17 @@ services:
 
   mongodb:
     image: mongo:7
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    volumes:
+      - ./deploy/integration/leastpriv/mongo.js:/docker-entrypoint-initdb.d/10-checkfleet.js:ro
     ports:
       - "127.0.0.1:27017:27017"
     healthcheck:
       # Standalone: replSetGetStatus fails, which the module reports as a
       # non-ERROR finding ("not a replica set") — reachability is what matters.
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      test: ["CMD", "mongosh", "--quiet", "-u", "root", "-p", "root", "--eval", "db.adminCommand('ping').ok"]
       interval: 5s
       timeout: 3s
       retries: 40

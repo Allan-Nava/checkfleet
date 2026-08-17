@@ -32,8 +32,10 @@ checks:
   postgres:
     targets:
       - name: pg-integration
-        dsn: "host=127.0.0.1 port=5432 user=postgres dbname=postgres sslmode=disable"
-        password_env: CF_PG_PASSWORD    # exported to "postgres" by the workflow
+        # Connects as the least-privilege user, not as the superuser (CF-181):
+        # the suite must prove the published grants are enough.
+        dsn: "host=127.0.0.1 port=5432 user=checkfleet dbname=postgres sslmode=disable"
+        password_env: CF_PG_PASSWORD
 
   patroni:
     port: 8008
@@ -52,12 +54,15 @@ checks:
   mysql:
     targets:
       - name: mysql-integration
-        dsn: "root:mysql@tcp(127.0.0.1:3306)/checkfleet"
+        dsn: "checkfleet:checkfleet@tcp(127.0.0.1:3306)/"
 
   mongodb:
     targets:
       - name: mongo-integration
         uri: mongodb://127.0.0.1:27017
+        username: checkfleet
+        password_env: CF_MONGO_PASSWORD
+        auth_source: admin
 
   kafka:
     brokers:

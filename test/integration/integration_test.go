@@ -18,6 +18,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -49,8 +50,14 @@ func configPath(t *testing.T) string {
 // loadConfig loads checkfleet.integration.yml once, ensuring the postgres
 // password env the config references is set (defaults to the compose password).
 func loadConfig(t *testing.T) *engine.Config {
+	// The integration stack creates least-privilege users (CF-181) whose
+	// passwords match their names, so the suite exercises the published grants
+	// rather than a superuser.
 	if os.Getenv("CF_PG_PASSWORD") == "" {
-		t.Setenv("CF_PG_PASSWORD", "postgres")
+		t.Setenv("CF_PG_PASSWORD", "checkfleet")
+	}
+	if os.Getenv("CF_MONGO_PASSWORD") == "" {
+		t.Setenv("CF_MONGO_PASSWORD", "checkfleet")
 	}
 	cfg, err := engine.LoadConfig(configPath(t))
 	if err != nil {
@@ -164,4 +171,53 @@ func TestKafka(t *testing.T) {
 		t.Skip("kafka not configured")
 	}
 	assertReachable(t, kafka.New(*cfg.Checks.Kafka))
+}
+
+// TestLeastPrivilegeIsEnough is the verification CF-181 turns on: the postgres,
+// mysql and mongodb targets in checkfleet.integration.yml connect as the user
+// created with exactly the grants published in docs/permissions.md — pg_monitor,
+// PROCESS+REPLICATION CLIENT, clusterMonitor — and nothing else. If a module
+// gains a query that needs more, this fails instead of the reader discovering it
+// in production.
+//
+// It proves SUFFICIENCY on this topology, not minimality, and the difference is
+// not academic. Running it with pg_monitor revoked, the postgres check still
+// passes here: pg_database and pg_stat_activity are world-readable, and on a
+// standalone the two replication views are empty either way. pg_monitor is what
+// populates them for a non-superuser on a primary *with* replicas — the case
+// this single-node stack cannot stage. Without the grant the replica-lag and
+// inactive-slot findings would quietly report nothing wrong, which is worse
+// than an error. Documented in the permissions entry rather than left for
+// someone to discover.
+func TestLeastPrivilegeIsEnough(t *testing.T) {
+	cfg := loadConfig(t)
+	for _, tc := range []struct {
+		name string
+		dsn  string
+		run  func() engine.Check
+	}{
+		{"postgres", "user=checkfleet", func() engine.Check { return postgres.New(*cfg.Checks.Postgres) }},
+		{"mysql", "checkfleet:", func() engine.Check { return mysql.New(*cfg.Checks.MySQL) }},
+		{"mongodb", "checkfleet", func() engine.Check { return mongodb.New(*cfg.Checks.MongoDB) }},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			assertReachable(t, tc.run())
+		})
+	}
+}
+
+// TestIntegrationConfigUsesTheLeastPrivilegeUser guards the guard: if someone
+// points these targets back at the superuser to make a failure go away, the
+// test above would still pass and prove nothing.
+func TestIntegrationConfigUsesTheLeastPrivilegeUser(t *testing.T) {
+	cfg := loadConfig(t)
+	if dsn := cfg.Checks.Postgres.Targets[0].DSN; !strings.Contains(dsn, "user=checkfleet") {
+		t.Errorf("postgres target is not the least-privilege user: %q", dsn)
+	}
+	if dsn := cfg.Checks.MySQL.Targets[0].DSN; !strings.HasPrefix(dsn, "checkfleet:") {
+		t.Errorf("mysql target is not the least-privilege user: %q", dsn)
+	}
+	if u := cfg.Checks.MongoDB.Targets[0].Username; u != "checkfleet" {
+		t.Errorf("mongodb target is not the least-privilege user: %q", u)
+	}
 }

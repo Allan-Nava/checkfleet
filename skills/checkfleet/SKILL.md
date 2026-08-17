@@ -68,6 +68,9 @@ Load these only when you need them:
   it. Read this to pick a module or to answer "can checkfleet see X?".
 - `references/config-schema.md` — config keys, types and defaults. Read this
   before writing or editing a `checkfleet.yml`.
+- `references/permissions.md` — the least privilege each module needs on the
+  system it watches, and what it does *not*. Read this when asked what access
+  checkfleet requires, or to write the grant for a new target.
 
 ## Constraints
 

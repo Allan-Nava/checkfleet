@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.19.0
+
+- **Reference dei privilegi minimi, per modulo (CF-181, M38).** Per tutti e 29 i moduli: cosa serve davvero sul sistema controllato, e cosa **non** serve. Sorgente unica in `internal/moduledoc` accanto alle descrizioni, generato da `cmd/gen-skill` in `skills/checkfleet/references/permissions.md` e in `docs/permissions.md`, sotto lo stesso gate anti-divergenza di CF-152.
+
+  **Diciassette moduli non hanno bisogno di nessuna credenziale** — certs, tls, tcp, dns, ntp, stream, ingest, grpc, http, smtp, cassandra, memcached, keycloak, vault, nats, patroni, haproxy — ed è la prima cosa che la pagina dice, perché è metà della risposta a un security review. Fra questi c'è un risultato che non era ovvio: **vault non richiede un token**, perché `/v1/sys/seal-status` e `/v1/sys/health` sono serviti senza autenticazione; uno può essere configurato e viene inviato, ma nessuna policy è necessaria.
+
+  Per gli altri dodici gli statement sono copia-incollabili: `GRANT pg_monitor`, `GRANT PROCESS, REPLICATION CLIENT`, il ruolo `clusterMonitor` di Mongo, `ACL SETUSER checkfleet on ~ -@all +info` per Redis, le tre ACL `Describe` di Kafka, il privilegio `monitor` di Elasticsearch, il tag `monitoring` di RabbitMQ, la policy Consul, la coppia di action S3.
+
+  **La metà che conta è "non serve".** Un elenco di grant lascia il revisore a supporre il peggio; dire "nessun SELECT su nessuna tabella utente, nessun SUPERUSER, nessuna scrittura" è quello che fa approvare il ticket. Un test lo impone: un'entry senza `NotNeeded` fallisce la build.
+
+  **E l'ho eseguito, che era il punto dell'item.** Lo stack d'integrazione ora crea gli utenti con **esattamente** quei grant — `postgres.sql`, `mysql.sql`, `mongo.js` in `deploy/integration/leastpriv/` — e la suite si collega come loro invece che come superuser. I tre check passano.
+
+  **Eseguirlo ha però smentito una parte di quello che stavo per pubblicare.** Revocando `pg_monitor` il check postgres **passa lo stesso**: `pg_database` e `pg_stat_activity` sono leggibili da tutti, e su uno standalone le due viste di replica sono vuote comunque. Quindi la suite dimostra **sufficienza su questa topologia, non minimalità** — e `pg_monitor` serve davvero solo dove il check ha qualcosa da dire, cioè su un primary *con* repliche, che uno stack a nodo singolo non sa mettere in scena. Senza il grant i finding su lag di replica e slot inattivi riporterebbero **silenziosamente che va tutto bene**, che è peggio di un errore. Scritto nell'entry e nel commento del test invece di lasciarlo scoprire a qualcuno.
+
+  Aggiunto `TestIntegrationConfigUsesTheLeastPrivilegeUser`, che sorveglia il sorvegliante: se qualcuno rimettesse i target sul superuser per far sparire un fallimento, il test sopra continuerebbe a passare senza dimostrare niente.
+
+
 ## 1.18.2
 
 - **Docs (backlog, planning): nuova milestone M38 — il minimo privilegio.** Nessun cambiamento al software. Si aggiunge a M37, che resta da costruire.

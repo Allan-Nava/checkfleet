@@ -37,9 +37,9 @@ jobs:
       - name: Skill references are up to date (CF-152)
         run: |
           go run ./cmd/gen-skill
-          if ! git diff --quiet -- skills/; then
-            echo "::error::skills/ is stale — run 'go run ./cmd/gen-skill' and commit the result"
-            git diff -- skills/
+          if ! git diff --quiet -- skills/ docs/permissions.md; then
+            echo "::error::skills/ or docs/permissions.md is stale — run 'go run ./cmd/gen-skill' and commit the result"
+            git diff -- skills/ docs/permissions.md
             exit 1
           fi
       # Same gate for the per-module docs pages (CF-147): they are a projection
