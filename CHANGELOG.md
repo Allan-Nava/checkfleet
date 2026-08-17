@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.24.0
+
+- **La sola lettura diventa una prova, e M38 si chiude (CF-186).** "checkfleet legge soltanto" e' la promessa su cui si regge il permesso di puntarlo alla produzione, e fino a oggi non la verificava niente. Ora e' imposta in due direzioni.
+
+  **Staticamente**: un guard cammina i sorgenti di tutti i moduli e fallisce se uno emette `POST`, `PUT`, `DELETE` o `PATCH`, o manda un comando che muta nei protocolli testuali scritti a mano (`SET`, `DEL`, `FLUSHALL`…). Sui comandi guarda **solo i letterali stringa**: un identificatore Go chiamato `set` non e' un comando Redis, e segnalarlo renderebbe il guard rumore.
+
+  **Due file possono usare POST, con la ragione scritta**, e in entrambi e' trasporto e non mutazione: il gateway gRPC-JSON di etcd richiede POST anche in lettura (`/v3/maintenance/status`, `/v3/cluster/member/list`), e gRPC stesso e' POST su HTTP/2. Aggiungere una terza eccezione significa argomentarla in review, che e' esattamente il punto di una allowlist con motivazione invece di un'esclusione in bianco.
+
+  **Dinamicamente**: la suite d'integrazione esegue i moduli col driver come gli account least-privilege di CF-181 — `pg_monitor`, `PROCESS`+`REPLICATION CLIENT`, `clusterMonitor` — nessuno dei quali porta `INSERT`, `UPDATE`, `DELETE` o DDL.
+
+  E prima di dichiararlo, **verifica che l'account non possa davvero scrivere**: tenta una `CREATE TABLE` e pretende che venga rifiutata. Un test che gira come un utente che i diritti ce li ha per caso non dimostra niente — e' la stessa lezione di CF-181, dove revocare `pg_monitor` non fece fallire nulla.
+
+  Verificato anche che il guard sappia mordere: introdotto un `"DELETE"` in `certs.go`, il test lo nomina e fallisce.
+
+  Nuova voce in `docs/faq.md`, citabile perche' sostenuta da test invece che da fiducia.
+
+  **M38 chiusa.** Sei item: il reference dei privilegi minimi eseguito contro utenti reali (CF-181), `checkfleet perms` (CF-182), i certificati client mTLS (CF-183), la redazione dei segreti come garanzia verificata (CF-184), l'igiene dei permessi su config e sorgenti di segreti (CF-185), e questo.
+
+
 ## 1.23.0
 
 - **Igiene dei permessi su config e sorgenti di segreti (CF-185, M38).** Due comportamenti, con due bilanci diversi.

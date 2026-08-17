@@ -150,3 +150,22 @@ Behind it, `engine.Redact` strips passwords out of connection strings and error
 text, and the three modules whose DSN carries the credential inline (`mysql`,
 `mongodb`, `postgres`) run their connection errors through it — a driver error
 that echoes its input is the classic way a password reaches a log.
+
+## Can checkfleet change anything on the systems it checks?
+
+No, and this is enforced in two directions rather than promised.
+
+**Statically**: a guard walks every module source and fails the build if one
+issues `POST`, `PUT`, `DELETE` or `PATCH`, or sends a mutating command in the
+hand-rolled text protocols (`SET`, `DEL`, `FLUSHALL`, …). Two files are allowed
+POST with a written reason, and both are transport rather than mutation:
+etcd's gRPC-JSON gateway requires POST even for reads, and gRPC itself is POST
+over HTTP/2. Adding a third exception means arguing for it in review.
+
+**Dynamically**: the integration suite runs the driver-backed checks
+(`postgres`, `mysql`, `mongodb`) as the least-privilege accounts from
+[Permissions](permissions.md) — `pg_monitor`, `PROCESS`+`REPLICATION CLIENT`,
+`clusterMonitor` — none of which carries `INSERT`, `UPDATE`, `DELETE` or DDL.
+The suite first proves the account really is refused a `CREATE TABLE`, because a
+test that runs as a user who happens to have rights proves nothing, and then
+asserts the checks pass anyway.

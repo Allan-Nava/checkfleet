@@ -33,6 +33,7 @@ import (
 	"github.com/Allan-Nava/checkfleet/internal/checks/postgres"
 	"github.com/Allan-Nava/checkfleet/internal/checks/redis"
 	"github.com/Allan-Nava/checkfleet/internal/engine"
+	"github.com/jackc/pgx/v5"
 )
 
 // configPath resolves the integration config, overridable via env.
@@ -220,4 +221,39 @@ func TestIntegrationConfigUsesTheLeastPrivilegeUser(t *testing.T) {
 	if u := cfg.Checks.MongoDB.Targets[0].Username; u != "checkfleet" {
 		t.Errorf("mongodb target is not the least-privilege user: %q", u)
 	}
+}
+
+// TestModulesCannotWrite is the dynamic half of the read-only guarantee
+// (CF-186). The static guard in internal/registry proves no module *issues* a
+// write; this proves it does not need one, by running the driver-backed checks
+// as accounts that have been granted none.
+//
+// The grants are the ones docs/permissions.md publishes — pg_monitor,
+// PROCESS+REPLICATION CLIENT, clusterMonitor — and none of them carries INSERT,
+// UPDATE, DELETE or DDL. A check that quietly depended on a write would fail
+// here instead of being discovered on someone's production database.
+func TestModulesCannotWrite(t *testing.T) {
+	cfg := loadConfig(t)
+
+	// First: prove the account really cannot write, so the checks passing below
+	// means something. A test that runs as a user who happens to have rights
+	// proves nothing at all.
+	t.Run("the postgres account is refused a write", func(t *testing.T) {
+		dsn := cfg.Checks.Postgres.Targets[0].DSN + " password=" + os.Getenv("CF_PG_PASSWORD")
+		conn, err := pgx.Connect(context.Background(), dsn)
+		if err != nil {
+			t.Fatalf("connect: %v", err)
+		}
+		defer conn.Close(context.Background())
+		if _, err := conn.Exec(context.Background(), "CREATE TABLE cf_write_probe (x int)"); err == nil {
+			_, _ = conn.Exec(context.Background(), "DROP TABLE cf_write_probe")
+			t.Fatal("the least-privilege account could create a table — the grants are wider than documented")
+		}
+	})
+
+	t.Run("the checks still pass", func(t *testing.T) {
+		assertReachable(t, postgres.New(*cfg.Checks.Postgres))
+		assertReachable(t, mysql.New(*cfg.Checks.MySQL))
+		assertReachable(t, mongodb.New(*cfg.Checks.MongoDB))
+	})
 }
