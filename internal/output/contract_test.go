@@ -24,7 +24,8 @@ func contractResult() engine.Result {
 		Findings: []engine.Finding{
 			{Check: "http", Target: "https://a.example", Status: engine.OK, Message: "200 in 12ms", Value: &v, Unit: "ms"},
 			{Check: "certs", Target: "b.example:443", Status: engine.BAD, Message: "expires in 2 days",
-				Runbook: "https://wiki.example/tls", Remediation: "Renew and reload"},
+				Runbook: "https://wiki.example/tls", Remediation: "Renew and reload",
+				SuppressedBy: "tcp b.example:22"},
 		},
 		Started:  time.Unix(1700000000, 0).UTC(),
 		Duration: 1500 * time.Millisecond,
@@ -79,7 +80,7 @@ func TestJSONFindingKeys(t *testing.T) {
 	if got, want := strings.Join(objectKeys(t, doc.Findings[0]), ","), "check,message,status,target,unit,value"; got != want {
 		t.Errorf("finding with metric = %q, want %q (runbook/remediation must be omitted) — see %s", got, want, docPath)
 	}
-	if got, want := strings.Join(objectKeys(t, doc.Findings[1]), ","), "check,message,remediation,runbook,status,target"; got != want {
+	if got, want := strings.Join(objectKeys(t, doc.Findings[1]), ","), "check,message,remediation,runbook,status,suppressed_by,target"; got != want {
 		t.Errorf("finding with hints = %q, want %q (value/unit must be omitted, not null)", got, want)
 	}
 }

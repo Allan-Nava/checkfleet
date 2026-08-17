@@ -731,3 +731,43 @@ file as a secret with `${file:...}`. There, continuing means using the
 credential anyway, so the load fails with the `chmod` to run. Group-readable
 (`0640`) is accepted: running under a dedicated group is a normal deployment,
 and refusing it would push the password back into a unit file.
+
+## Dependencies between checks
+
+A dead host produces one finding per module that touches it, and `alert` opens
+them all. `depends_on` says which findings are *consequences* of another, so the
+run reports one outage instead of six:
+
+```yaml
+depends_on:
+  # Everything on a host depends on that host answering on SSH.
+  - on_check: tcp
+    same_host: true
+
+  # Or name the parent explicitly.
+  - check: postgres
+    target: "db-*"
+    on_check: tcp
+    on_target: "db-01:22"
+```
+
+When the parent is `BAD` or `ERROR`, its dependents are **downgraded to `WARN`
+and annotated** — `[suppressed by tcp db-01:22]`, plus a `suppressed_by` field
+in the JSON. A merely `WARN` parent suppresses nothing: it has not explained
+its children away.
+
+**Suppressed findings are never hidden.** A row that disappears is
+indistinguishable from a check that never ran, and "the fleet went quiet" is the
+worst way to learn about an outage. They stay on screen, marked, and below the
+`--exit-on bad` gate.
+
+{: .note }
+> `same_host` compares the **host part of the target**, so both findings have to
+> spell their target as `host` or `host:port`. A module configured with a
+> friendly `name:` reports that name — `db-primary` shares no host with
+> `10.0.0.5:5432` — and the rule then matches nothing. Use an explicit
+> `on_target` for named targets.
+
+A cycle (`a` depends on `b` depends on `a`) is refused by
+[`validate`](usage.md) rather than resolved at run time, where the outcome would
+depend on the order findings happened to arrive in.

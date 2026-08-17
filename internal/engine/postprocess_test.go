@@ -90,7 +90,7 @@ func TestPostProcessKeepsResultMetadata(t *testing.T) {
 
 // pipelineSteps are the post-run transformations that must reach every
 // interface. Adding one to PostProcess is how you register it.
-var pipelineSteps = []string{"ApplyMaintenance", "ApplyRunbooks"}
+var pipelineSteps = []string{"ApplyMaintenance", "ApplyDependencies", "ApplyRunbooks"}
 
 // TestPostProcessIsTheOnlyPipeline is the parity gate (CF-163), and the reason
 // this file exists.

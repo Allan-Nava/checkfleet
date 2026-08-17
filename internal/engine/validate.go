@@ -14,6 +14,11 @@ func Validate(cfg *Config) []string {
 	var problems []string
 	add := func(format string, args ...any) { problems = append(problems, fmt.Sprintf(format, args...)) }
 
+	// Dependency rules are refused here rather than resolved at run time: a
+	// cycle would leave a run's outcome depending on the order findings arrived
+	// in (CF-174).
+	problems = append(problems, ValidateDependencies(cfg.DependsOn)...)
+
 	c := cfg.Checks
 	// configured is kept per rule-bearing module below for readability; the
 	// "nothing configured" check uses anyModuleConfigured so a module without

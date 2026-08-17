@@ -110,6 +110,7 @@ And within a finding:
 | `unit` | string | unit of `value` (`ms`, `s`, `days`, `bytes`, …), omitted with it |
 | `runbook` | string | optional procedure URL from the `runbooks:` config, omitted when no rule matches |
 | `remediation` | string | optional short "what to do" note from the same rules, omitted with it |
+| `suppressed_by` | string | the failing finding this one is a consequence of (`depends_on`), omitted when none |
 
 `runbook` and `remediation` are attached only to findings above `OK` — there is
 nothing to do about a green result — so a consumer must treat them as absent on

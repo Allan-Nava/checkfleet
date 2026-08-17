@@ -23,6 +23,13 @@ runbooks:
     target: "db-*"
     remediation: Check replication lag before failing over
 
+# Which findings are consequences of another: when the parent is BAD/ERROR the
+# dependents are downgraded to WARN and annotated, so a dead host pages once
+# instead of once per module. Never hidden — a row that vanishes looks like a
+# check that never ran. same_host needs both targets spelled as host[:port].
+# depends_on:
+#   - {on_check: tcp, same_host: true}
+
 # Per-module overrides of the tuning above (a zero field falls back to the global).
 module_overrides:
   postgres: {timeout_seconds: 10, retries: 2}   # DB checks: shorter deadline, retry transients

@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.25.0
+
+- **Soppressione per dipendenza (CF-174, M37).** Un host morto produce un finding per ogni modulo che lo tocca, e `alert` li apre tutti. CF-123 aveva insegnato a *mostrarli* come un guasto solo; questo decide cosa esce dal gate e dalle notifiche.
+
+  ```yaml
+  depends_on:
+    - on_check: tcp        # tutto su un host dipende da quell'host che risponde
+      same_host: true
+  ```
+
+  ```
+  WARN  http  http://10.0.0.5/  request failed: ... [suppressed by tcp 10.0.0.5:22]
+  ERROR tcp   10.0.0.5:22       connection failed: ...
+  ```
+
+  Quando il parent e' `BAD`/`ERROR` i dipendenti scendono a `WARN`, con il campo `suppressed_by` nel JSON. Un parent solo `WARN` non sopprime niente: non ha spiegato via i figli.
+
+  **Un finding soppresso non viene mai nascosto**, ed e' la trappola che l'item chiedeva di evitare: una riga che sparisce e' indistinguibile da un check che non e' girato, e "la flotta e' diventata silenziosa" e' il modo peggiore di scoprire un outage. Resta a schermo, marcata, e sotto il gate.
+
+  **I cicli sono rifiutati da `validate`**, non risolti a run time — dove l'esito dipenderebbe dall'ordine in cui i finding sono arrivati. Il messaggio mostra il giro (`cycle postgres → redis → postgres`) invece di limitarsi ad asserirne uno, ed e' deterministico.
+
+  Prima di scrivere la feature ho **spostato l'estrazione host in `engine`**, cosi' la soppressione e il raggruppamento di CF-123 rispondono alla stessa domanda. Due copie di "su quale host sta questo target" divergerebbero in silenzio, e sembrerebbe semplicemente che la feature non funzioni.
+
+  **Un limite trovato provandolo end-to-end, non nei test.** `same_host` confronta la parte host del target: con un modulo configurato con un `name:` amichevole il finding riporta quel nome, `db-primary` non condivide alcun host con `10.0.0.5:5432`, e **la regola non matcha niente in silenzio**. Fissato con un test che pinna entrambi i casi, scritto nel commento della struct e in una nota in evidenza nelle docs, con il rimedio (`on_target` esplicito).
+
+
 ## 1.24.0
 
 - **La sola lettura diventa una prova, e M38 si chiude (CF-186).** "checkfleet legge soltanto" e' la promessa su cui si regge il permesso di puntarlo alla produzione, e fino a oggi non la verificava niente. Ora e' imposta in due direzioni.

@@ -25,6 +25,10 @@ type Config struct {
 	// downgraded so scheduled work doesn't page. See ApplyMaintenance.
 	Maintenance []MaintenanceWindow `yaml:"maintenance"`
 
+	// DependsOn declares that some findings are consequences of another, so a
+	// dead host pages once instead of once per module. See ApplyDependencies.
+	DependsOn []DependsRule `yaml:"depends_on"`
+
 	// Runbooks attach operator hints (a procedure URL, a short remediation note)
 	// to the findings that need attention. See ApplyRunbooks.
 	Runbooks []RunbookRule `yaml:"runbooks"`

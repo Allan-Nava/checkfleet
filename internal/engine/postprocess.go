@@ -9,6 +9,9 @@ import "time"
 // The order is not incidental. Maintenance can drop a finding entirely, so
 // annotating first would spend work on rows nobody will see — and, worse, would
 // let a muted finding carry a runbook into a sink that only looks at hints.
+// Dependency suppression sits between them: it must see the surviving findings
+// (a muted parent explains nothing), and it must run before the hints so a
+// suppressed row still carries its runbook when someone opens it.
 //
 // This function exists because the steps were previously open-coded at four
 // call sites, and the desktop had drifted: it applied the hints but not the
@@ -23,6 +26,7 @@ func PostProcess(res Result, cfg *Config, now time.Time) Result {
 		return res
 	}
 	res.Findings = ApplyMaintenance(res.Findings, cfg.Maintenance, now)
+	res.Findings = ApplyDependencies(res.Findings, cfg.DependsOn)
 	res.Findings = ApplyRunbooks(res.Findings, cfg.Runbooks)
 	return res
 }

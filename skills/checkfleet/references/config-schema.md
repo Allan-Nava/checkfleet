@@ -18,6 +18,7 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `max_concurrency` | `int` |  |
 | `labels` | map of `string` |  |
 | `maintenance` | list of `MaintenanceWindow` |  |
+| `depends_on` | list of `DependsRule` |  |
 | `runbooks` | list of `RunbookRule` |  |
 | `module_overrides` | map of `ModuleOverride` |  |
 

@@ -51,6 +51,10 @@ type Finding struct {
 	Unit        string   `json:"unit,omitempty"`
 	Runbook     string   `json:"runbook,omitempty"`
 	Remediation string   `json:"remediation,omitempty"`
+	// SuppressedBy names the failing finding this one is a consequence of
+	// (CF-174). Set by ApplyDependencies, which downgrades rather than drops:
+	// the row stays visible and marked.
+	SuppressedBy string `json:"suppressed_by,omitempty"`
 }
 
 // Num returns a pointer to v, for setting Finding.Value inline.

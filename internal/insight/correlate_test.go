@@ -100,6 +100,10 @@ func TestSubnetGroupsLiteralIPv4(t *testing.T) {
 	}
 }
 
+// TestHostExtraction covers engine.HostOf through the clustering that uses it:
+// the function moved to engine so the dependency suppression (CF-174) could
+// share it, and the behaviour this package depends on is still worth pinning
+// from here.
 func TestHostExtraction(t *testing.T) {
 	cases := map[string]string{
 		"db-01:5432":                  "db-01",
@@ -110,7 +114,7 @@ func TestHostExtraction(t *testing.T) {
 		"10.20.30.11:22":              "10.20.30.11",
 	}
 	for target, want := range cases {
-		if got := hostOf(bad("c", target)); got != want {
+		if got := engine.HostOf(target); got != want {
 			t.Errorf("hostOf(%q) = %q, want %q", target, got, want)
 		}
 	}

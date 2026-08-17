@@ -56,15 +56,15 @@ func TestValidateThresholdOrder(t *testing.T) {
 // the "module without rules still counts" path.
 func TestValidatePerModuleProblems(t *testing.T) {
 	cfg := &Config{Checks: ChecksConfig{
-		Certs:         &CertsConfig{},                                                    // no target/inventory
-		Stream:        &StreamConfig{Targets: []StreamTarget{{URL: ""}}},                 // no url
-		HAProxy:       &HAProxyConfig{},                                                   // no target
-		Patroni:       &PatroniConfig{},                                                   // no target
-		Consul:        &ConsulConfig{},                                                    // no target
-		DNS:           &DNSConfig{Targets: []DNSTarget{{Name: ""}}},                       // no name
-		SMTP:          &SMTPConfig{},                                                      // no target
-		Elasticsearch: &ElasticsearchConfig{},                                            // no target
-		MongoDB:       &MongoDBConfig{},                                                   // no target
+		Certs:         &CertsConfig{},                                    // no target/inventory
+		Stream:        &StreamConfig{Targets: []StreamTarget{{URL: ""}}}, // no url
+		HAProxy:       &HAProxyConfig{},                                  // no target
+		Patroni:       &PatroniConfig{},                                  // no target
+		Consul:        &ConsulConfig{},                                   // no target
+		DNS:           &DNSConfig{Targets: []DNSTarget{{Name: ""}}},      // no name
+		SMTP:          &SMTPConfig{},                                     // no target
+		Elasticsearch: &ElasticsearchConfig{},                            // no target
+		MongoDB:       &MongoDBConfig{},                                  // no target
 	}}
 	joined := strings.Join(Validate(cfg), "\n")
 	for _, want := range []string{
