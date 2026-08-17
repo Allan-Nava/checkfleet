@@ -708,3 +708,26 @@ to say it is a knob that can disagree with the first:
 | `postgres` | `sslcert=`, `sslkey=`, `sslrootcert=` in the DSN |
 | `mongodb` | `tlsCertificateKeyFile=`, `tlsCAFile=` in the URI |
 | `mysql` | the driver's TLS parameters in the DSN |
+
+## File permissions
+
+`checkfleet doctor` warns when the config, or a file it reads a secret from with
+`${file:...}`, is readable by other accounts on the host:
+
+```
+🟡 WARN  doctor/perms  checkfleet.yml  the config is world-readable (mode 0644); run: chmod 0600 checkfleet.yml
+```
+
+A `checkfleet.yml` matters even when it holds only `*_env` keys: it maps the
+fleet, names every host and port, and says which credential lives in which
+variable. That is a reconnaissance document.
+
+`doctor` **warns and moves on** — a permission that is wrong today should not
+take your monitoring down with it, since the run is how you find out something
+else broke.
+
+**One case is refused rather than warned about**: reading a *world-readable*
+file as a secret with `${file:...}`. There, continuing means using the
+credential anyway, so the load fails with the `chmod` to run. Group-readable
+(`0640`) is accepted: running under a dedicated group is a normal deployment,
+and refusing it would push the password back into a unit file.

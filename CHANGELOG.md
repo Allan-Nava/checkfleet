@@ -1,5 +1,47 @@
 # Changelog
 
+## 1.23.0
+
+- **Igiene dei permessi su config e sorgenti di segreti (CF-185, M38).** Due comportamenti, con due bilanci diversi.
+
+  **`doctor` avvisa** quando il config — o un file da cui legge un segreto con l'interpolazione `file:` — e' leggibile dagli altri account della macchina:
+
+  ```
+  WARN  doctor/perms  checkfleet.yml  the config is world-readable (mode 0644); run: chmod 0600 checkfleet.yml
+  ```
+
+  Un `checkfleet.yml` conta anche quando dentro ci sono solo chiavi `*_env`: mappa la flotta, nomina ogni host e porta, e dice quale credenziale sta in quale variabile. E' un documento di ricognizione. Il `chmod` sta **nel messaggio**, perche' "i tuoi permessi sono sbagliati" senza il comando fa perdere un pomeriggio a qualcuno.
+
+  Resta **advisory**: `doctor` riporta e va avanti, perche' un permesso sbagliato oggi non deve portarsi giu' il monitoring — la run e' come scopri che si e' rotto qualcos'altro.
+
+  **L'interpolazione da file invece rifiuta**, ed e' un bilancio diverso: li' proseguire significa *usare comunque* quella credenziale. Un file leggibile da tutti fallisce il caricamento nominando il chmod, invece di essere letto in silenzio — che e' il modo in cui un segreto world-readable resta sbagliato per un anno.
+
+  **Il group-readable (`0640`) e' ammesso di proposito.** Far girare checkfleet sotto un gruppo dedicato con il segreto a 0640 e' un deployment normale e difendibile; rifiutarlo spingerebbe la gente a rimettere la password in un unit file, che non e' un miglioramento. Su Windows i bit Unix non significano niente e il controllo e' saltato invece che indovinato.
+
+  **Cambio di comportamento**, annotato in `docs/compatibility.md` accanto alla regola di interpolazione: un config che si appoggiava a un file di segreti leggibile da tutti ora non carica.
+
+
+## 1.23.0
+
+- **Igiene dei permessi su config e sorgenti di segreti (CF-185, M38).** Due comportamenti, con due bilanci diversi.
+
+  **`doctor` avvisa** quando il config — o un file da cui legge un segreto con `${file:...}` — è leggibile dagli altri account della macchina:
+
+  ```
+  🟡 WARN  doctor/perms  checkfleet.yml  the config is world-readable (mode 0644); run: chmod 0600 checkfleet.yml
+  ```
+
+  Un `checkfleet.yml` conta anche quando dentro ci sono solo chiavi `*_env`: mappa la flotta, nomina ogni host e porta, e dice quale credenziale sta in quale variabile. È un documento di ricognizione. Il `chmod` sta **nel messaggio**, perché "i tuoi permessi sono sbagliati" senza il comando fa perdere un pomeriggio a qualcuno.
+
+  Resta **advisory**: `doctor` riporta e va avanti, perché un permesso sbagliato oggi non deve portarsi giù il monitoring — la run è come scopri che si è rotto qualcos'altro.
+
+  **`${file:...}` invece rifiuta**, ed è un bilancio diverso: lì proseguire significa *usare comunque* quella credenziale. Un file leggibile da tutti fallisce il caricamento nominando il chmod, invece di essere letto in silenzio — che è il modo in cui un segreto world-readable resta sbagliato per un anno.
+
+  **Il group-readable (`0640`) è ammesso di proposito.** Far girare checkfleet sotto un gruppo dedicato con il segreto a 0640 è un deployment normale e difendibile; rifiutarlo spingerebbe la gente a rimettere la password in un unit file, che non è un miglioramento. Su Windows i bit Unix non significano niente e il controllo è saltato invece che indovinato.
+
+  **Cambio di comportamento**, annotato in `docs/compatibility.md`: un config che si appoggiava a un file di segreti leggibile da tutti ora non carica. Il messaggio dice esattamente cosa eseguire.
+
+
 ## 1.22.0
 
 - **La redazione dei segreti diventa una garanzia verificata (CF-184, M38).** "I check non loggano mai credenziali" era una regola tenuta a mano: i test che la controllavano coprivano `moduledoc` e `scaffold`, **non i messaggi dei finding** — e una stringa di connessione dentro un errore è il modo classico in cui una password arriva in un log.

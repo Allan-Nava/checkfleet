@@ -786,8 +786,9 @@ var varPattern = regexp.MustCompile(`\$\{([^}]*)\}`)
 //	${VAR:-default}   VAR, or default when unset/empty
 //	${file:/path}     the trimmed contents of a file (Docker/K8s secrets)
 //
-// A missing secret file is an error; unknown env vars expand to empty. Use
-// $${ to emit a literal ${.
+// A missing secret file is an error, and so is one readable by other users
+// (CF-185) — the error names the chmod to run. Unknown env vars expand to
+// empty. Use $${ to emit a literal ${.
 func expandVars(raw []byte) ([]byte, error) {
 	src := strings.ReplaceAll(string(raw), "$${", "\x00")
 	var firstErr error
@@ -795,7 +796,17 @@ func expandVars(raw []byte) ([]byte, error) {
 		inner := tok[2 : len(tok)-1] // strip ${ and }
 		switch {
 		case strings.HasPrefix(inner, "file:"):
-			b, err := os.ReadFile(strings.TrimPrefix(inner, "file:"))
+			path := strings.TrimPrefix(inner, "file:")
+			// A secret source readable by every account on the host defeats the
+			// point of putting it in a file (CF-185). Refused loudly rather than
+			// read in silence: silent is how it stays wrong for a year.
+			if err := CheckSecretFile(path); err != nil {
+				if firstErr == nil {
+					firstErr = err
+				}
+				return ""
+			}
+			b, err := os.ReadFile(path)
 			if err != nil {
 				if firstErr == nil {
 					firstErr = fmt.Errorf("secret file: %w", err)

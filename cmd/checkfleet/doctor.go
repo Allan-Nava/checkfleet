@@ -52,6 +52,13 @@ func runDoctor(args []string) error {
 	}
 	findings = append(findings, doctor.Env(refs)...)
 
+	// 1b. Permissions on the config and on any file it reads a secret from
+	//     (CF-185). Read from the raw text, so it still reports when the config
+	//     fails to parse — a broken config on a world-readable file is exactly
+	//     when you want to be told.
+	rawCfg, _ := os.ReadFile(*configPath)
+	findings = append(findings, doctor.FilePerms(*configPath, string(rawCfg))...)
+
 	// 2. The config, whose failure to load is a finding rather than an abort.
 	cfg, cfgErr := loadConfig(*configPath, *stack)
 	if cfgErr != nil {

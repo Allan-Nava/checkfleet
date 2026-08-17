@@ -71,6 +71,12 @@ Two properties are part of the contract, not accidents:
 - **`${VAR}` interpolation** (`${VAR}`, `${VAR:-default}`, `${file:/path}`,
   `$${` for a literal) is applied to config values before parsing.
 
+{: .note }
+> **Changed in 1.23.0** — `${file:/path}` refuses a *world-readable* secret file
+> instead of reading it silently: continuing would mean using the credential
+> anyway. A config that relied on one now fails to load, with the `chmod` to run
+> in the message. Group-readable (`0640`) files are unaffected.
+
 ### 2. The JSON output
 
 `--output json` emits a document with a top-level `schema` field. These keys are
