@@ -61,6 +61,13 @@ func runAlert(args []string) error {
 	prevKeys := prevProblemKeys(*historyPath, res)
 	events := alert.Plan(res.Findings, prevKeys)
 
+	// Routing (CF-175): with alert_routes in the config, each event goes to the
+	// provider its rule names. Without them the flags below behave exactly as
+	// before, so nobody who has not asked for this sees a change.
+	if len(cfg.AlertRoutes) > 0 {
+		return sendRouted(ctx, cfg, events, res.Labels, *source, *dryRun)
+	}
+
 	// SNS is a stateless pub/sub sink: it needs a topic ARN + AWS creds and only
 	// publishes triggers (there is nothing to "resolve").
 	var ak, sk string
@@ -187,4 +194,61 @@ func sendOpsgenie(ctx context.Context, key string, e alert.Event) error {
 		return fmt.Errorf("opsgenie responded HTTP %d", resp.StatusCode)
 	}
 	return nil
+}
+
+// sendRouted dispatches each event to the provider its route names (CF-175).
+//
+// An event that matches no route is reported and skipped rather than sent
+// somewhere arbitrary: a config with rules is a config that has opinions about
+// where things go, and quietly defaulting would deliver a database alert to
+// whoever happens to be first in the list.
+func sendRouted(ctx context.Context, cfg *engine.Config, events []alert.Event,
+	labels map[string]string, source string, dryRun bool) error {
+
+	var sent, unrouted int
+	for _, e := range events {
+		r, ok := alert.Match(cfg.AlertRoutes, e, labels)
+		if !ok {
+			unrouted++
+			fmt.Fprintf(os.Stderr, "checkfleet: alert: no route for %s %s\n", e.Action, e.DedupKey)
+			continue
+		}
+		if dryRun {
+			// The routing decision is the thing you want to see before turning
+			// this on, so --dry-run names the provider per event.
+			fmt.Printf("  %-7s %-40s → %s\n", e.Action, e.DedupKey, routeLabel(r))
+			sent++
+			continue
+		}
+		if err := sendVia(ctx, r, source, e); err != nil {
+			return err
+		}
+		sent++
+	}
+	fmt.Printf("alert: %d events routed, %d unrouted (dry-run=%v)\n", sent, unrouted, dryRun)
+	return nil
+}
+
+// routeLabel describes a route for the dry-run line.
+func routeLabel(r engine.AlertRoute) string {
+	if r.Provider == "sns" {
+		return "sns " + r.SNSTopicARN
+	}
+	return r.Provider + " (" + r.KeyEnv + ")"
+}
+
+// sendVia delivers one event through one route.
+func sendVia(ctx context.Context, r engine.AlertRoute, source string, e alert.Event) error {
+	if r.Provider == "sns" {
+		if e.Action != "trigger" {
+			return nil // SNS has no resolve
+		}
+		ak, sk := os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY")
+		return sendSNS(ctx, r.SNSTopicARN, ak, sk, e)
+	}
+	key := os.Getenv(r.KeyEnv)
+	if key == "" {
+		return fmt.Errorf("route %s: env %s is empty", r.Provider, r.KeyEnv)
+	}
+	return sendAlert(ctx, r.Provider, key, source, e)
 }

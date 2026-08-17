@@ -218,3 +218,51 @@ func TestSameHostNeedsAnAddressInTheTarget(t *testing.T) {
 		t.Errorf("an explicit on_target should pair a named parent: %+v", got)
 	}
 }
+
+func TestValidateAlertRoutesCatchesSilentMisrouting(t *testing.T) {
+	problems := ValidateAlertRoutes([]AlertRoute{
+		{Provider: "pagerduty"},      // no key_env
+		{Provider: "sns"},            // no topic
+		{Provider: "carrier-pigeon"}, // unknown
+		{Check: "a", Provider: "opsgenie", KeyEnv: "K", MinSeverity: "loud"}, // bad severity
+	})
+	joined := strings.Join(problems, "\n")
+	for _, want := range []string{"needs key_env", "needs sns_topic_arn", "unknown provider", "min_severity"} {
+		if !strings.Contains(joined, want) {
+			t.Errorf("missing a problem about %q:\n%s", want, joined)
+		}
+	}
+}
+
+// TestValidateAlertRoutesReportsUnreachableRules — a rule after a catch-all
+// never fires, and the symptom (alerts going to the wrong place) looks exactly
+// like the routing not working at all.
+func TestValidateAlertRoutesReportsUnreachableRules(t *testing.T) {
+	problems := ValidateAlertRoutes([]AlertRoute{
+		{Provider: "sns", SNSTopicARN: "arn:1"},                 // catches everything
+		{Check: "postgres", Provider: "pagerduty", KeyEnv: "K"}, // dead
+	})
+	var found bool
+	for _, p := range problems {
+		if strings.Contains(p, "unreachable") {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("no unreachable-rule problem: %v", problems)
+	}
+	// A catch-all in last position is the normal shape and must not warn.
+	ok := ValidateAlertRoutes([]AlertRoute{
+		{Check: "postgres", Provider: "pagerduty", KeyEnv: "K"},
+		{Provider: "sns", SNSTopicARN: "arn:1"},
+	})
+	if len(ok) != 0 {
+		t.Errorf("a catch-all at the end is correct usage: %v", ok)
+	}
+}
+
+func TestValidateAlertRoutesAcceptsNone(t *testing.T) {
+	if p := ValidateAlertRoutes(nil); len(p) != 0 {
+		t.Errorf("no routes is not a problem: %v", p)
+	}
+}

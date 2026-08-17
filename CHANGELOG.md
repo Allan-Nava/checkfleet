@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.26.0
+
+- **Routing degli alert per modulo, target, label e severita' (CF-175, M37).** `alert --provider X` valeva per l'intera run: o svegli la squadra sbagliata o non instradi niente. Ora `alert_routes` manda ogni alert dove deve andare — postgres al DBA, haproxy alla rete, tutto il resto a un catch-all.
+
+  Prima regola che matcha vince, quindi le specifiche vanno in cima e il catch-all in fondo. `labels` devono combaciare **tutte** con le label globali della run, e `key_env` nomina la variabile che tiene la chiave, mai la chiave.
+
+  **`--dry-run` mostra il routing**, che e' la cosa che vuoi vedere prima di attivarlo:
+
+  ```
+  trigger postgres/db-01:5432        → pagerduty (PD_DBA_ROUTING_KEY)
+  trigger http/https://api.internal/ → sns arn:aws:sns:eu-west-1:1:fleet
+  ```
+
+  Due comportamenti scelti apposta. **Un resolve non viene mai filtrato da `min_severity`**: e' la *fine* di un problema e non porta severita', e lasciarlo cadere manderebbe il trigger a una squadra lasciando l'alert aperto li' per sempre — peggio del rumore che il filtro evitava. **Un evento che non matcha nessuna regola viene segnalato e saltato**, non mandato a caso: un config con regole ha opinioni su dove vanno le cose, e defaultare in silenzio consegnerebbe un alert del database a chi capita per primo nella lista.
+
+  `validate` rifiuta provider sconosciuti, chiavi mancanti, `min_severity` non valida e — la piu' utile — una **regola messa dopo un catch-all**, dove non puo' mai scattare. E' un errore il cui sintomo, alert che arrivano nel posto sbagliato, somiglia esattamente al routing che non funziona.
+
+  `alert.Event` porta ora `check` e `target` separati, anche sui resolve: instradare una guarigione richiede gli stessi dati del trigger, e a quel punto il finding non esiste piu'. Senza `alert_routes` i flag si comportano esattamente come prima.
+
+
 ## 1.25.0
 
 - **Soppressione per dipendenza (CF-174, M37).** Un host morto produce un finding per ogni modulo che lo tocca, e `alert` li apre tutti. CF-123 aveva insegnato a *mostrarli* come un guasto solo; questo decide cosa esce dal gate e dalle notifiche.

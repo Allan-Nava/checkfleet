@@ -25,6 +25,11 @@ type Config struct {
 	// downgraded so scheduled work doesn't page. See ApplyMaintenance.
 	Maintenance []MaintenanceWindow `yaml:"maintenance"`
 
+	// AlertRoutes send different findings to different on-call providers, so a
+	// database problem reaches the DBA and a network one reaches the network
+	// team. Empty keeps the single-provider behaviour of the `alert` flags.
+	AlertRoutes []AlertRoute `yaml:"alert_routes"`
+
 	// DependsOn declares that some findings are consequences of another, so a
 	// dead host pages once instead of once per module. See ApplyDependencies.
 	DependsOn []DependsRule `yaml:"depends_on"`
@@ -58,6 +63,22 @@ type RunbookRule struct {
 	Target      string `yaml:"target"`      // glob on the target; "" = all
 	Runbook     string `yaml:"runbook"`     // URL of the procedure to follow
 	Remediation string `yaml:"remediation"` // short "what to do" note
+}
+
+// AlertRoute sends the alerts it matches to one provider (CF-175). Rules are
+// read in order and the first match wins, so specific rules go on top and a
+// catch-all — one with no match fields — goes at the bottom.
+//
+// Credentials are never here: KeyEnv names the environment variable holding the
+// routing key, the same rule the rest of the config follows.
+type AlertRoute struct {
+	Check       string            `yaml:"check"`        // glob on the check; "" = all
+	Target      string            `yaml:"target"`       // glob on the target; "" = all
+	Labels      map[string]string `yaml:"labels"`       // every one must match the run's labels
+	MinSeverity string            `yaml:"min_severity"` // bad|error; "" = any
+	Provider    string            `yaml:"provider"`     // pagerduty|opsgenie|sns
+	KeyEnv      string            `yaml:"key_env"`      // env var with the routing/API key
+	SNSTopicARN string            `yaml:"sns_topic_arn"`
 }
 
 // MaintenanceWindow suppresses (or downgrades) findings during a time range.

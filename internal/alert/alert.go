@@ -20,6 +20,11 @@ type Event struct {
 	DedupKey string        // check/target
 	Summary  string        // human-readable summary (trigger only)
 	Severity engine.Status // BAD or ERROR (trigger only)
+	// Check and Target are the dedup key's two halves, kept apart so routing
+	// can match on them without re-parsing (CF-175). A resolve carries them too,
+	// so a recovery reaches the same team the trigger did.
+	Check  string `json:"check,omitempty"`
+	Target string `json:"target,omitempty"`
 }
 
 // Plan builds the events for a run: trigger for each current BAD/ERROR finding,
@@ -39,11 +44,17 @@ func Plan(curr []engine.Finding, prevProblemKeys []string) []Event {
 	sort.Strings(keys)
 	for _, k := range keys {
 		f := problems[k]
-		events = append(events, Event{Action: "trigger", DedupKey: k, Summary: k + ": " + f.Message, Severity: f.Status})
+		events = append(events, Event{
+			Action: "trigger", DedupKey: k, Summary: k + ": " + f.Message, Severity: f.Status,
+			Check: f.Check, Target: f.Target,
+		})
 	}
 	for _, k := range prevProblemKeys {
 		if _, still := problems[k]; !still {
-			events = append(events, Event{Action: "resolve", DedupKey: k})
+			check, target := splitKey(k)
+			// A recovery must reach the team the trigger did, so it carries the
+			// same routing inputs even though there is no finding left.
+			events = append(events, Event{Action: "resolve", DedupKey: k, Check: check, Target: target})
 		}
 	}
 	return events

@@ -771,3 +771,58 @@ worst way to learn about an outage. They stay on screen, marked, and below the
 A cycle (`a` depends on `b` depends on `a`) is refused by
 [`validate`](usage.md) rather than resolved at run time, where the outcome would
 depend on the order findings happened to arrive in.
+
+## Alert routing
+
+`checkfleet alert --provider X` sends the whole run to one place: either you
+wake the wrong team or you route nothing. `alert_routes` sends each alert where
+it belongs:
+
+```yaml
+alert_routes:
+  - check: postgres
+    provider: pagerduty
+    key_env: PD_DBA_ROUTING_KEY
+
+  - check: haproxy
+    provider: opsgenie
+    key_env: OG_NETWORK_KEY
+
+  - min_severity: error          # anything that could not be measured
+    labels: {env: prod}          # only in production
+    provider: pagerduty
+    key_env: PD_ONCALL
+
+  - provider: sns                # catch-all, last
+    sns_topic_arn: arn:aws:sns:eu-west-1:123456789:fleet
+```
+
+Rules are read in order and **the first match wins**, so specific rules go on
+top and a catch-all — one with no match fields — goes at the bottom. `labels`
+must *all* match the run's global labels. `key_env` names the variable holding
+the key, never the key.
+
+See where an alert would go before turning it on:
+
+```
+$ checkfleet alert --config checkfleet.yml --dry-run
+  trigger postgres/db-01:5432        → pagerduty (PD_DBA_ROUTING_KEY)
+  trigger http/https://api.internal/ → sns arn:aws:sns:eu-west-1:123456789:fleet
+```
+
+Two behaviours worth knowing:
+
+- **A resolve is never filtered by `min_severity`.** It is the *end* of a
+  problem and carries no severity; letting the filter swallow it would route the
+  trigger to a team and leave the alert open there forever.
+- **An event matching no rule is reported and skipped**, not sent somewhere
+  arbitrary. A config with rules has opinions about where things go, and
+  defaulting quietly would deliver a database alert to whoever happens to be
+  first in the list.
+
+`validate` refuses an unknown provider, a missing key, a bad `min_severity`, and
+a rule placed **after** a catch-all where it can never fire — a mistake whose
+symptom (alerts arriving in the wrong place) looks exactly like the routing not
+working at all.
+
+With no `alert_routes`, the `alert` flags behave exactly as before.

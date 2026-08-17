@@ -18,6 +18,7 @@ func Validate(cfg *Config) []string {
 	// cycle would leave a run's outcome depending on the order findings arrived
 	// in (CF-174).
 	problems = append(problems, ValidateDependencies(cfg.DependsOn)...)
+	problems = append(problems, ValidateAlertRoutes(cfg.AlertRoutes)...)
 
 	c := cfg.Checks
 	// configured is kept per rule-bearing module below for readability; the
