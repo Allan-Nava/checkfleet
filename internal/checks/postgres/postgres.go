@@ -84,13 +84,13 @@ func (c *Check) probe(ctx context.Context, t engine.PostgresTarget) []engine.Fin
 	}
 	coll, err := c.connect(ctx, t)
 	if err != nil {
-		return []engine.Finding{{Check: c.Name(), Target: label, Status: engine.ERROR, Message: fmt.Sprintf("connection failed: %v", err)}}
+		return []engine.Finding{{Check: c.Name(), Target: label, Status: engine.ERROR, Message: fmt.Sprintf("connection failed: %v", engine.Redact(err.Error()))}}
 	}
 	defer coll.Close(ctx)
 
 	m, err := coll.Collect(ctx)
 	if err != nil {
-		return []engine.Finding{{Check: c.Name(), Target: label, Status: engine.ERROR, Message: fmt.Sprintf("query failed: %v", err)}}
+		return []engine.Finding{{Check: c.Name(), Target: label, Status: engine.ERROR, Message: fmt.Sprintf("query failed: %v", engine.Redact(err.Error()))}}
 	}
 	return c.evaluate(label, m)
 }

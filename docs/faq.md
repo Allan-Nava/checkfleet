@@ -136,3 +136,17 @@ If yours isn't here, open a
 Read [why checkfleet exists and how it compares](comparison.md) to Prometheus,
 Blackbox exporter, Nagios and friends, or jump straight to
 [Installation](installation.md).
+
+## Can a finding leak a password?
+
+No, and it is verified rather than promised. A test in `internal/registry`
+configures **every** credentialed module with a sentinel value in each password
+and token field, points them at a dead port so they all fail the way they fail
+in production, and asserts that no finding — message, target, runbook or
+remediation — contains it. That test can fail: a companion case feeds it a
+finding that does leak and checks it is rejected.
+
+Behind it, `engine.Redact` strips passwords out of connection strings and error
+text, and the three modules whose DSN carries the credential inline (`mysql`,
+`mongodb`, `postgres`) run their connection errors through it — a driver error
+that echoes its input is the classic way a password reaches a log.

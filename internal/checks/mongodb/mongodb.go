@@ -82,14 +82,14 @@ func (c *Check) probe(ctx context.Context, t engine.MongoDBTarget) []engine.Find
 	col, err := c.connect(ctx, t)
 	if err != nil {
 		return []engine.Finding{{Check: c.Name(), Target: label, Status: engine.ERROR,
-			Message: fmt.Sprintf("connection failed: %v", err)}}
+			Message: fmt.Sprintf("connection failed: %v", engine.Redact(err.Error()))}}
 	}
 	defer col.Close(ctx)
 
 	m, err := col.Collect(ctx)
 	if err != nil {
 		return []engine.Finding{{Check: c.Name(), Target: label, Status: engine.ERROR,
-			Message: fmt.Sprintf("status query failed: %v", err)}}
+			Message: fmt.Sprintf("status query failed: %v", engine.Redact(err.Error()))}}
 	}
 
 	var findings []engine.Finding

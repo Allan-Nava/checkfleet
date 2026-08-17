@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.22.0
+
+- **La redazione dei segreti diventa una garanzia verificata (CF-184, M38).** "I check non loggano mai credenziali" era una regola tenuta a mano: i test che la controllavano coprivano `moduledoc` e `scaffold`, **non i messaggi dei finding** — e una stringa di connessione dentro un errore è il modo classico in cui una password arriva in un log.
+
+  Ora c'è il test che la regola non aveva. Configura **tredici moduli** con un valore sentinella in ogni campo password e token, li punta a una porta morta così falliscono come falliscono in produzione, e verifica che nessun finding — messaggio, target, runbook o remediation — lo contenga.
+
+  **Il risultato è una buona notizia detta con prova: nessun modulo perde niente oggi.** Ma un controllo che nessuno ha visto rifiutare qualcosa non è un controllo, quindi `TestTheLeakGuardBites` gli passa un finding che la credenziale ce l'ha davvero e verifica che venga respinto — e uno pulito, che deve passare.
+
+  Aggiunto `engine.Redact`, che è ciò che rende la garanzia valida **in avanti**: una convenzione protegge solo il codice già scritto, e un autore che domani scrive `fmt.Sprintf("connect to %s failed", dsn)` la romperebbe in silenzio. Toglie la password dalla userinfo di un URL **tenendo lo username** (chi ero non è il segreto, ed è la metà utile di un errore di connessione), dalle coppie `password=`/`token=`/`api_key:`, e dagli header `Bearer`. Più `RedactDSN` per il formato senza schema di go-sql-driver, che `url.Parse` non sa leggere. È deliberatamente grossolano: redigere troppo costa un indizio di debug, redigere troppo poco costa una rotazione di credenziali.
+
+  Applicato ai tre moduli la cui stringa di connessione **contiene** la credenziale — `mysql`, `mongodb`, `postgres` — con un test che verifica che la chiamata sia proprio su quel messaggio, non genericamente presente nel file: un driver che domani iniziasse a riecheggiare il DSN è già coperto.
+
+  Il test dello sweep girava in **30 secondi** perché chiamavo `c.Run(ctx)` direttamente con un context lungo, quindi il `timeout_seconds` della config — che applica `engine.Run`, non il modulo — non entrava mai in gioco. Con un context da 5 secondi e le run in parallelo sta in 5. Nuova voce in `docs/faq.md`, citabile perché sostenuta da test invece che da fiducia.
+
+
 ## 1.21.0
 
 - **Certificati client (mTLS) dove il protocollo li prevede (CF-183, M38).** Prima, nessun modulo sapeva presentarne uno: in una flotta con mTLS obbligatorio quei check **non si collegavano affatto** — un no binario, non un degrado. Sei moduli — `http`, `grpc`, `tcp`, `smtp`, `elasticsearch`, `kafka` — accettano ora `client_cert`, `client_key` e `ca_cert`, con un tipo condiviso `engine.ClientTLS`.
