@@ -79,3 +79,21 @@ func ValidateHistoryRetention(h HistoryRetention) []string {
 	sort.Strings(problems)
 	return problems
 }
+
+// ValidateModuleIntervals reports per-module cadences that would silently do
+// nothing (CF-178). A "5m" that Go cannot parse leaves the module on the base
+// interval while the config claims otherwise.
+func ValidateModuleIntervals(overrides map[string]ModuleOverride) []string {
+	var problems []string
+	for name, o := range overrides {
+		if o.Interval == "" {
+			continue
+		}
+		if _, err := time.ParseDuration(o.Interval); err != nil {
+			problems = append(problems, fmt.Sprintf(
+				"module_overrides.%s.interval %q is not a duration (e.g. 30s, 15m, 6h)", name, o.Interval))
+		}
+	}
+	sort.Strings(problems) // map order is not stable
+	return problems
+}

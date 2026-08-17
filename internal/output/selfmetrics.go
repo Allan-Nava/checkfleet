@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/Allan-Nava/checkfleet/internal/engine"
 )
@@ -43,6 +44,32 @@ func SelfMetrics(res engine.Result) string {
 	b.WriteString("# TYPE checkfleet_module_errors gauge\n")
 	for _, m := range order {
 		fmt.Fprintf(&b, "checkfleet_module_errors{module=%q} %d\n", m, byModule[m].errors)
+	}
+	return b.String()
+}
+
+// SampleAges exposes how long ago each module last produced a sample (CF-178).
+//
+// With per-module cadences a stale metric is normal, so "the exporter stopped
+// updating" is no longer a usable alarm and the age per module is what you
+// alert on instead: `checkfleet_sample_age_seconds{check="certs"} > 7200`.
+// Without it an hourly module looks frozen and there is no way to tell that
+// apart from a module that is genuinely stuck.
+func SampleAges(ages map[string]time.Duration) string {
+	if len(ages) == 0 {
+		return ""
+	}
+	names := make([]string, 0, len(ages))
+	for n := range ages {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+
+	var b strings.Builder
+	b.WriteString("# HELP checkfleet_sample_age_seconds Seconds since this module last produced findings.\n")
+	b.WriteString("# TYPE checkfleet_sample_age_seconds gauge\n")
+	for _, n := range names {
+		fmt.Fprintf(&b, "checkfleet_sample_age_seconds{check=%q} %.0f\n", n, ages[n].Seconds())
 	}
 	return b.String()
 }

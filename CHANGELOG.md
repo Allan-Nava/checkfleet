@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.29.0
+
+- **Cadenze per modulo in `serve` e `watch` (CF-178, M37).** Un certificato non cambia in trenta secondi e un endpoint HTTP si', ma c'era un solo `--interval` per tutto. Il costo si paga due volte: carico inutile sulla flotta, e un grafico la cui risoluzione dice piu' sul poll rate che sul sistema.
+
+  ```yaml
+  module_overrides:
+    certs: {interval: 6h}
+    http:  {interval: 15s}
+  ```
+
+  Verificato eseguendo l'exporter: con certs a 1h e http a 2s, dopo sei secondi `certs` ha un'eta' di 6s (una sola run) e `http` di 0, e lo scheduler ha scelto `tick=2s`.
+
+  **Lo scheduler si sveglia sulla cadenza piu' corta in gioco**: ticchettare su `--interval` farebbe scattare un modulo da 15s ogni minuto, che e' l'impostazione che non funziona in silenzio. `max_concurrency` continua a valere.
+
+  **Un modulo continua a contribuire fra le sue run.** Toglierlo da `/metrics` mentre aspetta somiglierebbe esattamente al check che sparisce — il fallimento che questo progetto continua a rifiutare — quindi i suoi ultimi finding restano nell'output. E `started` del risultato unito e' il campione **piu' vecchio**, non il piu' recente: rivendicare la freschezza del modulo piu' rapido descriverebbe male tutti gli altri.
+
+  Siccome una metrica stantia diventa normale, "l'exporter ha smesso di aggiornare" smette di essere un allarme utile e serve l'eta' per modulo: `serve` espone `checkfleet_sample_age_seconds{check="certs"}`. Senza, un modulo orario sembra congelato e non c'e' modo di distinguerlo da uno che lo e' davvero.
+
+  La metrica nuova passa dallo stesso gate anti-divergenza delle altre — un nome che esce non documentato finisce nella alert rule di qualcuno e poi non si puo' piu' rinominare — e `validate` rifiuta un `interval` che Go non sa parsare, che altrimenti lascerebbe il modulo sulla cadenza base mentre il config dichiara altro.
+
+
 ## 1.28.0
 
 - **Retention e compattazione della history (CF-177, M37).** `--history` e' append-only, che e' il default giusto — perdere una run per una rotazione dimenticata e' peggio di un file grande — ma "e fra un anno?" non aveva risposta, e le analisi di M30 rileggono tutto il file.

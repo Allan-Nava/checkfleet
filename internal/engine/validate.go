@@ -20,6 +20,7 @@ func Validate(cfg *Config) []string {
 	problems = append(problems, ValidateDependencies(cfg.DependsOn)...)
 	problems = append(problems, ValidateAlertRoutes(cfg.AlertRoutes)...)
 	problems = append(problems, ValidateHistoryRetention(cfg.HistoryRetention)...)
+	problems = append(problems, ValidateModuleIntervals(cfg.ModuleOverrides)...)
 
 	c := cfg.Checks
 	// configured is kept per rule-bearing module below for readability; the

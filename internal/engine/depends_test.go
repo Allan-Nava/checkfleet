@@ -266,3 +266,30 @@ func TestValidateAlertRoutesAcceptsNone(t *testing.T) {
 		t.Errorf("no routes is not a problem: %v", p)
 	}
 }
+
+func TestValidateModuleIntervalsCatchesBadDurations(t *testing.T) {
+	problems := ValidateModuleIntervals(map[string]ModuleOverride{
+		"certs": {Interval: "1h"},  // fine
+		"http":  {Interval: "5 m"}, // not a duration
+		"redis": {Interval: "30d"}, // Go has no day unit
+		"nats":  {},                // unset is fine
+	})
+	if len(problems) != 2 {
+		t.Fatalf("want two problems, got %v", problems)
+	}
+	joined := strings.Join(problems, "\n")
+	for _, want := range []string{"http", "redis"} {
+		if !strings.Contains(joined, want) {
+			t.Errorf("the problem list should name %q:\n%s", want, joined)
+		}
+	}
+	// Map order is not stable, so the message order has to be.
+	for i := 0; i < 5; i++ {
+		again := ValidateModuleIntervals(map[string]ModuleOverride{
+			"http": {Interval: "5 m"}, "redis": {Interval: "30d"},
+		})
+		if strings.Join(again, "|") != strings.Join(problems, "|") {
+			t.Fatal("problem order is not deterministic")
+		}
+	}
+}

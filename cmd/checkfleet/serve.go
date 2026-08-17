@@ -16,6 +16,7 @@ import (
 	"github.com/Allan-Nava/checkfleet/internal/engine"
 	"github.com/Allan-Nava/checkfleet/internal/output"
 	"github.com/Allan-Nava/checkfleet/internal/registry"
+	"github.com/Allan-Nava/checkfleet/internal/schedule"
 )
 
 // runServe exposes the findings as Prometheus metrics, re-running the checks on
@@ -42,32 +43,42 @@ func runServe(args []string) error {
 	if len(jobs) == 0 {
 		return fmt.Errorf("no module configured in %s", *configPath)
 	}
+	// Each module runs on its own cadence (CF-178); one that declares none
+	// follows --interval, so a config that sets nothing behaves as before.
+	sched := schedule.New(scheduleEntries(cfg, jobs), *interval, limit)
 
 	var mu sync.Mutex
 	var latest engine.Result
 	var ready atomic.Bool
-	runOnce := func() {
-		res := engine.RunJobsLimited(context.Background(), jobs, limit)
-		res.Labels = cfg.Labels
-		res = engine.PostProcess(res, cfg, time.Now())
+	runOnce := func(now time.Time) {
+		ran := sched.RunDue(context.Background(), now)
+		if ran == 0 {
+			return
+		}
+		res := sched.Result(cfg.Labels)
+		res = engine.PostProcess(res, cfg, now)
 		mu.Lock()
 		latest = res
 		mu.Unlock()
 		ready.Store(true)
 		sum := engine.Summarize(res.Findings)
 		logger.Info("run complete",
+			"modules_run", ran,
 			"duration_ms", res.Duration.Milliseconds(),
 			"worst", string(engine.Worst(res.Findings)),
 			"ok", sum[engine.OK], "warn", sum[engine.WARN],
 			"bad", sum[engine.BAD], "error", sum[engine.ERROR])
 	}
-	logger.Info("serve start", "modules", len(jobs), "listen", *listen, "interval", interval.String())
-	runOnce()
+	logger.Info("serve start", "modules", len(jobs), "listen", *listen,
+		"interval", interval.String(), "tick", sched.Tick().String())
+	runOnce(time.Now())
 	go func() {
-		t := time.NewTicker(*interval)
+		// Wake on the shortest cadence in play: ticking on --interval would make
+		// a 10s module fire every 60s, which is the setting quietly not working.
+		t := time.NewTicker(sched.Tick())
 		defer t.Stop()
 		for range t.C {
-			runOnce()
+			runOnce(time.Now())
 		}
 	}()
 
@@ -77,7 +88,8 @@ func runServe(args []string) error {
 		mu.Unlock()
 		w.Header().Set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
 		fmt.Fprint(w, output.Prometheus(res))
-		fmt.Fprint(w, output.SelfMetrics(res)) // metrics about checkfleet itself (CF-87)
+		fmt.Fprint(w, output.SelfMetrics(res))                   // metrics about checkfleet itself (CF-87)
+		fmt.Fprint(w, output.SampleAges(sched.Ages(time.Now()))) // per-module freshness (CF-178)
 	})
 	// Liveness: the process is up. Readiness: the first run has completed, so
 	// /metrics has real data — for k8s/nomad probes (CF-88).
@@ -104,4 +116,21 @@ func newLogger(format string) *slog.Logger {
 		return slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	}
 	return slog.New(slog.NewTextHandler(os.Stderr, nil))
+}
+
+// scheduleEntries pairs each job with its configured cadence (CF-178). An
+// unparseable duration was already reported by validate, so it degrades to the
+// base interval here rather than refusing to start an exporter.
+func scheduleEntries(cfg *engine.Config, jobs []engine.Job) []schedule.Entry {
+	out := make([]schedule.Entry, 0, len(jobs))
+	for _, j := range jobs {
+		e := schedule.Entry{Job: j}
+		if o, ok := cfg.ModuleOverrides[j.Check.Name()]; ok && o.Interval != "" {
+			if d, err := time.ParseDuration(o.Interval); err == nil {
+				e.Every = d
+			}
+		}
+		out = append(out, e)
+	}
+	return out
 }

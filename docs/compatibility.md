@@ -196,6 +196,7 @@ because the query simply returns no data.
 | `checkfleet_findings_total` | `status` + global labels | count per status |
 | `checkfleet_worst_status` | global labels | worst severity across the fleet |
 | `checkfleet_run_duration_seconds` | global labels | duration of the last run |
+| `checkfleet_sample_age_seconds` | gauge | seconds since a module last produced findings, labelled by `check` — only from `serve`, where modules may run on their own cadence |
 | `checkfleet_last_run_timestamp_seconds` | global labels | when the last run finished |
 | `checkfleet_module_findings` | `module` | findings produced per module (`serve`) |
 | `checkfleet_module_errors` | `module` | ERROR findings per module (`serve`) |

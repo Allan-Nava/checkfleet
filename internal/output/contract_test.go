@@ -158,7 +158,13 @@ func TestFormatsAreDocumented(t *testing.T) {
 			}
 		}
 	}
-	for _, name := range append(metricNames(Prometheus(contractResult())), metricNames(SelfMetrics(contractResult()))...) {
+	// SampleAges is a third exposition (CF-178) and has to pass the same gate:
+	// a metric name that ships undocumented ends up in someone's alert rule and
+	// then cannot be renamed.
+	ages := SampleAges(map[string]time.Duration{"certs": time.Hour})
+	all := append(metricNames(Prometheus(contractResult())), metricNames(SelfMetrics(contractResult()))...)
+	all = append(all, metricNames(ages)...)
+	for _, name := range all {
 		if !strings.Contains(doc, name) {
 			t.Errorf("metric %q is not documented in %s", name, docPath)
 		}
@@ -205,5 +211,27 @@ func TestInsightBlockAppearsAndIsDocumented(t *testing.T) {
 	}
 	if !strings.Contains(string(raw), "`insight`") {
 		t.Errorf("the insight key is not documented in %s", docPath)
+	}
+}
+
+// TestSampleAgesShape pins the metric `serve` exposes per module (CF-178).
+func TestSampleAgesShape(t *testing.T) {
+	out := SampleAges(map[string]time.Duration{"certs": 90 * time.Minute, "http": 0})
+	for _, want := range []string{
+		"# TYPE checkfleet_sample_age_seconds gauge",
+		`checkfleet_sample_age_seconds{check="certs"} 5400`,
+		`checkfleet_sample_age_seconds{check="http"} 0`,
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("missing %q in:\n%s", want, out)
+		}
+	}
+	// Deterministic order: a Prometheus scrape that reshuffles is a diff for no
+	// reason in anything that snapshots it.
+	if first := SampleAges(map[string]time.Duration{"b": 1, "a": 2}); first != SampleAges(map[string]time.Duration{"a": 2, "b": 1}) {
+		t.Error("output depends on map iteration order")
+	}
+	if SampleAges(nil) != "" {
+		t.Error("no samples should render nothing, not an empty HELP block")
 	}
 }

@@ -57,6 +57,39 @@ module_overrides:
   stream:   {timeout_seconds: 15}
 ```
 
+### Per-module cadence
+
+`serve` and `watch` re-run everything on one `--interval`, which is wrong in
+both directions: a certificate does not change in thirty seconds, and polling it
+as if it did is load on the fleet for nothing.
+
+```yaml
+module_overrides:
+  certs: {interval: 6h}     # expiry moves slowly
+  http:  {interval: 15s}    # an endpoint does not
+```
+
+A module with no `interval` follows `--interval`, so a config that sets nothing
+behaves exactly as before. The scheduler wakes on the **shortest** cadence in
+play — ticking on `--interval` would make a 15s module fire every minute, which
+is the setting quietly not working — and still respects `max_concurrency`.
+
+**A module keeps contributing between its runs.** Dropping it from `/metrics`
+while it waits would look exactly like the check disappearing, so its last
+findings stay in the output until it runs again. `started` in the merged result
+is the *oldest* sample, not the newest: claiming the freshness of the fastest
+module would misdescribe the rest.
+
+Because a stale metric becomes normal, `serve` exposes the freshness itself:
+
+```
+checkfleet_sample_age_seconds{check="certs"} 5400
+checkfleet_sample_age_seconds{check="http"} 3
+```
+
+That is the thing to alert on — an hourly module otherwise looks frozen, and
+there is no way to tell that apart from one that genuinely is.
+
 A module that is **not** present in `checks` is skipped by `check all`, and
 `check <name>` for it fails with `modulo "<name>" non configurato`.
 

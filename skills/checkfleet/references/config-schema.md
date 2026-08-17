@@ -586,6 +586,7 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `timeout_seconds` | `int` |  |
 | `retries` | `int` |  |
 | `retry_backoff_ms` | `int` |  |
+| `interval` | `string` |  |
 
 ### `MongoDBConfig`
 

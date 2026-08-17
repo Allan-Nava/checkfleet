@@ -52,6 +52,10 @@ type ModuleOverride struct {
 	TimeoutSeconds int `yaml:"timeout_seconds"`
 	Retries        int `yaml:"retries"`
 	RetryBackoffMS int `yaml:"retry_backoff_ms"`
+	// Interval is how often `serve` and `watch` re-run this module (CF-178).
+	// Empty follows --interval, so a config that sets nothing is unchanged. A
+	// certificate does not change in thirty seconds; an HTTP endpoint does.
+	Interval string `yaml:"interval"`
 }
 
 // RunbookRule attaches a runbook URL and/or a remediation note to the findings
