@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.18.2
+
+- **Docs (backlog, planning): nuova milestone M38 — il minimo privilegio.** Nessun cambiamento al software. Si aggiunge a M37, che resta da costruire.
+
+  La tesi: checkfleet è un processo che tiene le credenziali di **fino a 29 sistemi di produzione** e ci si collega da solo, spesso da cron. È il tipo di software su cui un security team fa una domanda sola prima di approvarlo — *"a cosa gli serve accedere, esattamente?"* — e oggi la risposta onesta è "leggi il sorgente del modulo". Verificato: `grep -rn 'pg_monitor\|GRANT' docs/` non trova niente. È un blocco all'adozione più duro di qualunque feature mancante, perché non lo supera l'entusiasmo di chi installa: lo supera solo un documento.
+
+  Ed è per costruzione **lavoro di dominio**, la stessa cosa che ha reso utili i moduli: sapere che il check postgres ha bisogno di `pg_monitor` e di nient'altro, che mongodb vuole `clusterMonitor`, che a kafka basta `DESCRIBE` sul cluster. Nessun exporter generico può dirlo al posto nostro.
+
+  Sei item (CF-181..186). Il **reference dei privilegi minimi** generato dove la risposta è deducibile dal codice e messo in `moduledoc` dove serve giudizio umano — con la verifica che conta: la suite d'integrazione crea l'utente *con quei soli privilegi* e il check deve passare lo stesso, perché una doc sui permessi che nessuno ha eseguito è una supposizione formattata. **`checkfleet perms`**, che stampa gli statement da mandare al DBA. I **certificati client**, che oggi nessun modulo sa presentare (`client_cert` non esiste in config; i certificati compaiono solo nelle fixture di test), quindi in una flotta con mTLS obbligatorio quei moduli semplicemente non entrano.
+
+  E le due promesse che il progetto fa senza verificarle. La **redazione dei segreti** è una convenzione tenuta a mano: i test che la controllano coprono `moduledoc` e `scaffold`, non i messaggi dei finding — e una DSN dentro un errore di connessione è il modo classico in cui una password finisce in un log. La **sola lettura** è la promessa su cui si regge il permesso di puntare questo strumento alla produzione, e oggi non la verifica niente.
+
+
 ## 1.18.1
 
 - **Docs (backlog, planning): nuova milestone M37 — meno rumore, più scala.** Nessun cambiamento al software.
