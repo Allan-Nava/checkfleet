@@ -31,6 +31,11 @@ var snippets = map[string]string{
     warn_days: 30
     crit_days: 7
     targets: [example.com:443]`,
+	"pq": `  pq:
+    # Which classes of TLS client can still handshake. Add "=origin.example"
+    # to a target to dial an address while sending that server name, the way a
+    # CDN does — it is how a CDN-only failure reproduces from here.
+    targets: [www.example.com]`,
 	"ntp": `  ntp:
     offset_warn_ms: 100
     offset_crit_ms: 1000

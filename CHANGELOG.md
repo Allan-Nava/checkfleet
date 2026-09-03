@@ -1,5 +1,46 @@
 # Changelog
 
+## 1.30.0
+
+- **Modulo `pq`: prontezza TLS post-quantum (CF-187, M37).** Lo scambio di
+  chiavi post-quantum ibrido (`X25519MLKEM768`) è ormai il default in Chrome,
+  Edge, Firefox, Go 1.24+, OpenSSL 3.5+ e in diverse CDN, e il guasto che
+  produce ha la forma peggiore possibile: `curl` funziona, l'health check è
+  verde, i log dell'origin mostrano 200, e una parte degli utenti non si
+  connette. Il modulo dialoga ogni endpoint come client classico **e** come
+  client post-quantum e riporta quali classi riescono ancora a completare un
+  handshake.
+
+  La distinzione è tutto il valore, ed è il motivo per cui il modulo
+  **incorpora** [pqprobe](https://github.com/Allan-Nava/pqprobe) invece di
+  reimplementarlo: un peer che risponde a un hello ibrido con un **alert TLS**
+  lo ha letto e ha declinato un gruppo — una policy, una lista di gruppi
+  fissata, una negoziazione riuscita. Uno che **resetta, va in timeout o
+  svanisce** si è strozzato sull'hello, ed è rotto per ogni client che *offre*
+  ML-KEM, anche quando quel client sarebbe stato felicissimo di X25519. Solo il
+  secondo è un'interruzione che aspetta che una CDN cambi un default. Una
+  seconda copia di quella classificazione qui sarebbe la copia che sbaglia in
+  silenzio.
+
+  Forma dei finding: un endpoint sano è **una riga verde**; uno guasto conserva
+  la prova — il verdetto più l'handshake che l'ha prodotto — perché quella
+  coppia è l'argomento che qualcuno porta a chi gestisce il middlebox.
+  `unreachable`, `tls-broken` e `mtls-required` arrivano come **ERROR** e non
+  come BAD: non sono voti sulla capacità, e graduare un host irraggiungibile
+  come "rifiuta i client post-quantum" sarebbe peggio di non avere il check.
+  I numeri viaggiano come numeri (`value`/`unit`), quindi nessuna dashboard
+  legge una frase.
+
+  Config in `checks.pq`: `targets` (anche `1.2.3.4=origin.example`, per dialogare
+  un indirizzo mandando un altro server name — l'unico modo di riprodurre da qui
+  un guasto visibile solo attraverso una CDN), `profiles`, `timeout_seconds`,
+  `concurrency`, `socks5`. Read-only: handshake e chiusura, nessuna richiesta,
+  nessuna credenziale.
+
+  Nota di integrazione: ogni pacchetto di pqprobe stava sotto `internal/`, che
+  nessun altro modulo può importare, quindi il modulo è stato possibile solo dopo
+  che pqprobe ha esposto una superficie pubblica (`pq/`, PQ-39 lì).
+
 ## 1.29.0
 
 - **Cadenze per modulo in `serve` e `watch` (CF-178, M37).** Un certificato non cambia in trenta secondi e un endpoint HTTP si', ma c'era un solo `--interval` per tutto. Il costo si paga due volte: carico inutile sulla flotta, e un grafico la cui risoluzione dice piu' sul poll rate che sul sistema.

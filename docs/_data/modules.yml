@@ -47,6 +47,9 @@
 - name: tls
   title: TLS handshakes
   summary: Deep TLS inspection — chain validity, leaf expiry, hostname mismatch, weak negotiated protocol version.
+- name: pq
+  title: Post-quantum TLS readiness
+  summary: Which classes of TLS client can still handshake — and whether the others are declined with an alert or cut off mid-hello, which is the difference between a setting and an outage.
 - name: ntp
   title: NTP / clock drift
   summary: Clock offset and stratum over SNTP, because drift silently breaks TLS and JWT validation.

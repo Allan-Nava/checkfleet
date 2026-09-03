@@ -7,8 +7,8 @@ package registry
 import (
 	"time"
 
-	"github.com/Allan-Nava/checkfleet/internal/checks/certs"
 	"github.com/Allan-Nava/checkfleet/internal/checks/cassandra"
+	"github.com/Allan-Nava/checkfleet/internal/checks/certs"
 	"github.com/Allan-Nava/checkfleet/internal/checks/clickhouse"
 	"github.com/Allan-Nava/checkfleet/internal/checks/consul"
 	"github.com/Allan-Nava/checkfleet/internal/checks/dns"
@@ -28,6 +28,7 @@ import (
 	"github.com/Allan-Nava/checkfleet/internal/checks/ntp"
 	"github.com/Allan-Nava/checkfleet/internal/checks/patroni"
 	"github.com/Allan-Nava/checkfleet/internal/checks/postgres"
+	"github.com/Allan-Nava/checkfleet/internal/checks/pq"
 	"github.com/Allan-Nava/checkfleet/internal/checks/rabbitmq"
 	"github.com/Allan-Nava/checkfleet/internal/checks/redis"
 	"github.com/Allan-Nava/checkfleet/internal/checks/s3"
@@ -64,6 +65,7 @@ func Modules(cfg *engine.Config) []Spec {
 		{"tcp", c.TCP != nil, func() engine.Check { return tcp.New(*c.TCP) }},
 		{"tls", c.TLS != nil, func() engine.Check { return tlscheck.New(*c.TLS) }},
 		{"ntp", c.NTP != nil, func() engine.Check { return ntp.New(*c.NTP) }},
+		{"pq", c.PQ != nil, func() engine.Check { return pq.New(*c.PQ) }},
 		{"rabbitmq", c.RabbitMQ != nil, func() engine.Check { return rabbitmq.New(*c.RabbitMQ) }},
 		{"grpc", c.GRPC != nil, func() engine.Check { return grpccheck.New(*c.GRPC) }},
 		{"ldap", c.LDAP != nil, func() engine.Check { return ldapcheck.New(*c.LDAP) }},

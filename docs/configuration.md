@@ -497,6 +497,26 @@ checks:
     targets: [auth.example.com, api.example.com:8443]
 ```
 
+## `checks.pq`
+
+Post-quantum TLS readiness, embedding pqprobe. See [Modules → pq](modules.md#pq).
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `targets` | list | — | `host`, `host:port`, `https://host/path` (the path is ignored — nothing is requested), or `1.2.3.4=origin.example` to dial an address while sending that server name. |
+| `profiles` | list | `classic,pq-preferred,pq-only` | Client shapes to dial. Also available: `tls13-only`, `tls12`. An unknown name makes the check report an error rather than probe less. |
+| `timeout_seconds` | int | `10` | Per-handshake timeout. |
+| `concurrency` | int | `8` | Endpoints in flight. The profiles of one endpoint are always dialled in sequence — three connections landing together would measure a connection limit instead of a capability. |
+| `socks5` | string | — | `host:port` of a no-auth SOCKS5 proxy, for a fleet whose only egress is one. |
+
+```yaml
+checks:
+  pq:
+    targets:
+      - www.example.com
+      - 10.0.0.5=origin.example.com   # the address, with the public name as SNI
+```
+
 ## `checks.ntp`
 
 NTP clock offset. See [Modules → ntp](modules.md#ntp).

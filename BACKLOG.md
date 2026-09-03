@@ -351,6 +351,25 @@ Il resto della milestone è la coda: tutti i moduli girano alla **stessa cadenza
 
 Vincoli invariati: logica in `internal/`, **exit-code semantics** invariata, niente segreti, output user-facing in **inglese**, test in-test con fixture locali, zero-dep salvo motivazione forte. Ogni item è una release a sé.
 
+### Moduli
+
+- [x] **CF-187 — Modulo `pq`: prontezza TLS post-quantum**: incorpora
+  [pqprobe](https://github.com/Allan-Nava/pqprobe) tramite la sua superficie
+  pubblica `pq/`, non reimplementandolo: la distinzione su cui il check si regge
+  — un peer che risponde con un **alert** ha letto il ClientHello e ha declinato
+  un gruppo, uno che **resetta, va in timeout o svanisce** si è strozzato
+  sull'hello ed è rotto per *ogni* client che offre ML-KEM — deve vivere in un
+  posto solo, e una seconda copia qui sarebbe la copia che sbaglia in silenzio.
+  Un endpoint sano è **una riga**; uno guasto conserva la prova (verdetto più
+  l'handshake che l'ha prodotto), che è l'argomento che si porta a un vendor.
+  `unreachable` arriva come ERROR e non come BAD: non è un voto. I target
+  accettano `1.2.3.4=origin.example`, l'unico modo di riprodurre da qui un
+  guasto che si vede solo attraverso una CDN.
+  Prerequisito trovato strada facendo: ogni pacchetto di pqprobe stava sotto
+  `internal/`, non importabile da un altro modulo — quindi il modulo è arrivato
+  solo dopo che pqprobe ha esposto `pq/` (PQ-39 di là). Read-only: handshake e
+  chiusura, nessuna richiesta. _(v1.30.0)_
+
 ### Meno rumore
 
 - [x] **CF-174 — Soppressione per dipendenza (`depends_on`)**: dichiarare in config che dei target dipendono da un altro (`postgres db-01` dipende da `tcp db-01:22`, o l'intero host da un `ping`). Quando il **parent** è BAD/ERROR, i figli non diventano finding indipendenti ma vengono **annotati e declassati** (`suppressed by tcp db-01:22`), così il report dice *un* guasto e non sei. È il passo che CF-123 non fa: quello raggruppa per *mostrare*, questo agisce su cosa esce dal gate e dalle notifiche. Riusa l'estrazione host di `insight.Correlate`. Attenzione a due trappole: la soppressione **non deve nascondere** il finding (resta visibile, marcato — un finding sparito è indistinguibile da un check che non è girato), e un ciclo nelle dipendenze va rilevato e segnalato in `validate`, non fatto girare.

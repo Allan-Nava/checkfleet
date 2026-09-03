@@ -195,6 +195,16 @@ checks:
     targets:
       - 10.20.30.60
 
+  # Which classes of TLS client can still handshake, now that post-quantum key
+  # exchange is on by default in browsers and CDNs. Handshakes only, never a
+  # request. `1.2.3.4=origin.example` dials the address while sending that
+  # server name — the way a CDN does, and the only way to reproduce a CDN-only
+  # failure from here.
+  pq:
+    targets:
+      - www.example.com
+      - 10.0.0.5=origin.example.com
+
   ntp:
     offset_warn_ms: 100
     offset_crit_ms: 1000

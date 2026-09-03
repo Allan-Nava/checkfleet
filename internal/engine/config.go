@@ -152,6 +152,7 @@ type ChecksConfig struct {
 	Elasticsearch *ElasticsearchConfig `yaml:"elasticsearch"`
 	MongoDB       *MongoDBConfig       `yaml:"mongodb"`
 	MySQL         *MySQLConfig         `yaml:"mysql"`
+	PQ            *PQConfig            `yaml:"pq"`
 	Etcd          *EtcdConfig          `yaml:"etcd"`
 	ClickHouse    *ClickHouseConfig    `yaml:"clickhouse"`
 	Vault         *VaultConfig         `yaml:"vault"`
@@ -563,6 +564,23 @@ type TLSConfig struct {
 	WarnDays         int      `yaml:"warn_days"`
 	CritDays         int      `yaml:"crit_days"`
 	AnsibleInventory string   `yaml:"ansible_inventory"`
+}
+
+// PQConfig configures the post-quantum TLS readiness check (CF-187), which
+// embeds pqprobe. Targets are the same forms pqprobe accepts, including
+// "1.2.3.4=origin.example" to dial an address while sending a server name — the
+// only way to reproduce a CDN-only failure from here.
+type PQConfig struct {
+	Targets []string `yaml:"targets"`
+	// Profiles by name; empty means pqprobe's default set (classic,
+	// pq-preferred, pq-only). An unknown name makes the check report an error
+	// rather than run a smaller probe.
+	Profiles       []string `yaml:"profiles"`
+	TimeoutSeconds int      `yaml:"timeout_seconds"`
+	Concurrency    int      `yaml:"concurrency"`
+	// Socks5 reaches the endpoints through a no-auth SOCKS5 proxy, for a fleet
+	// whose only egress is one.
+	Socks5 string `yaml:"socks5"`
 }
 
 // NTPConfig configures the NTP clock-offset check.
@@ -989,6 +1007,14 @@ func applyDefaults(cfg *Config) {
 		}
 		if rb.QueueCritDepth <= 0 {
 			rb.QueueCritDepth = 50000
+		}
+	}
+	if p := cfg.Checks.PQ; p != nil {
+		if p.TimeoutSeconds <= 0 {
+			p.TimeoutSeconds = 10
+		}
+		if p.Concurrency <= 0 {
+			p.Concurrency = 8
 		}
 	}
 	if n := cfg.Checks.NTP; n != nil {

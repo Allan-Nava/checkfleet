@@ -259,6 +259,43 @@ Findings are labelled `target [chain]`, `target [expiry]`, `target [protocol]`.
 
 See [Configuration → checks.tls](configuration.md#checkstls).
 
+## `pq` — Post-quantum TLS readiness {#pq}
+
+Which classes of TLS client can still complete a handshake with an endpoint, now
+that hybrid post-quantum key exchange (`X25519MLKEM768`) is on by default in
+Chrome, Edge, Firefox, Go 1.24+, OpenSSL 3.5+ and several CDNs. It embeds
+[pqprobe](https://github.com/Allan-Nava/pqprobe) rather than reimplementing it:
+the distinction the check rests on has to live in one place.
+
+That distinction is the point of the module. A peer that answers a
+post-quantum ClientHello with a **TLS alert** parsed it and declined a group — a
+policy, a pinned group list, a negotiation that worked. A peer that **resets,
+times out or vanishes** choked on the hello itself, and is broken for every
+client that so much as *offers* ML-KEM, however happy that client would have
+been with X25519. Only the second is an outage waiting for a CDN to flip a
+default, and no other check here reports the difference.
+
+- `pq-ready` → `OK`: hybrid key exchange works, including for a client that requires it.
+- `pq-blind` → `WARN`: no ML-KEM, but capable clients still connect on a classical group.
+- `pq-refusing` → `BAD`: capable clients are declined **with an alert** while classical ones connect — look at the configuration.
+- `pq-intolerant` → `BAD`: capable clients are **cut off** while classical ones connect — look at the path: a middlebox, an old TLS library, a load balancer that reads the hello.
+- `no-tls13` → `WARN`: TLS 1.2 is the ceiling, so post-quantum is out of reach; a ceiling, not a setting.
+- `unreachable` / `tls-broken` / `mtls-required` → `ERROR`: not a grade at all.
+
+A healthy endpoint is one row. A failing one keeps its evidence: the verdict plus
+the handshake that produced it, which together are the argument somebody takes to
+a CDN vendor.
+
+Targets accept the same forms pqprobe does, including `1.2.3.4=origin.example`
+to dial an address while sending a server name — the only way to reproduce a
+CDN-only failure from here, and the way to find the one node out of six that is
+broken.
+
+**Read-only**: TLS handshakes, closed immediately. No request, no body, no
+credentials — there is nothing it could change on the far side.
+
+See [Configuration → checks.pq](configuration.md#checkspq).
+
 ## `ntp` — NTP / clock drift {#ntp}
 
 NTP clock-offset check via a hand-rolled SNTP query (UDP, zero dependency).

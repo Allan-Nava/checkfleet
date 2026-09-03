@@ -18,6 +18,7 @@ var Docs = map[string]string{
 	"keycloak":      "Keycloak health endpoint UP, and per-realm OIDC discovery (token endpoint present, issuer coherent with `/realms/<realm>`).",
 	"tcp":           "Generic TCP reachability: connect (optionally TLS) + latency (`max_latency_ms`), optional `expect_banner` substring.",
 	"tls":           "Deep TLS: chain validity vs trust store, leaf expiry (`warn_days`/`crit_days`), negotiated protocol (below TLS 1.2 -> WARN), hostname mismatch.",
+	"pq":            "Post-quantum TLS readiness, embedding pqprobe: dials each endpoint as a classical client and as a post-quantum-capable one and reports which classes can still handshake — `pq-ready`, `pq-blind`, `pq-refusing` (declined with an alert) or `pq-intolerant` (cut off mid-hello, an outage waiting for a CDN default). Handshakes only, never a request.",
 	"ntp":           "NTP clock offset via SNTP: WARN/BAD over `offset_warn_ms`/`offset_crit_ms`, BAD if the server is unsynchronized (stratum 0 or >=16).",
 	"rabbitmq":      "RabbitMQ management API: node running + alarms, queue depth (`queue_warn_depth`/`queue_crit_depth`), backlog with no consumer.",
 	"grpc":          "gRPC Health Checking Protocol over HTTP/2+TLS: SERVING->OK, NOT_SERVING->BAD, UNKNOWN->WARN.",
