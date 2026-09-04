@@ -61,7 +61,8 @@ They're complements: `checkfleet serve` exposes the findings as Prometheus metri
 
 ```bash
 go install github.com/Allan-Nava/checkfleet/cmd/checkfleet@latest
-# or: brew install Allan-Nava/tap/checkfleet   (macOS; `brew tap Allan-Nava/tap` first if you prefer)
+# or: brew install Allan-Nava/tap/checkfleet   (macOS/Linuxbrew; Homebrew 6+ asks to trust a
+#     third-party tap the first time: brew trust --cask Allan-Nava/tap/checkfleet)
 # or: download a release archive (tar.gz/zip + checksums.txt) from GitHub Releases
 ```
 

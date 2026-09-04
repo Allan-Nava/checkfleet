@@ -24,7 +24,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Expected version without the leading v (e.g. 0.32.1); empty = don't assert an exact version"
+        description: "Version to expect, without the leading v (e.g. 0.32.1); empty = whatever releases/latest says"
         required: false
         default: ""
   schedule:
@@ -35,8 +35,14 @@ permissions:
 
 jobs:
   brew-install:
-    # For the Release trigger, only run when the release actually succeeded.
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    # For the Release trigger: only when the release succeeded, and NOT for a prerelease.
+    # `skip_upload: "auto"` deliberately publishes no cask for a v*-rc.* tag (CF-160), so a run
+    # here would install the previous stable cask and report success for a release it never saw —
+    # a green that verified nothing, which is the failure mode this whole workflow exists to avoid.
+    if: >-
+      ${{ github.event_name != 'workflow_run' ||
+          (github.event.workflow_run.conclusion == 'success' &&
+           !contains(github.event.workflow_run.head_branch, '-')) }}
     strategy:
       fail-fast: false
       matrix:
@@ -66,9 +72,31 @@ jobs:
           echo "$out" | grep -Eq '^checkfleet [0-9]+\.[0-9]+\.[0-9]+' \
             || { echo "::error::unexpected version output: $out"; exit 1; }
 
-      - name: Assert the expected version (manual dispatch only)
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.version != '' }}
-        run: checkfleet version | grep -qx "checkfleet ${{ inputs.version }}"
+      # ⚠️ The check that actually matters. Asserting "some X.Y.Z" only proves brew installed
+      # *something*: if the cask on the tap is stale (the classic case is the expired PAT that
+      # makes goreleaser's last step fail), the old version installs cleanly and this job goes
+      # green while `brew install` hands users a release from months ago. Comparing against
+      # `releases/latest` is the only signal that catches it — and because it does not depend on
+      # the trigger, the Monday cron catches drift that appeared without any release at all.
+      - name: The tap serves the latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          # An explicit dispatch input wins, so a specific version can still be pinned by hand.
+          WANT: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if [ -z "$WANT" ]; then
+            # `gh release view` with no tag resolves /releases/latest, which excludes drafts and
+            # prereleases — exactly the release the cask is supposed to track.
+            WANT="$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName -q .tagName)"
+            WANT="${WANT#v}"
+          fi
+          GOT="$(checkfleet version | awk '{print $2}')"
+          echo "tap serves $GOT, latest release is $WANT"
+          if [ "$GOT" != "$WANT" ]; then
+            echo "::error::the tap is stale: installed $GOT but the latest release is $WANT — the cask was not pushed (check HOMEBREW_TAP_GITHUB_TOKEN upstream)"
+            exit 1
+          fi
 
       - name: Gatekeeper quarantine attribute is stripped
         run: |

@@ -2,6 +2,14 @@
 
 ## 1.30.0
 
+- **`Brew test` ora verifica la versione, non «una versione» (CF-188).** Il workflow asseriva
+  soltanto che il binario installato riportasse un `X.Y.Z` qualsiasi: con un cask fermo sul tap
+  (PAT scaduto upstream, push di goreleaser fallito) la versione vecchia si installava pulita e il
+  job restava verde mentre `brew install` serviva una release di mesi prima. Adesso il confronto è
+  con `releases/latest`, quindi lo vede anche il cron del lunedì, senza bisogno di una release. E
+  su un tag di prerelease il job non parte: `skip_upload: "auto"` non pubblica nessun cask per un
+  `-rc.N`, quindi l'unica cosa che poteva fare era dichiarare verificata una release mai vista.
+
 - **Modulo `pq`: prontezza TLS post-quantum (CF-187, M37).** Lo scambio di
   chiavi post-quantum ibrido (`X25519MLKEM768`) è ormai il default in Chrome,
   Edge, Firefox, Go 1.24+, OpenSSL 3.5+ e in diverse CDN, e il guasto che
