@@ -142,7 +142,7 @@ Reads `/v1/sys/seal-status` and `/v1/sys/health`, which Vault serves unauthentic
 > The exact policy depends on how the target is deployed, so treat the
 > above as guidance rather than a recipe.
 
-## Needs an account (12)
+## Needs an account (13)
 
 ### clickhouse
 
@@ -193,6 +193,20 @@ etcdctl user grant-role checkfleet checkfleet
 ```
 
 **Not needed:** No key read or write: the endpoints used report cluster state, not data. Grant no key range to the role.
+
+> The exact policy depends on how the target is deployed, so treat the
+> above as guidance rather than a recipe.
+
+### flow
+
+Whatever the flow's own steps need — typically an application login: a client credential or a user account, supplied through `body_env` / `headers_env`.
+
+```
+The steps are exactly the requests an ordinary client of the application would make, so the permission needed is the permission that client has.
+Give it the least-privileged account that can complete the flow — a read-only service user, never an admin — because a flow that logs in holds a real credential for the duration of the run.
+```
+
+**Not needed:** No infrastructure permission of its own: the module speaks HTTP to the application, not to the platform underneath it.
 
 > The exact policy depends on how the target is deployed, so treat the
 > above as guidance rather than a recipe.

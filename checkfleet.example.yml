@@ -338,3 +338,45 @@ checks:
     targets:
       - {name: cass-01, address: cass-01:9042, max_latency_ms: 500}
       - {name: cass-02, address: cass-02:9042}
+
+  # Multi-step HTTP flows (CF-180): the answer to "does login actually work",
+  # which no single request can give. Declarative steps only — nothing in this
+  # config is ever executed.
+  flow:
+    flows:
+      - name: login
+        # Budget for the whole flow: a login that takes eight seconds is broken
+        # regardless of which hop spent them.
+        max_latency_ms: 5000
+        steps:
+          - name: get a token
+            method: POST
+            url: https://auth.example.com/token
+            headers:
+              Content-Type: application/x-www-form-urlencoded
+            # The body carries a client secret, so it comes from the
+            # environment by name — never written here.
+            body_env: CF_FLOW_LOGIN_BODY
+            # Selectors: json:<dotted.path>, header:<Name>, regex:<one group>.
+            # Captured values are never printed in any output.
+            extract:
+              token: json:access_token
+          - name: use the token
+            url: https://api.example.com/me
+            headers:
+              Authorization: "Bearer {{token}}"
+            expect_body: '"active":true'
+            max_latency_ms: 1000
+
+      # A session login instead of a bearer token: keep_cookies carries the
+      # cookie the first step set into the next one.
+      - name: portal session
+        keep_cookies: true
+        steps:
+          - name: sign in
+            method: POST
+            url: https://portal.example.com/login
+            body_env: CF_FLOW_PORTAL_BODY
+          - name: reach a private page
+            url: https://portal.example.com/account
+            expect_status: 200

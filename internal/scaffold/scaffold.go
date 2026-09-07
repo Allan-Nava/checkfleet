@@ -31,6 +31,26 @@ var snippets = map[string]string{
     warn_days: 30
     crit_days: 7
     targets: [example.com:443]`,
+	"flow": `  flow:
+    flows:
+      - name: login
+        max_latency_ms: 5000
+        steps:
+          - name: get a token
+            method: POST
+            url: https://auth.example.com/token
+            headers:
+              Content-Type: application/x-www-form-urlencoded
+            # The body carries a client secret, so it comes from the
+            # environment and is never written here.
+            body_env: CF_FLOW_LOGIN_BODY
+            extract:
+              token: json:access_token
+          - name: use the token
+            url: https://api.example.com/me
+            headers:
+              Authorization: "Bearer {{token}}"
+            expect_body: '"active":true'`,
 	"pq": `  pq:
     # Which classes of TLS client can still handshake. Add "=origin.example"
     # to a target to dial an address while sending that server name, the way a

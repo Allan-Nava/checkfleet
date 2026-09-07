@@ -93,6 +93,15 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `targets` | list of `EtcdTarget` |  |
 | `expect_members` | `int` |  |
 
+### `checks.flow`
+
+| Key | Type | Default |
+|---|---|---|
+| `flows` | list of `Flow` |  |
+| `client_cert` | `string` |  |
+| `client_key` | `string` |  |
+| `ca_cert` | `string` |  |
+
 ### `checks.grpc`
 
 | Key | Type | Default |
@@ -480,6 +489,41 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `username` | `string` |  |
 | `password_env` | `string` |  |
 | `insecure_skip_verify` | `bool` |  |
+
+### `Flow`
+
+| Key | Type | Default |
+|---|---|---|
+| `name` | `string` |  |
+| `steps` | list of `FlowStep` |  |
+| `max_latency_ms` | `int` |  |
+| `keep_cookies` | `bool` |  |
+| `insecure_skip_verify` | `bool` |  |
+
+### `FlowConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `flows` | list of `Flow` |  |
+| `client_cert` | `string` |  |
+| `client_key` | `string` |  |
+| `ca_cert` | `string` |  |
+
+### `FlowStep`
+
+| Key | Type | Default |
+|---|---|---|
+| `name` | `string` |  |
+| `method` | `string` |  |
+| `url` | `string` |  |
+| `headers` | map of `string` |  |
+| `headers_env` | map of `string` |  |
+| `body` | `string` |  |
+| `body_env` | `string` |  |
+| `expect_status` | `int` |  |
+| `expect_body` | `string` |  |
+| `max_latency_ms` | `int` |  |
+| `extract` | map of `string` |  |
 
 ### `GRPCConfig`
 

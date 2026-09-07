@@ -1,5 +1,55 @@
 # Changelog
 
+## 1.32.0
+
+- **Modulo `flow`: check di flusso multi-passo (CF-180, M37 chiusa).** Metà di quello a
+  cui un operatore tiene non è una richiesta sola. «Il login funziona» è *ottieni un
+  token, usalo, verifica la risposta* — e una probe che chiede solo la prima delle tre
+  riporta un servizio sano mentre nessuno riesce ad accedere.
+
+  Un flow è una lista ordinata di passi. `extract` cattura un valore dalla risposta con
+  tre selettori e nessuno di più — `json:<path>` (un segmento numerico indicizza un
+  array), `header:<Name>`, `regex:` con un gruppo di cattura — e `{{name}}` lo sostituisce
+  in `url`, `headers` o `body` di un passo successivo. Più `expect_status`, `expect_body`,
+  budget di latenza per passo e per flusso, `keep_cookies` per le sessioni,
+  `insecure_skip_verify`, e le credenziali dall'ambiente con `headers_env` / `body_env`.
+
+- **Il finding dice quale passo è saltato.** `step 2/3 "use the token": expected status
+  200, got 401`. «Il flusso è rotto» senza dire dove è un finding che non fa risparmiare
+  tempo a nessuno. Il primo fallimento ferma il flusso, perché ogni passo successivo
+  fallirebbe per la stessa ragione e seppellirebbe quello che conta. BAD quando il target
+  ha risposto e ha risposto male, ERROR quando il check non è riuscito a misurare —
+  irraggiungibile, o una env var nominata in config e non impostata.
+
+- **Due regole, e un test che può fallire per ciascuna.** Nessuna esecuzione di codice
+  dalla config: la sostituzione è una sola forma di riferimento risolta contro valori che
+  il flusso stesso ha catturato, e `TestSubstitutionIsNotAnExpressionLanguage` verifica
+  che `{{token|upper}}`, `{{token.length}}`, `${token}` e `{{env.HOME}}` restino testo
+  letterale. Un check che valutasse codice dalla propria config sarebbe una superficie di
+  sicurezza nuova su un processo che tiene già le credenziali di 31 sistemi di produzione.
+
+  Nessun valore catturato nell'output: un flusso di login cattura un token, e un finding
+  finisce in un terminale, in un log di CI e in un file JSON. I messaggi nominano *cosa si
+  cercava* — il selettore, l'header, la cattura mancante — mai cosa si è trovato, e una URL
+  in cui è stato sostituito un valore catturato viene redatta dagli errori di trasporto,
+  che la citano per intero. `TestACapturedValueNeverReachesTheOutput` cerca il token
+  letterale in tre flussi, incluso quello dove finisce dentro la URL.
+
+- **Un selettore con un typo si scopre da `checkfleet validate`.** Non dopo che il flusso
+  ha già fatto login in produzione: `regex:` senza gruppo di cattura, un pattern che non
+  compila, `jq:.token`, i due punti dimenticati — tutti errori di config, tutti riportati
+  senza toccare la rete.
+
+- **`coverage` non sapeva appiattire un target fatto di sotto-richieste.** Un flow sarebbe
+  comparso senza nessun host e non avrebbe mai potuto fare match con un inventory: il
+  sotto-riportare silenzioso che quel package esiste apposta per evitare. Ora gli host di
+  un flow sono quelli di tutti i suoi passi, deduplicati nell'ordine in cui il flusso gira.
+
+- **Il README dichiarava «29 modules ship today» quando nel registry ce n'erano già 30.**
+  Un conteggio scritto nella prosa è un'affermazione che si guasta in silenzio, ed era già
+  successo con l'intro di `docs/modules.md` fermo a 18. `TestProseModuleCountsMatchTheRegistry`
+  lega adesso quella frase al registry invece che a chi se lo ricorda per ultimo.
+
 ## 1.31.0
 
 - **Scoperta dei target da Consul e DNS SRV (CF-179, M37).** Sette moduli — `certs`,

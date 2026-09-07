@@ -36,6 +36,10 @@ Elasticsearch/OpenSearch via HTTP: cluster health green/yellow(WARN)/red(BAD), u
 
 etcd v3 via the HTTP JSON gateway: /health, leader present (BAD if no leader / lost quorum), etcd version and member count vs `expect_members`. Zero-dep.
 
+## flow
+
+Multi-step HTTP flows: ordered steps where a value captured from one response (`json:`/`header:`/`regex:` selector) is substituted into the next request as `{{name}}`. The finding names the step that failed. Declarative YAML only — no scripting — and captured values are never printed.
+
 ## grpc
 
 gRPC Health Checking Protocol over HTTP/2+TLS: SERVING->OK, NOT_SERVING->BAD, UNKNOWN->WARN.
@@ -130,4 +134,4 @@ HashiCorp Vault via HTTP: seal status (BAD if sealed or uninitialized, with unse
 
 ---
 
-30 modules.
+31 modules.

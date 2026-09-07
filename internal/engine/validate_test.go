@@ -122,3 +122,52 @@ func TestValidatePostgresRanges(t *testing.T) {
 		t.Error("want conn_warn_pct range problem")
 	}
 }
+
+// CF-180: a typo in an extraction selector must be caught by `validate`, not by
+// a flow that has already logged in against production before failing.
+func TestValidateCatchesFlowMistakes(t *testing.T) {
+	cfg := &Config{Checks: ChecksConfig{Flow: &FlowConfig{Flows: []Flow{
+		{Name: "login", Steps: []FlowStep{
+			{Name: "token", URL: "https://auth.example.com/token",
+				Extract: map[string]string{
+					"good":       "json:access_token",
+					"no-colon":   "access_token",
+					"unknown":    "jq:.access_token",
+					"no-capture": `regex:token="[^"]+"`,
+					"bad-regex":  "regex:([",
+				}},
+			{Name: "no url"},
+		}},
+		{Name: "empty"},
+	}}}}
+
+	got := strings.Join(Validate(cfg), "\n")
+	for _, want := range []string{
+		`extract "no-colon"`,
+		`extract "unknown"`,
+		`extract "no-capture"`,
+		`extract "bad-regex"`,
+		"step 2 has no url",
+		"flow empty: no steps",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q in:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, `extract "good"`) {
+		t.Errorf("a valid selector was reported:\n%s", got)
+	}
+}
+
+func TestValidateAcceptsAWorkingFlow(t *testing.T) {
+	cfg := &Config{Checks: ChecksConfig{Flow: &FlowConfig{Flows: []Flow{
+		{Name: "login", Steps: []FlowStep{
+			{Name: "token", URL: "https://auth.example.com/token",
+				Extract: map[string]string{"token": "json:access_token"}},
+			{Name: "use", URL: "https://api.example.com/me"},
+		}},
+	}}}}
+	if got := Validate(cfg); len(got) != 0 {
+		t.Fatalf("a valid flow should raise nothing, got %v", got)
+	}
+}

@@ -49,19 +49,6 @@ in-test fake CQL server.
       - {name: cass-01, address: cass-01:9042, max_latency_ms: 500}
 ```
 
-## Ansible inventory as a target source
-
-The `certs`, `nats`, `haproxy`, `patroni`, `consul`, `redis` and `tls` modules can read
-a standard Ansible **INI** inventory (a file or a directory of files):
-
-- host lines and their `ansible_host=` value are used;
-- `:vars` and `:children` sections are ignored;
-- hosts are de-duplicated.
-
-Every discovered host becomes a target on the module's `port` (443 for `certs`,
-8222 for `nats`, 8404 for `haproxy`, 8008 for `patroni`, 8500 for `consul`,
-6379 for `redis`, 443 for `tls`).
-
 ---
 
 See the [full module reference]({{ '/modules' | relative_url }}) for every check,

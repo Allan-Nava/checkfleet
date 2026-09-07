@@ -98,3 +98,6 @@
 - name: cassandra
   title: Cassandra / ScyllaDB
   summary: Nodes accept CQL via the native-protocol handshake, handshake latency, and cluster size against the expected node count.
+- name: flow
+  title: Multi-step HTTP flows
+  summary: Ordered HTTP steps where a value captured from one response is used by the next; the finding names the step that failed. Declarative only, captured values never printed.

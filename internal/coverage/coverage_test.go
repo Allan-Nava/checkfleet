@@ -240,6 +240,16 @@ func fillOneTarget(cfg reflect.Value) bool {
 					nf.SetString("host.example.com")
 					set = true
 				}
+				// A target made of ordered sub-requests (a flow) carries its
+				// addresses one level down, so a realistic entry needs a step.
+				if sf := elem.FieldByName("Steps"); sf.IsValid() && sf.Kind() == reflect.Slice {
+					step := reflect.New(sf.Type().Elem()).Elem()
+					if uf := step.FieldByName("URL"); uf.IsValid() && uf.Kind() == reflect.String {
+						uf.SetString("https://host.example.com/step")
+						sf.Set(reflect.Append(sf, step))
+						set = true
+					}
+				}
 				if !set {
 					return false
 				}

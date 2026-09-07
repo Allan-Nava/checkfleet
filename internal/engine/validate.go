@@ -1,9 +1,11 @@
 package engine
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"reflect"
+	"regexp"
 	"strings"
 )
 
@@ -31,10 +33,39 @@ func Validate(cfg *Config) []string {
 	if x := c.Certs; x != nil {
 		configured++
 		if len(x.Targets) == 0 && !x.Discovery.Set() {
-			add("certs: no target or ansible_inventory")
+			add("certs: no target and no discovery source (ansible_inventory, consul_service, dns_srv)")
 		}
 		if x.WarnDays < x.CritDays {
 			add("certs: warn_days (%d) should be >= crit_days (%d)", x.WarnDays, x.CritDays)
+		}
+	}
+	if x := c.Flow; x != nil {
+		configured++
+		if len(x.Flows) == 0 {
+			add("flow: no flow configured")
+		}
+		for i, f := range x.Flows {
+			label := f.Name
+			if label == "" {
+				label = fmt.Sprintf("flow %d", i+1)
+			}
+			if len(f.Steps) == 0 {
+				add("flow %s: no steps", label)
+			}
+			for j, st := range f.Steps {
+				if st.URL == "" {
+					add("flow %s: step %d has no url", label, j+1)
+				}
+				// Caught here rather than at run time because a typo in a
+				// selector fails only once the flow has already logged in
+				// against production, which is a slow and expensive way to
+				// learn about a missing colon.
+				for name, sel := range st.Extract {
+					if err := validSelector(sel); err != nil {
+						add("flow %s: step %d extract %q: %v", label, j+1, name, err)
+					}
+				}
+			}
 		}
 	}
 	if x := c.HTTP; x != nil {
@@ -269,4 +300,29 @@ func anyModuleConfigured(c ChecksConfig) bool {
 		}
 	}
 	return false
+}
+
+// validSelector rejects an extraction selector that could never match, without
+// running the flow. The three forms are json:<path>, header:<name> and
+// regex:<pattern>; the pattern must compile and must have a capture group.
+func validSelector(sel string) error {
+	kind, arg, ok := strings.Cut(sel, ":")
+	if !ok || arg == "" {
+		return errors.New("expected json:<path>, header:<name> or regex:<pattern>")
+	}
+	switch kind {
+	case "json", "header":
+		return nil
+	case "regex":
+		re, err := regexp.Compile(arg)
+		if err != nil {
+			return fmt.Errorf("invalid pattern: %w", err)
+		}
+		if re.NumSubexp() < 1 {
+			return errors.New("the pattern needs one capture group")
+		}
+		return nil
+	default:
+		return fmt.Errorf("unknown selector %q (use json, header or regex)", kind)
+	}
 }

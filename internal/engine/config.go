@@ -158,6 +158,7 @@ type ChecksConfig struct {
 	Vault         *VaultConfig         `yaml:"vault"`
 	Memcached     *MemcachedConfig     `yaml:"memcached"`
 	Cassandra     *CassandraConfig     `yaml:"cassandra"`
+	Flow          *FlowConfig          `yaml:"flow"`
 }
 
 // CassandraConfig configures the Cassandra/ScyllaDB reachability check.

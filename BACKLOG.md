@@ -341,7 +341,7 @@ Vincoli invariati: logica in `internal/`, mai duplicata in JS (il frontend ricev
 - [x] **CF-171 — Punteggio di flappiness e badge** (resti di CF-120): oggi il flapping è un conteggio secco di transizioni. Trasformarlo in un punteggio (transizioni pesate sulla finestra, così 4 cambi in 10 run pesano più di 4 in 60) e mostrarlo come badge nella tabella desktop. `insight.UnstableKeys` è già la base; CF-32 aveva consegnato la detection, non la misura.
 - [x] **CF-172 — Consumer group nella suite d'integrazione**: `kadm.GroupLag` resta a **0%** anche con CF-161 perché `checkfleet.integration.yml` non dichiara nessun gruppo — la copertura è salita, quel percorso no. Creare un topic e un consumer group nel compose e asserire il lag, così l'ultimo pezzo dell'adapter Kafka è coperto dove va coperto.
 
-## M37 — Meno rumore, più scala (fase 4)
+## M37 — Meno rumore, più scala (fase 4) ✅
 
 Con 29 moduli e le sette analisi di M30, checkfleet **trova** abbastanza. Il prossimo problema non è trovare di più: è che su una flotta vera trova *troppo*, e che il file che lo spiega cresce per sempre.
 
@@ -389,7 +389,11 @@ Vincoli invariati: logica in `internal/`, **exit-code semantics** invariata, nie
 
   **Il riuso previsto dall'item non c'era.** `liveQuery` del modulo `dns` è unexported e **non gestisce SRV**: "riusarlo" avrebbe voluto dire scrivere e mantenere un secondo parser di rdata SRV con decompressione dei nomi per rispondere a una domanda a cui `net.Resolver` risponde già. Idem per `get` del modulo `consul`, che è un metodo legato alla config e al TLS di quel check. Entrambe le sorgenti sono comunque zero-dep. Il test SRV usa un **nameserver UDP vero in-test** che codifica le risposte a mano: è l'unico modo di dimostrare che l'override del resolver manda davvero la query altrove.
 
-- [ ] **CF-180 — Check di flusso multi-passo**: metà dell'infrastruttura reale non risponde a una domanda sola — "il login funziona" è *ottieni un token, usalo, verifica la risposta*. Un modulo `flow` con passi ordinati (richiesta HTTP, estrazione di un valore con un selettore semplice, riuso nel passo successivo, asserzione) che riporta **quale passo** ha fallito, perché "il flusso è rotto" senza dire dove è un finding che non fa risparmiare tempo a nessuno. Niente linguaggio di scripting: passi dichiarativi in YAML, nessuna esecuzione di codice dalla config — quella sarebbe una superficie di sicurezza nuova, e la regola "niente segreti in config" vale anche per i valori estratti, che non vanno mai stampati nei messaggi.
+- [x] **CF-180 — Check di flusso multi-passo** ✅ (v1.32.0). Modulo `flow`: passi ordinati, `extract` cattura un valore dalla risposta (`json:<path>` con indice di array, `header:<Name>`, `regex:` con un gruppo) e `{{name}}` lo sostituisce in `url`/`headers`/`body` del passo dopo. Il finding **nomina il passo** (`step 2/3 "use the token": expected status 200, got 401`) e il primo fallimento ferma il flusso. `keep_cookies` per le sessioni, `headers_env`/`body_env` per le credenziali, budget di latenza per passo e per flusso, BAD/ERROR distinti. Validato da `checkfleet validate` — un selettore con un typo si scopre lì, non dopo che il flusso ha già fatto login in produzione.
+
+  Le due regole su cui è costruito hanno un test ciascuna che **può fallire**: nessuna esecuzione di codice dalla config (`TestSubstitutionIsNotAnExpressionLanguage` prova che `{{token|upper}}`, `{{token.length}}`, `${token}` restano testo) e nessun valore catturato nell'output (`TestACapturedValueNeverReachesTheOutput` cerca il token letterale in tre flussi, incluso quello dove finisce dentro una URL e l'errore di trasporto la cita).
+
+  Coda trovata strada facendo: `coverage` non sapeva appiattire un target fatto di sotto-richieste — un flow sarebbe comparso senza host e non avrebbe mai fatto match con un inventory, cioè il sotto-riportare silenzioso che quel package esiste per evitare. E il README dichiarava «29 modules ship today» con 30 nel registry: `TestProseModuleCountsMatchTheRegistry` lega ora quella frase al registry.
 
 ## M38 — Il minimo privilegio (fase 4) ✅
 

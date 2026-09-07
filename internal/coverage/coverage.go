@@ -11,8 +11,8 @@
 //
 // The convention every module already follows:
 //
-//   - the targets live in a field named Targets (27 modules), Brokers (kafka)
-//     or BaseURL (keycloak);
+//   - the targets live in a field named Targets (27 modules), Brokers (kafka),
+//     BaseURL (keycloak) or Flows (flow);
 //   - that field is a []string, a []SomethingTarget, or a plain string;
 //   - inside a target struct, the display name is Name (or URL when there is
 //     no Name), and the address is one of Address, URL, DSN, URI, Endpoint.
@@ -52,7 +52,7 @@ type Target struct {
 }
 
 // candidate field names holding targets, in priority order.
-var targetFields = []string{"Targets", "Brokers", "BaseURL"}
+var targetFields = []string{"Targets", "Brokers", "BaseURL", "Flows"}
 
 // address field names inside a target struct, in priority order.
 var addressFields = []string{"Address", "URL", "Endpoint", "DSN", "URI"}
@@ -124,6 +124,15 @@ func targetFrom(module string, v reflect.Value) (Target, bool) {
 	}
 	if v.Kind() != reflect.Struct {
 		return Target{}, false
+	}
+
+	// A target made of ordered sub-requests (a flow) reaches every host its
+	// steps do, and there is no single address field to read. Without this the
+	// flow would be listed with no host at all and could never match an
+	// inventory — a coverage tool quietly under-reporting, which is exactly the
+	// failure this package's reflection exists to avoid.
+	if steps := v.FieldByName("Steps"); steps.IsValid() && steps.Kind() == reflect.Slice {
+		return flowTarget(module, v, steps)
 	}
 
 	// The address first: it is also the fallback display name.
@@ -328,4 +337,41 @@ func DiffInventory(targets []Target, hosts []inventory.Host) Diff {
 		}
 	}
 	return d
+}
+
+// flowTarget flattens a multi-step target: the display name is the flow's, and
+// the hosts are every host its steps reach, de-duplicated in step order so the
+// list reads the way the flow runs.
+func flowTarget(module string, v, steps reflect.Value) (Target, bool) {
+	name := ""
+	if f := v.FieldByName("Name"); f.IsValid() && f.Kind() == reflect.String {
+		name = f.String()
+	}
+
+	var hosts []string
+	seen := map[string]bool{}
+	port := 0
+	for i := 0; i < steps.Len(); i++ {
+		u := steps.Index(i).FieldByName("URL")
+		if !u.IsValid() || u.Kind() != reflect.String || u.String() == "" {
+			continue
+		}
+		for _, h := range hostsOf(u.String()) {
+			if !seen[h] {
+				seen[h] = true
+				hosts = append(hosts, h)
+			}
+		}
+		if port == 0 {
+			port = portOf(u.String())
+		}
+	}
+
+	if name == "" {
+		if len(hosts) == 0 {
+			return Target{}, false
+		}
+		name = hosts[0]
+	}
+	return Target{Module: module, Name: name, Hosts: hosts, Port: port}, true
 }

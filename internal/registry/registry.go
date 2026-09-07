@@ -14,6 +14,7 @@ import (
 	"github.com/Allan-Nava/checkfleet/internal/checks/dns"
 	"github.com/Allan-Nava/checkfleet/internal/checks/elasticsearch"
 	"github.com/Allan-Nava/checkfleet/internal/checks/etcd"
+	"github.com/Allan-Nava/checkfleet/internal/checks/flow"
 	"github.com/Allan-Nava/checkfleet/internal/checks/grpccheck"
 	"github.com/Allan-Nava/checkfleet/internal/checks/haproxy"
 	"github.com/Allan-Nava/checkfleet/internal/checks/httpcheck"
@@ -81,6 +82,7 @@ func Modules(cfg *engine.Config) []Spec {
 		{"vault", c.Vault != nil, func() engine.Check { return vault.New(*c.Vault) }},
 		{"memcached", c.Memcached != nil, func() engine.Check { return memcached.New(*c.Memcached) }},
 		{"cassandra", c.Cassandra != nil, func() engine.Check { return cassandra.New(*c.Cassandra) }},
+		{"flow", c.Flow != nil, func() engine.Check { return flow.New(*c.Flow) }},
 	}
 }
 
