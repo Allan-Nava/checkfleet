@@ -230,6 +230,16 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `slot_warn_bytes` | `int64` | `536870912` |
 | `slot_crit_bytes` | `int64` | `2147483648` |
 
+### `checks.pq`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `string` |  |
+| `profiles` | list of `string` |  |
+| `timeout_seconds` | `int` | `10` |
+| `concurrency` | `int` | `8` |
+| `socks5` | `string` |  |
+
 ### `checks.rabbitmq`
 
 | Key | Type | Default |
@@ -644,6 +654,16 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `port` | `int` |  |
 | `offset_warn_ms` | `int` |  |
 | `offset_crit_ms` | `int` |  |
+
+### `PQConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `string` |  |
+| `profiles` | list of `string` |  |
+| `timeout_seconds` | `int` |  |
+| `concurrency` | `int` |  |
+| `socks5` | `string` |  |
 
 ### `PatroniConfig`
 

@@ -53,12 +53,26 @@ jobs:
             exit 1
           fi
 
-  # Quality & security gate (CF-57, CF-72). Both are hard gates now: govulncheck
-  # fails only on vulnerabilities the code actually reaches (kept clean by staying
-  # on `stable` Go), and golangci-lint fails on any finding (the tree is clean;
-  # config in .golangci.yml, schema v2). golangci-lint must stay on a release built
-  # with Go >= the go.mod version, or it refuses to load the config — that's why
-  # we're on v2: v1 is EOL and its last binaries are built with go1.24.
+  # Quality & security gate (CF-57, CF-72). Both are hard gates: govulncheck
+  # fails only on vulnerabilities the code actually reaches, and golangci-lint
+  # fails on any finding (config in .golangci.yml, schema v2).
+  #
+  # The two jobs pin Go differently on purpose.
+  #
+  # govulncheck wants the newest toolchain, because the vulnerability database is
+  # keyed on it — `stable` is right there.
+  #
+  # golangci-lint must analyse the Go version the project actually targets. The
+  # action installs a PREBUILT linter binary, and a binary built with Go 1.25
+  # cannot typecheck a 1.27 standard library: with `stable` this job died on
+  # `could not import math/rand/v2 (method must have no type parameters)` the day
+  # Go 1.27 became stable — a failure with nothing to do with this repo's code.
+  # Pinning to the go.mod version removes the moving target; `stable` would break
+  # this again at every Go release, and it did.
+  #
+  # Building the linter from source hides the problem rather than fixing it: a
+  # locally-compiled v2.12.2 (built with 1.27.1) passes happily, which is exactly
+  # why this was green on a laptop and red in CI.
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -70,10 +84,14 @@ jobs:
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
           govulncheck ./...
+      # Re-pin to the go.mod version before linting — see the note above.
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
       - name: golangci-lint (gate)
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.12.2
+          version: v2.13.2
 
 # Releases (cross-platform archives, checksums, Homebrew formula) are built by
 # .github/workflows/release.yml with goreleaser on v* tags.

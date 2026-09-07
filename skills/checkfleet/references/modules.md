@@ -92,6 +92,10 @@ Patroni cluster via REST: BAD if no leader, WARN on split-brain, replica lag (`l
 
 PostgreSQL via read-only SQL: wraparound age, connection saturation (`conn_warn_pct`), inactive replication slots retaining WAL, replica lag.
 
+## pq
+
+Post-quantum TLS readiness, embedding pqprobe: dials each endpoint as a classical client and as a post-quantum-capable one and reports which classes can still handshake — `pq-ready`, `pq-blind`, `pq-refusing` (declined with an alert) or `pq-intolerant` (cut off mid-hello, an outage waiting for a CDN default). Handshakes only, never a request.
+
 ## rabbitmq
 
 RabbitMQ management API: node running + alarms, queue depth (`queue_warn_depth`/`queue_crit_depth`), backlog with no consumer.
@@ -126,4 +130,4 @@ HashiCorp Vault via HTTP: seal status (BAD if sealed or uninitialized, with unse
 
 ---
 
-29 modules.
+30 modules.

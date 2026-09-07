@@ -49,6 +49,16 @@
   nessun altro modulo può importare, quindi il modulo è stato possibile solo dopo
   che pqprobe ha esposto una superficie pubblica (`pq/`, PQ-39 lì).
 
+- **CI di nuovo verde: due rossi indipendenti su `main` (CF-189).**
+
+  **1. I reference generati erano stale.** Il modulo `pq` (CF-187) e' entrato nel registry e in `internal/moduledoc`, ma i quattro file generati non sono mai stati rigenerati: mancava da `modules.md`, da `permissions.md` (dove il conteggio diceva ancora «17 senza credenziali» invece di 18), dallo schema di config e dalla pagina docs. Il gate anti-divergenza di CF-152 ha fatto esattamente il suo mestiere — impedire che un modulo nuovo entri lasciando la skill indietro — e il rimedio e' rigenerare e committare.
+
+  **2. `golangci-lint` non typecheckava piu' la stdlib.** Il job `lint` installava Go `stable`, diventato **1.27.1**, ma l'action scarica un binario **prebuilt** del linter compilato con un Go piu' vecchio: da li' `could not import math/rand/v2 (method must have no type parameters)`, un fallimento che col codice di questo repo non c'entra niente.
+
+  Il dettaglio che spiega perche' non l'avevo visto prima: il `golangci-lint` sulla mia macchina e' **compilato da sorgente con go1.27.1** e passa senza una parola. Un verde locale che non significava nulla — compilare il linter da sorgente nasconde il problema invece di risolverlo, ed e' scritto nel commento del workflow perche' non riaccada.
+
+  Il job `lint` ora ri-fissa Go alla versione di `go.mod` (**1.25**) prima di lanciare il linter, tenendo `stable` per `govulncheck`, che il toolchain nuovo lo vuole davvero. Pinnare rimuove il bersaglio mobile: con `stable` questo si sarebbe rotto a ogni release di Go, e infatti si e' rotto. Linter portato a **v2.13.2**.
+
 ## 1.29.0
 
 - **Cadenze per modulo in `serve` e `watch` (CF-178, M37).** Un certificato non cambia in trenta secondi e un endpoint HTTP si', ma c'era un solo `--interval` per tutto. Il costo si paga due volte: carico inutile sulla flotta, e un grafico la cui risoluzione dice piu' sul poll rate che sul sistema.

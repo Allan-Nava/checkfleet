@@ -13,7 +13,7 @@ Every module is read-only: no check writes to the system it inspects.
 Credentials always come from the environment (`*_env`, `${VAR}`), never
 from the config file.
 
-## Needs no credential (17)
+## Needs no credential (18)
 
 These reach the target over the network and read what it already exposes.
 
@@ -94,6 +94,12 @@ GETs the Patroni REST API `/cluster` endpoint.
 
 > The exact policy depends on how the target is deployed, so treat the
 > above as guidance rather than a recipe.
+
+### pq
+
+A handful of TLS handshakes per endpoint, closed immediately. No credential.
+
+**Not needed:** No request, no body, no application data: the check reads how the handshake ended, so there is nothing it could change on the far side.
 
 ### smtp
 
