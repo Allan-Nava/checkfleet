@@ -45,6 +45,10 @@ type Target struct {
 	// address lists several endpoints (a replica set) this is the first one's
 	// port, which in practice is shared by all members.
 	Port int `json:"port,omitempty"`
+	// Source is the discovery source a target came from ("inventory", "consul",
+	// "dns-srv"), empty for targets written in the config. Empty by default so
+	// the JSON of a config without discovery is byte-identical to before.
+	Source string `json:"source,omitempty"`
 }
 
 // candidate field names holding targets, in priority order.

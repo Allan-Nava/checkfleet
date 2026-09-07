@@ -130,7 +130,7 @@ func TestUnreachableIsError(t *testing.T) {
 
 func TestTargetsDefaultPort(t *testing.T) {
 	check := New(engine.HAProxyConfig{Port: 8404, Targets: []string{"lb1", "lb2:1940"}})
-	targets, err := check.Targets()
+	targets, err := check.Targets(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}

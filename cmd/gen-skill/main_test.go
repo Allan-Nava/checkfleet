@@ -1,6 +1,7 @@
 package main
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 
@@ -144,5 +145,65 @@ func TestInlinedKeysAreDocumented(t *testing.T) {
 		if !strings.Contains(rest, "client_cert") {
 			t.Errorf("%s does not document client_cert", mod)
 		}
+	}
+}
+
+// This generator has now dropped keys from the schema four separate times, each
+// found by hand and fixed with a one-off regression test: inline fields, list
+// types at the top level, nested keys checked only one level deep, and finally
+// the types referenced from an inline struct (ConsulService and SRVLookup were
+// named in every table and documented nowhere).
+//
+// So this test stops testing the symptoms. It walks every struct type reachable
+// from engine.Config the way yaml.v3 will, and asserts that each one either has
+// a section of its own or is inline (spliced into its parent's table). A key
+// missing from this document is not cosmetic: the agent skill reads it as the
+// definition of what checkfleet.yml accepts, so an undocumented option is an
+// option that effectively does not exist.
+func TestSchemaDocumentsEveryReachableType(t *testing.T) {
+	doc := schemaDoc()
+
+	seen := map[reflect.Type]bool{}
+	var walk func(t reflect.Type, path string)
+	walk = func(rt reflect.Type, path string) {
+		if seen[rt] {
+			return
+		}
+		seen[rt] = true
+		for i := 0; i < rt.NumField(); i++ {
+			f := rt.Field(i)
+			ft := f.Type
+			for ft.Kind() == reflect.Pointer || ft.Kind() == reflect.Slice || ft.Kind() == reflect.Map {
+				ft = ft.Elem()
+			}
+			if ft.Kind() != reflect.Struct || ft.Name() == "" || ft.PkgPath() == "" {
+				continue // a scalar, or a stdlib type like time.Time
+			}
+			where := path + "." + f.Name
+			inline := isInline(f)
+			// ChecksConfig is the module index: its fields are documented as
+			// `checks.<module>` sections, not as a type of its own.
+			if ft.Name() != "ChecksConfig" && !inline &&
+				!strings.Contains(doc, "### `"+ft.Name()+"`") {
+				t.Errorf("%s (%s) has no section in config-schema.md — its keys are undocumented",
+					where, ft.Name())
+			}
+			// An inline struct contributes its keys to the parent's table, so
+			// each of those keys must appear somewhere in the document.
+			if inline {
+				for j := 0; j < ft.NumField(); j++ {
+					if key := yamlKey(ft.Field(j)); key != "" && !strings.Contains(doc, "`"+key+"`") {
+						t.Errorf("%s: inline key %q from %s is missing from config-schema.md",
+							where, key, ft.Name())
+					}
+				}
+			}
+			walk(ft, where)
+		}
+	}
+	walk(reflect.TypeOf(engine.Config{}), "Config")
+
+	if len(seen) < 30 {
+		t.Fatalf("only %d types walked — the traversal is not reaching the module configs", len(seen))
 	}
 }

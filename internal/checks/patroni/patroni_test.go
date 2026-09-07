@@ -123,7 +123,7 @@ func TestUnreachableIsError(t *testing.T) {
 }
 
 func TestTargetsDefaultPort(t *testing.T) {
-	targets, err := New(engine.PatroniConfig{Port: 8008, Targets: []string{"pg1", "pg2:8009"}}).Targets()
+	targets, err := New(engine.PatroniConfig{Port: 8008, Targets: []string{"pg1", "pg2:8009"}}).Targets(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}

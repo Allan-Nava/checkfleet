@@ -41,11 +41,11 @@ func genCert(t *testing.T, days int) tls.Certificate {
 
 // fakeSMTP starts an in-test SMTP server driven by opts and returns its address.
 type opts struct {
-	greeting    string          // greeting line without CRLF; default "220 relay ESMTP"
-	ehlo        []string        // EHLO reply lines (without codes); default {"relay", "STARTTLS"}
-	offerTLS    bool            // include STARTTLS in EHLO (overrides ehlo default)
-	startTLS    bool            // honor STARTTLS by upgrading with tlsCert
-	implicitTLS bool            // wrap the connection in TLS immediately (smtps)
+	greeting    string   // greeting line without CRLF; default "220 relay ESMTP"
+	ehlo        []string // EHLO reply lines (without codes); default {"relay", "STARTTLS"}
+	offerTLS    bool     // include STARTTLS in EHLO (overrides ehlo default)
+	startTLS    bool     // honor STARTTLS by upgrading with tlsCert
+	implicitTLS bool     // wrap the connection in TLS immediately (smtps)
 	tlsCert     *tls.Certificate
 }
 

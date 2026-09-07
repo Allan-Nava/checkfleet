@@ -372,7 +372,7 @@ type CertsConfig struct {
 	// Explicit host[:port] targets.
 	Targets []string `yaml:"targets"`
 	// Optional Ansible INI inventory: every host becomes a target on Port.
-	AnsibleInventory string `yaml:"ansible_inventory"`
+	Discovery Discovery `yaml:",inline"`
 }
 
 // NATSConfig configures the NATS JetStream cluster health check.
@@ -381,7 +381,7 @@ type NATSConfig struct {
 	Targets []string `yaml:"targets"`
 	Port    int      `yaml:"port"`
 	// Optional Ansible INI inventory: every host becomes a monitoring target.
-	AnsibleInventory string `yaml:"ansible_inventory"`
+	Discovery Discovery `yaml:",inline"`
 	// Scheme for the monitoring endpoint (http or https). Default http.
 	Scheme string `yaml:"scheme"`
 	// Optional expected meta-leader (server_name); a mismatch is WARN.
@@ -403,7 +403,7 @@ type HAProxyConfig struct {
 	Scheme string `yaml:"scheme"`
 	Path   string `yaml:"path"`
 	// Optional Ansible INI inventory: every host becomes a stats target.
-	AnsibleInventory string `yaml:"ansible_inventory"`
+	Discovery Discovery `yaml:",inline"`
 	// Optional WARN when a server/backend session usage reaches this percent
 	// of its limit (scur/slim). 0 disables the check.
 	SessionWarnPct int `yaml:"session_warn_pct"`
@@ -440,7 +440,7 @@ type PatroniConfig struct {
 	Port    int      `yaml:"port"`
 	Scheme  string   `yaml:"scheme"`
 	// Optional Ansible INI inventory: every host becomes an API target.
-	AnsibleInventory string `yaml:"ansible_inventory"`
+	Discovery Discovery `yaml:",inline"`
 	// Replica lag thresholds in bytes (WARN/BAD).
 	LagWarnBytes int64 `yaml:"lag_warn_bytes"`
 	LagCritBytes int64 `yaml:"lag_crit_bytes"`
@@ -454,7 +454,7 @@ type ConsulConfig struct {
 	Port    int      `yaml:"port"`
 	Scheme  string   `yaml:"scheme"`
 	// Optional Ansible INI inventory: every host becomes an API target.
-	AnsibleInventory string `yaml:"ansible_inventory"`
+	Discovery Discovery `yaml:",inline"`
 	// Optional expected number of raft peers; fewer than this is WARN.
 	ExpectPeers int `yaml:"expect_peers"`
 	// Optional ACL token, read from this env var (X-Consul-Token); never inline.
@@ -514,7 +514,7 @@ type RedisConfig struct {
 	Targets []string `yaml:"targets"`
 	Port    int      `yaml:"port"`
 	// Optional Ansible INI inventory: every host becomes a target.
-	AnsibleInventory string `yaml:"ansible_inventory"`
+	Discovery Discovery `yaml:",inline"`
 	// Optional TLS (rediss) and ACL auth. Password comes from the env var.
 	TLS         bool   `yaml:"tls"`
 	Username    string `yaml:"username"`
@@ -559,11 +559,11 @@ type TCPTarget struct {
 
 // TLSConfig configures the deep TLS check (chain validity, expiry, protocol).
 type TLSConfig struct {
-	Targets          []string `yaml:"targets"`
-	Port             int      `yaml:"port"`
-	WarnDays         int      `yaml:"warn_days"`
-	CritDays         int      `yaml:"crit_days"`
-	AnsibleInventory string   `yaml:"ansible_inventory"`
+	Targets   []string  `yaml:"targets"`
+	Port      int       `yaml:"port"`
+	WarnDays  int       `yaml:"warn_days"`
+	CritDays  int       `yaml:"crit_days"`
+	Discovery Discovery `yaml:",inline"`
 }
 
 // PQConfig configures the post-quantum TLS readiness check (CF-187), which

@@ -279,6 +279,17 @@ func schemaDoc() string {
 func collectStructs(t reflect.Type, out map[string]reflect.Type) {
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
+		// An inline struct has no key of its own: its fields are spliced into
+		// the parent's table, so it gets no section — but it must still be
+		// walked, or the types IT references go undocumented. That is how
+		// ConsulService and SRVLookup were named in the tables under
+		// `ansible_inventory` with no section explaining their keys.
+		if isInline(f) {
+			if f.Type.Kind() == reflect.Struct {
+				collectStructs(f.Type, out)
+			}
+			continue
+		}
 		if yamlKey(f) == "" {
 			continue
 		}

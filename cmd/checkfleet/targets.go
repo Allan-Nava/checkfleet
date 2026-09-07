@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/Allan-Nava/checkfleet/internal/coverage"
 	"github.com/Allan-Nava/checkfleet/internal/inventory"
@@ -29,6 +31,8 @@ func runTargets(args []string) error {
 	against := fs.String("against", "", "Ansible inventory file or directory to diff the coverage against")
 	group := fs.String("group", "", "with --against: only consider inventory hosts in this group")
 	module := fs.String("module", "", "only list targets of this module")
+	noDiscover := fs.Bool("no-discover", false, "skip discovery sources (consul_service, dns_srv, ansible_inventory) and list only the targets written in the config")
+	discoverTimeout := fs.Duration("discover-timeout", 15*time.Second, "budget for resolving all discovery sources")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -47,6 +51,24 @@ func runTargets(args []string) error {
 	// to: the target simply isn't there, and nothing says why.
 	warnUnknownKeys(os.Stderr, *configPath, *stack)
 	targets := coverage.Targets(cfg)
+
+	// Discovery runs before anything else so this command answers what a run
+	// would actually cover (CF-179). Skippable because it talks to the network:
+	// a catalog or nameserver that is down must not stop an operator from
+	// reading the static half of the picture.
+	if !*noDiscover {
+		ctx, cancel := context.WithTimeout(context.Background(), *discoverTimeout)
+		defer cancel()
+		found, derrs := coverage.Discovered(ctx, cfg)
+		targets = append(targets, found...)
+		// Reported on stderr, not as an exit code: this is a diagnostic, and a
+		// half-resolved fleet is still worth printing. Silence here would be
+		// the failure mode the whole feature exists to avoid.
+		for _, m := range sortedKeys(derrs) {
+			fmt.Fprintf(os.Stderr, "warning: %s: discovery failed: %v\n", m, derrs[m])
+		}
+	}
+
 	if *module != "" {
 		var kept []coverage.Target
 		for _, t := range targets {
@@ -120,10 +142,17 @@ func formatTargets(targets []coverage.Target, diff *coverage.Diff, inventoryPath
 			// The hosts are shown only when they add something to the label, so
 			// the common case stays a single readable column.
 			hosts := strings.Join(t.Hosts, ", ")
+			// The source is shown only for discovered targets: it is the answer
+			// to "where did this host come from?", which is a question a
+			// hand-written target never raises.
+			src := ""
+			if t.Source != "" {
+				src = "  [" + t.Source + "]"
+			}
 			if hosts != "" && hosts != t.Name {
-				fmt.Fprintf(&b, "  %-52s → %s\n", t.Name, hosts)
+				fmt.Fprintf(&b, "  %-52s → %s%s\n", t.Name, hosts, src)
 			} else {
-				fmt.Fprintf(&b, "  %s\n", t.Name)
+				fmt.Fprintf(&b, "  %s%s\n", t.Name, src)
 			}
 		}
 	}
@@ -154,6 +183,17 @@ func formatTargets(targets []coverage.Target, diff *coverage.Diff, inventoryPath
 		fmt.Fprint(&b, "\nevery inventory host is covered ✅\n")
 	}
 	return b.String()
+}
+
+// sortedKeys keeps the discovery warnings in a stable order, so a CI log diffs
+// cleanly between runs.
+func sortedKeys(m map[string]error) []string {
+	out := make([]string, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	sort.Strings(out)
+	return out
 }
 
 func sortedCopy(in []string) []string {

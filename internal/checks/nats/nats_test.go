@@ -186,7 +186,7 @@ func TestUnreachableNodeIsError(t *testing.T) {
 
 func TestTargetsDefaultPort(t *testing.T) {
 	check := New(engine.NATSConfig{Port: 8222, Targets: []string{"a.example", "b.example:9000"}})
-	targets, err := check.Targets()
+	targets, err := check.Targets(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}

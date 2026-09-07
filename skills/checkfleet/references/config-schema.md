@@ -42,6 +42,8 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `port` | `int` | `443` |
 | `targets` | list of `string` |  |
 | `ansible_inventory` | `string` |  |
+| `consul_service` | `ConsulService` |  |
+| `dns_srv` | list of `SRVLookup` |  |
 
 ### `checks.clickhouse`
 
@@ -59,6 +61,8 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `port` | `int` | `8500` |
 | `scheme` | `string` |  |
 | `ansible_inventory` | `string` |  |
+| `consul_service` | `ConsulService` |  |
+| `dns_srv` | list of `SRVLookup` |  |
 | `expect_peers` | `int` |  |
 | `token_env` | `string` |  |
 | `kv_keys` | list of `string` |  |
@@ -107,6 +111,8 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `scheme` | `string` |  |
 | `path` | `string` | `/stats;csv` |
 | `ansible_inventory` | `string` |  |
+| `consul_service` | `ConsulService` |  |
+| `dns_srv` | list of `SRVLookup` |  |
 | `session_warn_pct` | `int` |  |
 | `auth_user` | `string` |  |
 | `auth_pass_env` | `string` |  |
@@ -191,6 +197,8 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `targets` | list of `string` |  |
 | `port` | `int` | `8222` |
 | `ansible_inventory` | `string` |  |
+| `consul_service` | `ConsulService` |  |
+| `dns_srv` | list of `SRVLookup` |  |
 | `scheme` | `string` |  |
 | `expect_meta_leader` | `string` |  |
 | `expect_peers` | list of `string` |  |
@@ -214,6 +222,8 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `port` | `int` | `8008` |
 | `scheme` | `string` |  |
 | `ansible_inventory` | `string` |  |
+| `consul_service` | `ConsulService` |  |
+| `dns_srv` | list of `SRVLookup` |  |
 | `lag_warn_bytes` | `int64` | `33554432` |
 | `lag_crit_bytes` | `int64` | `134217728` |
 
@@ -259,6 +269,8 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `targets` | list of `string` |  |
 | `port` | `int` | `6379` |
 | `ansible_inventory` | `string` |  |
+| `consul_service` | `ConsulService` |  |
+| `dns_srv` | list of `SRVLookup` |  |
 | `tls` | `bool` |  |
 | `username` | `string` |  |
 | `password_env` | `string` |  |
@@ -307,6 +319,8 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `warn_days` | `int` | `30` |
 | `crit_days` | `int` | `7` |
 | `ansible_inventory` | `string` |  |
+| `consul_service` | `ConsulService` |  |
+| `dns_srv` | list of `SRVLookup` |  |
 
 ### `checks.vault`
 
@@ -354,6 +368,8 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `port` | `int` |  |
 | `targets` | list of `string` |  |
 | `ansible_inventory` | `string` |  |
+| `consul_service` | `ConsulService` |  |
+| `dns_srv` | list of `SRVLookup` |  |
 
 ### `ClickHouseConfig`
 
@@ -381,9 +397,23 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `port` | `int` |  |
 | `scheme` | `string` |  |
 | `ansible_inventory` | `string` |  |
+| `consul_service` | `ConsulService` |  |
+| `dns_srv` | list of `SRVLookup` |  |
 | `expect_peers` | `int` |  |
 | `token_env` | `string` |  |
 | `kv_keys` | list of `string` |  |
+
+### `ConsulService`
+
+| Key | Type | Default |
+|---|---|---|
+| `address` | `string` |  |
+| `scheme` | `string` |  |
+| `service` | `string` |  |
+| `tag` | `string` |  |
+| `token_env` | `string` |  |
+| `only_healthy` | `bool` |  |
+| `keep_port` | `bool` |  |
 
 ### `DNSConfig`
 
@@ -478,6 +508,8 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `scheme` | `string` |  |
 | `path` | `string` |  |
 | `ansible_inventory` | `string` |  |
+| `consul_service` | `ConsulService` |  |
+| `dns_srv` | list of `SRVLookup` |  |
 | `session_warn_pct` | `int` |  |
 | `auth_user` | `string` |  |
 | `auth_pass_env` | `string` |  |
@@ -640,6 +672,8 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `targets` | list of `string` |  |
 | `port` | `int` |  |
 | `ansible_inventory` | `string` |  |
+| `consul_service` | `ConsulService` |  |
+| `dns_srv` | list of `SRVLookup` |  |
 | `scheme` | `string` |  |
 | `expect_meta_leader` | `string` |  |
 | `expect_peers` | list of `string` |  |
@@ -673,6 +707,8 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `port` | `int` |  |
 | `scheme` | `string` |  |
 | `ansible_inventory` | `string` |  |
+| `consul_service` | `ConsulService` |  |
+| `dns_srv` | list of `SRVLookup` |  |
 | `lag_warn_bytes` | `int64` |  |
 | `lag_crit_bytes` | `int64` |  |
 
@@ -716,6 +752,8 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `targets` | list of `string` |  |
 | `port` | `int` |  |
 | `ansible_inventory` | `string` |  |
+| `consul_service` | `ConsulService` |  |
+| `dns_srv` | list of `SRVLookup` |  |
 | `tls` | `bool` |  |
 | `username` | `string` |  |
 | `password_env` | `string` |  |
@@ -774,6 +812,14 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `expect_banner` | `string` |  |
 | `max_latency_ms` | `int` |  |
 
+### `SRVLookup`
+
+| Key | Type | Default |
+|---|---|---|
+| `name` | `string` |  |
+| `resolver` | `string` |  |
+| `keep_port` | `bool` |  |
+
 ### `StreamConfig`
 
 | Key | Type | Default |
@@ -819,6 +865,8 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `warn_days` | `int` |  |
 | `crit_days` | `int` |  |
 | `ansible_inventory` | `string` |  |
+| `consul_service` | `ConsulService` |  |
+| `dns_srv` | list of `SRVLookup` |  |
 
 ### `VaultConfig`
 

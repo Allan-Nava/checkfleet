@@ -18,14 +18,14 @@ import (
 
 // CQL native protocol v4 opcodes.
 const (
-	protoRequest  = 0x04
-	protoResponse = 0x84
-	opError       = 0x00
-	opStartup     = 0x01
-	opReady       = 0x02
+	protoRequest   = 0x04
+	protoResponse  = 0x84
+	opError        = 0x00
+	opStartup      = 0x01
+	opReady        = 0x02
 	opAuthenticate = 0x03
-	opOptions     = 0x05
-	opSupported   = 0x06
+	opOptions      = 0x05
+	opSupported    = 0x06
 )
 
 type Check struct {
@@ -178,7 +178,7 @@ func (c *Check) probe(ctx context.Context, t engine.CassandraTarget) engine.Find
 func writeFrame(conn net.Conn, opcode byte, body []byte) error {
 	hdr := make([]byte, 9+len(body))
 	hdr[0] = protoRequest
-	hdr[1] = 0x00 // flags
+	hdr[1] = 0x00                           // flags
 	binary.BigEndian.PutUint16(hdr[2:4], 1) // stream id
 	hdr[4] = opcode
 	binary.BigEndian.PutUint32(hdr[5:9], uint32(len(body)))

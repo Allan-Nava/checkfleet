@@ -93,6 +93,83 @@ there is no way to tell that apart from one that genuinely is.
 A module that is **not** present in `checks` is skipped by `check all`, and
 `check <name>` for it fails with `modulo "<name>" non configurato`.
 
+## Target discovery
+
+Seven modules — `certs`, `nats`, `haproxy`, `patroni`, `consul`, `redis`, `tls` —
+can take their targets from where the fleet is already described, instead of a
+hand-maintained list in `checkfleet.yml`. A retyped list drifts the moment a node
+is added, and the drift is silent: the check stays green because it never looked
+at the new host.
+
+Three sources, usable together. Results are merged and de-duplicated by address;
+when two sources name the same address the first one wins, so a hand-written
+inventory keeps its host name.
+
+### `ansible_inventory`
+
+A path to an Ansible INI inventory, file or directory. Unchanged from earlier
+releases.
+
+### `consul_service`
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `service` | string | — | **Required.** The service name to look up. |
+| `address` | string | `127.0.0.1:8500` | Consul agent, `host[:port]`. |
+| `scheme` | string | `http` | `http` or `https`. |
+| `tag` | string | — | Narrow the lookup to instances carrying this tag. |
+| `token_env` | string | — | Name of the env var holding the ACL token. Never the token itself. |
+| `only_healthy` | bool | `true` | Skip instances failing their own checks. |
+| `keep_port` | bool | `true` | Append the service port to each address. |
+
+`only_healthy` defaults to true because a target list carrying known-dead nodes
+turns one outage into a second, noisier one.
+
+### `dns_srv`
+
+A list of SRV lookups.
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `name` | string | — | **Required.** The full record name, e.g. `_nats._tcp.service.consul`. |
+| `resolver` | string | system | Send the query to a specific nameserver, `host[:port]` (default port 53). |
+| `keep_port` | bool | `true` | Append the port the record advertises. |
+
+`resolver` is not an edge case: names served only by Consul's DNS on `:8600` or a
+cluster's CoreDNS are invisible to the system resolver.
+
+### `keep_port`
+
+Both sources know a port, and by default they keep it — a discovery source that
+learns the port and drops it throws away the useful half of the answer. Set
+`keep_port: false` when the module supplies its own, as `certs` does with 443.
+
+### Seeing what will be checked
+
+Discovery runs **before** the checks, so `checkfleet targets` shows exactly what
+a run would cover, each discovered host tagged with its source:
+
+```console
+$ checkfleet targets --config checkfleet.yml
+4 target(s) across 1 module(s)
+
+certs (4)
+  github.com:443
+  web1                                                 → 10.0.0.1  [inventory]
+  web2                                                 → 10.0.0.2  [inventory]
+  nats1.service.consul                                 → nats1.service.consul  [dns-srv]
+```
+
+`--no-discover` lists only the targets written in the config; `--discover-timeout`
+(default 15s) bounds the whole resolution.
+
+A source that cannot be reached is a warning on stderr, not an exit code: a
+half-resolved fleet is still worth printing, and this command is a diagnostic.
+During a run the same failure becomes an `ERROR` finding — the check could not
+measure — while the hosts the other sources did resolve are still probed. One
+broken source must never silently mean "nothing to check", which would report a
+healthy fleet from a typo in a path.
+
 ## `checks.certs`
 
 TLS certificate expiry. See [Modules → certs](modules.md#certs).
@@ -104,9 +181,11 @@ TLS certificate expiry. See [Modules → certs](modules.md#certs).
 | `port` | int | `443` | Default port for targets and inventory hosts without an explicit `:port`. |
 | `targets` | list | — | `host` or `host:port` entries. |
 | `ansible_inventory` | string | — | Path to an Ansible INI inventory (file or directory). Every host becomes a target on `port`. |
+| `consul_service` | object | — | Consul catalog lookup. See [Target discovery](#target-discovery). |
+| `dns_srv` | list | — | SRV record lookups. See [Target discovery](#target-discovery). |
 
-Targets and inventory hosts are merged and de-duplicated. At least one of
-`targets` / `ansible_inventory` should be set.
+Targets and discovered hosts are merged and de-duplicated. At least one of
+`targets` / `ansible_inventory` / `consul_service` / `dns_srv` should be set.
 
 ## `checks.http`
 
@@ -132,6 +211,7 @@ NATS JetStream cluster health via the monitoring endpoints. See
 | `port` | int | `8222` | Default monitoring port for targets/inventory hosts without one. |
 | `scheme` | string | `http` | `http` or `https` for the monitoring endpoint. |
 | `ansible_inventory` | string | — | Ansible INI inventory; every host becomes a monitoring target on `port`. |
+| `consul_service` / `dns_srv` | — | — | See [Target discovery](#target-discovery). |
 | `expect_meta_leader` | string | — | Expected meta-leader `server_name`; a mismatch is WARN. |
 | `expect_peers` | list | — | Expected peer `server_name`s. Unexpected members → WARN (ghost); expected-but-absent → BAD. |
 | `lag_warn` | int | `100` | Raft peer lag (entries) at/above which a peer is WARN. |
@@ -162,6 +242,7 @@ HAProxy backend/server health via the CSV stats export. See
 | `scheme` | string | `http` | `http` or `https`. |
 | `path` | string | `/stats;csv` | Path of the CSV stats export. |
 | `ansible_inventory` | string | — | Ansible INI inventory; every host becomes a stats target on `port`. |
+| `consul_service` / `dns_srv` | — | — | See [Target discovery](#target-discovery). |
 | `session_warn_pct` | int | `0` (off) | WARN when `scur/slim` reaches this percent. |
 | `auth_user` | string | — | HTTP basic-auth user (optional). |
 | `auth_pass_env` | string | — | Env var holding the basic-auth password. **Never put the password in the config.** |
@@ -218,6 +299,7 @@ Patroni-managed PostgreSQL cluster health via the Patroni REST API. See
 | `port` | int | `8008` | Default API port for targets/inventory hosts without one. |
 | `scheme` | string | `http` | `http` or `https`. |
 | `ansible_inventory` | string | — | Ansible INI inventory; every host becomes an API target on `port`. |
+| `consul_service` / `dns_srv` | — | — | See [Target discovery](#target-discovery). |
 | `lag_warn_bytes` | int | `33554432` (32 MiB) | Replica lag → WARN. |
 | `lag_crit_bytes` | int | `134217728` (128 MiB) | Replica lag → BAD. |
 
@@ -242,6 +324,7 @@ Consul cluster health via the HTTP API. See [Modules → consul](modules.md#cons
 | `port` | int | `8500` | Default API port for targets/inventory hosts without one. |
 | `scheme` | string | `http` | `http` or `https`. |
 | `ansible_inventory` | string | — | Ansible INI inventory; every host becomes an API target on `port`. |
+| `consul_service` / `dns_srv` | — | — | See [Target discovery](#target-discovery). |
 | `expect_peers` | int | `0` (skip) | Expected raft peers; below quorum → BAD, below expected → WARN. |
 | `token_env` | string | — | Env var holding the ACL token (sent as `X-Consul-Token`). **Never inline the token.** |
 | `kv_keys` | list | — | KV keys that must exist; a missing key is BAD. |
@@ -424,6 +507,7 @@ Redis / Valkey health via `INFO`. See [Modules → redis](modules.md#redis).
 | `username` | string | — | Optional ACL username. |
 | `password_env` | string | — | Env var holding the password. **Never inline it.** |
 | `ansible_inventory` | string | — | Ansible INI inventory; every host becomes a target on `port`. |
+| `consul_service` / `dns_srv` | — | — | See [Target discovery](#target-discovery). |
 | `mem_warn_pct` | int | `80` | WARN when `used_memory` reaches this % of `maxmemory`. |
 | `lag_warn_bytes` | int | `16777216` (16 MiB) | Replica offset lag → WARN. |
 | `lag_crit_bytes` | int | `134217728` (128 MiB) | Replica offset lag → BAD. |
@@ -490,6 +574,7 @@ Deep TLS check. See [Modules → tls](modules.md#tls).
 | `warn_days` | int | `30` | Leaf expiry → WARN. |
 | `crit_days` | int | `7` | Leaf expiry → BAD. |
 | `ansible_inventory` | string | — | Ansible INI inventory; every host becomes a target. |
+| `consul_service` / `dns_srv` | — | — | See [Target discovery](#target-discovery). |
 
 ```yaml
 checks:

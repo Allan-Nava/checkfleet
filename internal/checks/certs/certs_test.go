@@ -99,7 +99,7 @@ func TestConnectionRefusedIsError(t *testing.T) {
 
 func TestTargetsFromConfigAndDefaultPort(t *testing.T) {
 	check := New(engine.CertsConfig{Port: 443, Targets: []string{"a.example", "b.example:8443"}})
-	targets, err := check.Targets()
+	targets, err := check.Targets(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -146,7 +146,7 @@ func TestRunAddsInventoryHosts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	c := New(engine.CertsConfig{AnsibleInventory: inv, Port: p, WarnDays: 30, CritDays: 7})
+	c := New(engine.CertsConfig{Discovery: engine.Discovery{AnsibleInventory: inv}, Port: p, WarnDays: 30, CritDays: 7})
 	findings := c.Run(context.Background())
 	if len(findings) != 1 {
 		t.Fatalf("the inventory host should be probed, got %+v", findings)
@@ -160,8 +160,8 @@ func TestRunAddsInventoryHosts(t *testing.T) {
 // report a healthy fleet from a typo in a path.
 func TestRunReportsUnreadableInventory(t *testing.T) {
 	c := New(engine.CertsConfig{
-		AnsibleInventory: filepath.Join(t.TempDir(), "nope.ini"),
-		WarnDays:         30, CritDays: 7,
+		Discovery: engine.Discovery{AnsibleInventory: filepath.Join(t.TempDir(), "nope.ini")},
+		WarnDays:  30, CritDays: 7,
 	})
 	findings := c.Run(context.Background())
 	if len(findings) != 1 || findings[0].Status != engine.ERROR {

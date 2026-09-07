@@ -96,7 +96,7 @@ func (c *Check) probe(ctx context.Context, t engine.EtcdTarget) []engine.Finding
 
 	if c.cfg.ExpectMembers > 0 && members > 0 && members < c.cfg.ExpectMembers {
 		findings = append(findings, engine.Finding{Check: c.Name(), Target: label + "/members",
-			Status: engine.BAD,
+			Status:  engine.BAD,
 			Message: fmt.Sprintf("%d members present, expected %d (quorum risk)", members, c.cfg.ExpectMembers)})
 	}
 	return findings

@@ -77,10 +77,12 @@ faq:
       network path from being reported as a broken service.
   - q: Can checkfleet monitor a whole fleet without listing every host?
     a: >-
-      Yes. Point a module at an Ansible INI inventory with `ansible_inventory`
-      and every host in it becomes a target, honouring `ansible_host`
-      overrides. It is the fastest way to get TLS expiry coverage across an
-      estate you already describe in Ansible.
+      Yes, from any of three sources. Point a module at an Ansible INI
+      inventory with `ansible_inventory` and every host in it becomes a target,
+      honouring `ansible_host` overrides. `consul_service` pulls the healthy
+      instances of a service from a Consul catalog, and `dns_srv` reads SRV
+      records. They can be combined, and `checkfleet targets` shows what a run
+      would actually cover before running it.
   - q: How does checkfleet handle credentials and secrets?
     a: >-
       Credentials are read from environment variables referenced by name in the

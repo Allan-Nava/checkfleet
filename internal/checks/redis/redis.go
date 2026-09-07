@@ -14,8 +14,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Allan-Nava/checkfleet/internal/discovery"
 	"github.com/Allan-Nava/checkfleet/internal/engine"
-	"github.com/Allan-Nava/checkfleet/internal/inventory"
 )
 
 type Check struct {
@@ -32,29 +32,26 @@ func New(cfg engine.RedisConfig) *Check {
 
 func (c *Check) Name() string { return "redis" }
 
-// Targets resolves explicit targets plus inventory hosts to host:port pairs.
-func (c *Check) Targets() ([]string, error) {
+// Targets resolves explicit targets plus discovered hosts to host:port pairs.
+func (c *Check) Targets(ctx context.Context) ([]string, error) {
 	var targets []string
 	for _, t := range c.cfg.Targets {
 		targets = append(targets, withDefaultPort(t, c.cfg.Port))
 	}
-	if c.cfg.AnsibleInventory != "" {
-		hosts, err := inventory.LoadPath(c.cfg.AnsibleInventory)
-		if err != nil {
-			return targets, fmt.Errorf("inventory %s: %w", c.cfg.AnsibleInventory, err)
-		}
-		for _, h := range hosts {
-			targets = append(targets, withDefaultPort(h.Address, c.cfg.Port))
-		}
+	hosts, err := discovery.Resolve(ctx, c.cfg.Discovery)
+	for _, h := range hosts {
+		targets = append(targets, withDefaultPort(h.Address, c.cfg.Port))
 	}
-	return targets, nil
+	// Partial results are kept alongside the error on purpose: one unreachable
+	// source must not blind the check to the hosts the others did resolve.
+	return targets, err
 }
 
 func (c *Check) Run(ctx context.Context) []engine.Finding {
-	targets, err := c.Targets()
+	targets, err := c.Targets(ctx)
 	var findings []engine.Finding
 	if err != nil {
-		findings = append(findings, engine.Finding{Check: c.Name(), Target: c.cfg.AnsibleInventory, Status: engine.ERROR, Message: err.Error()})
+		findings = append(findings, engine.Finding{Check: c.Name(), Target: discovery.Label(c.cfg.Discovery), Status: engine.ERROR, Message: err.Error()})
 	}
 	perTarget := make([][]engine.Finding, len(targets))
 	sem := make(chan struct{}, 16)

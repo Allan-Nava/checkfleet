@@ -43,7 +43,20 @@ checks:
     targets:
       - github.com
       - example.com:443
+    # Target discovery (CF-179). Any combination; results are merged and
+    # de-duplicated by address, and the first source to name an address wins.
     # ansible_inventory: /path/to/inventory   # every host becomes a target on `port`
+    # consul_service:                         # every healthy instance of a service
+    #   address: consul.service.consul:8500
+    #   service: web
+    #   tag: prod                             # optional
+    #   token_env: CONSUL_HTTP_TOKEN          # env var name, never the token
+    #   only_healthy: true                    # default: skip instances failing their checks
+    #   keep_port: false                      # certs supplies its own 443
+    # dns_srv:
+    #   - name: _https._tcp.example.com
+    #     resolver: 10.0.0.1:8600             # optional: Consul DNS, CoreDNS…
+    #     keep_port: false
 
   http:
     # Client certificate for a target behind mutual TLS (paths only, never

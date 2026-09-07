@@ -120,6 +120,7 @@ checks:
       - example.com
       - internal.example:8443
     ansible_inventory: /path/to/inventory   # optional: every host → target
+    # also: consul_service (Consul catalog) and dns_srv (SRV records)
   http:
     targets:
       - url: https://example.com/

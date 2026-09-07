@@ -1,5 +1,55 @@
 # Changelog
 
+## 1.31.0
+
+- **Scoperta dei target da Consul e DNS SRV (CF-179, M37).** Sette moduli — `certs`,
+  `nats`, `haproxy`, `patroni`, `consul`, `redis`, `tls` — leggevano la flotta da un
+  solo posto, un file INI di Ansible. Il nuovo `internal/discovery` ne aggiunge due che
+  una flotta reale ha già: `consul_service` prende le istanze di un servizio dal catalogo
+  (solo quelle healthy di default — una lista di target che contiene nodi già morti
+  trasforma un guasto in due allarmi) e `dns_srv` legge i record SRV, con `resolver`
+  opzionale perché i nomi serviti solo dalla DNS di Consul su `:8600` o da una CoreDNS
+  sono invisibili al resolver di sistema. Le tre sorgenti si combinano, i risultati sono
+  uniti e deduplicati per indirizzo e la prima sorgente vince, così un inventory scritto a
+  mano tiene il suo nome host.
+
+  `ansible_inventory` **non cambia**: `engine.Discovery` è spliced con `yaml:",inline"`,
+  quindi una config scritta prima funziona identica.
+
+- **`checkfleet targets` mostra cosa verrebbe controllato, prima di controllarlo.** La
+  scoperta gira prima della run e ogni host scoperto è etichettato con la sua sorgente
+  (`[inventory]`, `[consul]`, `[dns-srv]`). Senza questo il comando avrebbe sotto-riportato
+  proprio dove la scoperta sta facendo il lavoro: la YAML statica smette di essere la
+  risposta nel momento in cui c'è un catalogo di mezzo. `--no-discover` elenca i soli
+  target scritti in config, `--discover-timeout` (15s) limita l'intera risoluzione.
+
+  Una sorgente irraggiungibile è un warning su stderr e non un exit code — il comando è
+  diagnostico, e una flotta risolta a metà vale comunque la stampa. Nella run diventa un
+  finding ERROR, mentre gli host risolti dalle altre sorgenti restano controllati: una
+  sorgente rotta non deve mai voler dire in silenzio «niente da controllare», che sarebbe
+  «flotta sana» generata da un typo in un path.
+
+- **Il riuso che l'item CF-179 dava per scontato non esisteva.** Il decoder DNS scritto a
+  mano nel modulo `dns` è unexported e non gestisce SRV: riusarlo avrebbe significato
+  scrivere e mantenere un secondo parser di rdata SRV con decompressione dei nomi, per
+  rispondere a una domanda a cui `net.Resolver` risponde già correttamente. Stessa cosa
+  per il client HTTP del modulo `consul`, che è un metodo legato alla config e al TLS di
+  quel check. Entrambe le sorgenti restano zero-dep. Il test SRV usa un nameserver UDP
+  vero in-test, che codifica le risposte a mano: è l'unico modo di dimostrare che
+  l'override del resolver manda davvero la query altrove.
+
+- **Il generatore dello schema perdeva chiavi per la quarta volta — chiusa la classe di
+  bug, non il caso.** `collectStructs` saltava i campi `yaml:",inline"` e quindi non
+  visitava i tipi che quelli referenziano: `ConsulService` e `SRVLookup` comparivano in
+  ogni tabella e non erano documentati da nessuna parte. Dopo tre toppe puntuali (campi
+  inline, tipi lista al livello alto, chiavi annidate viste solo a un livello), adesso
+  `TestSchemaDocumentsEveryReachableType` cammina **tutti** i tipi raggiungibili da
+  `engine.Config` come farebbe yaml.v3 e pretende che ognuno abbia una sezione o sia
+  inline. Verificato che la guardia morda rimettendo il bug: fallisce nominando il path
+  esatto. Una chiave non documentata non è un dettaglio estetico — la skill agent legge
+  quel file come definizione di cosa accetta `checkfleet.yml`, quindi un'opzione non
+  documentata è un'opzione che di fatto non esiste.
+
 ## 1.30.0
 
 - **`Brew test` ora verifica la versione, non «una versione» (CF-188).** Il workflow asseriva

@@ -206,3 +206,70 @@ func TestTargetsSystemicErrors(t *testing.T) {
 		})
 	}
 }
+
+// CF-179: with a discovery source configured, `targets` must show what a run
+// would actually cover. The static YAML stops being the answer the moment a
+// catalog or an inventory is in play, and a coverage tool that reads only the
+// YAML under-reports exactly where discovery is doing the work.
+func TestTargetsShowsDiscoveredHosts(t *testing.T) {
+	bin := buildCLI(t)
+	dir := t.TempDir()
+
+	inv := filepath.Join(dir, "hosts.ini")
+	if err := os.WriteFile(inv, []byte("[web]\nweb1 ansible_host=10.0.0.1\nweb2 ansible_host=10.0.0.2\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg := filepath.Join(dir, "checkfleet.yml")
+	body := "checks:\n  certs:\n    targets: [\"github.com:443\"]\n    ansible_inventory: " + inv + "\n"
+	if err := os.WriteFile(cfg, []byte(body), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	out, code := runCLI(t, bin, "targets", "--config", cfg)
+	if code != 0 {
+		t.Fatalf("targets exited %d:\n%s", code, out)
+	}
+	if !strings.Contains(out, "3 target(s)") {
+		t.Errorf("want the configured target plus the two discovered ones:\n%s", out)
+	}
+	for _, want := range []string{"web1", "web2", "[inventory]"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("missing %q in:\n%s", want, out)
+		}
+	}
+
+	// --no-discover is the escape hatch when the source is unreachable, and it
+	// must leave exactly the statically configured targets.
+	out, code = runCLI(t, bin, "targets", "--config", cfg, "--no-discover")
+	if code != 0 {
+		t.Fatalf("targets --no-discover exited %d:\n%s", code, out)
+	}
+	if !strings.Contains(out, "1 target(s)") || strings.Contains(out, "web1") {
+		t.Errorf("--no-discover should list only the config's own targets:\n%s", out)
+	}
+}
+
+// A discovery source that cannot be reached is a warning, not an exit code:
+// this command is a diagnostic, and a half-resolved fleet is still worth
+// printing. Silence would be the exact failure mode the feature exists to stop.
+func TestTargetsWarnsOnBrokenDiscovery(t *testing.T) {
+	bin := buildCLI(t)
+	dir := t.TempDir()
+	cfg := filepath.Join(dir, "checkfleet.yml")
+	body := "checks:\n  certs:\n    targets: [\"github.com:443\"]\n    ansible_inventory: " +
+		filepath.Join(dir, "nope.ini") + "\n"
+	if err := os.WriteFile(cfg, []byte(body), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	out, code := runCLI(t, bin, "targets", "--config", cfg)
+	if code != 0 {
+		t.Fatalf("a broken discovery source must not gate, got exit %d:\n%s", code, out)
+	}
+	if !strings.Contains(out, "discovery failed") || !strings.Contains(out, "certs") {
+		t.Errorf("want a warning naming the module:\n%s", out)
+	}
+	if !strings.Contains(out, "1 target(s)") {
+		t.Errorf("the configured target must still be listed:\n%s", out)
+	}
+}

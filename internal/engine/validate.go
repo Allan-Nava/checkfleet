@@ -30,7 +30,7 @@ func Validate(cfg *Config) []string {
 
 	if x := c.Certs; x != nil {
 		configured++
-		if len(x.Targets) == 0 && x.AnsibleInventory == "" {
+		if len(x.Targets) == 0 && !x.Discovery.Set() {
 			add("certs: no target or ansible_inventory")
 		}
 		if x.WarnDays < x.CritDays {
@@ -50,14 +50,14 @@ func Validate(cfg *Config) []string {
 	}
 	if x := c.NATS; x != nil {
 		configured++
-		requireTargets(add, "nats", len(x.Targets), x.AnsibleInventory)
+		requireTargets(add, "nats", len(x.Targets), x.Discovery)
 		if x.LagWarn > x.LagCrit {
 			add("nats: lag_warn (%d) > lag_crit (%d)", x.LagWarn, x.LagCrit)
 		}
 	}
 	if x := c.HAProxy; x != nil {
 		configured++
-		requireTargets(add, "haproxy", len(x.Targets), x.AnsibleInventory)
+		requireTargets(add, "haproxy", len(x.Targets), x.Discovery)
 	}
 	if x := c.Stream; x != nil {
 		configured++
@@ -74,14 +74,14 @@ func Validate(cfg *Config) []string {
 	}
 	if x := c.Patroni; x != nil {
 		configured++
-		requireTargets(add, "patroni", len(x.Targets), x.AnsibleInventory)
+		requireTargets(add, "patroni", len(x.Targets), x.Discovery)
 		if x.LagWarnBytes > x.LagCritBytes {
 			add("patroni: lag_warn_bytes (%d) > lag_crit_bytes (%d)", x.LagWarnBytes, x.LagCritBytes)
 		}
 	}
 	if x := c.Consul; x != nil {
 		configured++
-		requireTargets(add, "consul", len(x.Targets), x.AnsibleInventory)
+		requireTargets(add, "consul", len(x.Targets), x.Discovery)
 	}
 	if x := c.Postgres; x != nil {
 		configured++
@@ -252,9 +252,9 @@ func Validate(cfg *Config) []string {
 	return problems
 }
 
-func requireTargets(add func(string, ...any), module string, nTargets int, inventory string) {
-	if nTargets == 0 && inventory == "" {
-		add("%s: no target or ansible_inventory", module)
+func requireTargets(add func(string, ...any), module string, nTargets int, d Discovery) {
+	if nTargets == 0 && !d.Set() {
+		add("%s: no target and no discovery source (ansible_inventory, consul_service, dns_srv)", module)
 	}
 }
 
