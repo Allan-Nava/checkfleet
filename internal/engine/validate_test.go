@@ -171,3 +171,30 @@ func TestValidateAcceptsAWorkingFlow(t *testing.T) {
 		t.Fatalf("a valid flow should raise nothing, got %v", got)
 	}
 }
+
+func TestValidateCatchesMediaMTXMistakes(t *testing.T) {
+	cfg := &Config{Checks: ChecksConfig{MediaMTX: &MediaMTXConfig{Targets: []MediaMTXTarget{
+		{Name: "ok", URL: "http://mtx-01:9997"},
+		{Name: "no-url"},
+		{Name: "not-a-url", URL: "mtx-01:9997"},
+		// A URL that already carries a path produces a 404 that reads like an
+		// unreachable server, which is a slow thing to debug.
+		{Name: "has-path", URL: "http://mtx-01:9997/v3/paths/list"},
+		{Name: "half-auth", URL: "http://mtx-02:9997", Username: "admin"},
+	}}}}
+
+	got := strings.Join(Validate(cfg), "\n")
+	for _, want := range []string{
+		"mediamtx no-url: no url",
+		"mediamtx not-a-url: url must be scheme+host",
+		"mediamtx has-path: url should be the API base",
+		"mediamtx half-auth: username set with no password_env",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q in:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, "mediamtx ok:") {
+		t.Errorf("a valid target was reported:\n%s", got)
+	}
+}

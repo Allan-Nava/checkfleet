@@ -1,5 +1,40 @@
 # Changelog
 
+## 1.33.0
+
+- **Modulo `mediamtx` (CF-21).** L'ultimo item aperto del backlog, deprioritizzato «da fare
+  per ultimo» fin da M6. Legge l'**API di controllo v3** di mediamtx: quali path esistono,
+  se ognuno è ready, e cosa ci passa dentro.
+
+  È il livello che nient'altro in checkfleet vede. `ingest` dice che uno streamer *può*
+  connettersi, `stream` dice che un manifest viene servito — e in mezzo ai due sta il
+  guasto che manda una diretta fuori onda in silenzio: **l'encoder è morto, il path è
+  andato not-ready, e il manifest a valle è ancora in cache**, quindi ogni altra probe
+  resta verde.
+
+- **Cosa riporta.** Un finding per target sulla raggiungibilità dell'API, con il numero di
+  path come metrica, WARN oltre `max_latency_ms` e ERROR se l'API è irraggiungibile,
+  rifiuta le credenziali (401) o risponde qualcosa che non è 200 — ERROR e non BAD, perché
+  un'API che non si riesce a leggere non dice niente sulla salute degli stream.
+
+  Per path: BAD quando è **not ready** (nessun publisher, l'encoder è sparito), BAD quando
+  è ready ma ha ricevuto **zero byte** (il publisher si è connesso e poi è ammutolito, che
+  da fuori è indistinguibile dalla salute), altrimenti OK con il tipo di sorgente, le
+  tracce e il numero di reader come metrica.
+
+- **`expect_paths` cambia la domanda.** Senza, si giudicano i path che il server riporta —
+  e un path sparito dalla config è invisibile a quella domanda. Con, la domanda diventa
+  «i path che devono essere in onda ci sono», e uno mancante è BAD. `warn_no_readers` è
+  opt-in: uno stream senza spettatori alle 04:00 è la notte, non un guasto.
+
+- **La paginazione è seguita**, perché una lista di path troncata è lo stesso guasto del
+  non controllarli affatto. Il check chiama solo `/v3/paths/list`: non può creare né
+  cancellare un path, e la pagina dei permessi lo dice insieme al fatto che mediamtx non
+  ha un modello di permessi suo — l'API va ristretta a livello di rete o reverse proxy.
+
+- **Con questo il backlog non ha più item aperti implementabili.** Restano solo CF-146
+  (social preview) e CF-148 (Search Console), che si fanno dalle UI di GitHub e Google.
+
 ## 1.32.0
 
 - **Modulo `flow`: check di flusso multi-passo (CF-180, M37 chiusa).** Metà di quello a

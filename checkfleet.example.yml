@@ -380,3 +380,16 @@ checks:
           - name: reach a private page
             url: https://portal.example.com/account
             expect_status: 200
+
+  # mediamtx control API: the layer between "a streamer can connect" (ingest)
+  # and "a manifest is served" (stream) — where a dead encoder hides.
+  mediamtx:
+    targets:
+      - name: mtx-01
+        url: http://mtx-01:9997      # API base, no path
+        # The paths that must be on the air. Without this every path the
+        # server reports is judged, which cannot notice one that vanished.
+        expect_paths: [live/stream1]
+        # A stream with no viewers at 04:00 is not a fault, so this is opt-in.
+        warn_no_readers: false
+        max_latency_ms: 1000

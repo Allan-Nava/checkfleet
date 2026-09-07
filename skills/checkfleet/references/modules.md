@@ -68,6 +68,10 @@ Keycloak health endpoint UP, and per-realm OIDC discovery (token endpoint presen
 
 LDAP connect + bind (anonymous or creds from env), optional sanity search (at least `min_entries` under `base_dn`).
 
+## mediamtx
+
+mediamtx streaming server via its v3 control API: paths present and ready (a not-ready path has no publisher), `expect_paths` missing, ingest stalled (ready but zero bytes received), reader count per path. Zero-dep HTTP/JSON.
+
 ## memcached
 
 memcached via the text protocol (STATS): reachability, memory used vs limit_maxbytes (`mem_warn_pct`), evictions since startup (`evictions_warn`), connections and version. Zero-dep.
@@ -134,4 +138,4 @@ HashiCorp Vault via HTTP: seal status (BAD if sealed or uninitialized, with unse
 
 ---
 
-31 modules.
+32 modules.

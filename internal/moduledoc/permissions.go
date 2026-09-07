@@ -44,6 +44,14 @@ var Permissions = map[string]Permission{
 	"dns": {Unauthenticated: true,
 		Summary:   "Sends DNS queries to the configured resolvers. No credential.",
 		NotNeeded: "No zone transfer (AXFR) and no write: only ordinary lookups."},
+	"mediamtx": {
+		Summary: "Read-only access to the mediamtx control API (`/v3/paths/list`). Basic auth only when the API is protected, with the credential read from an env var named in the config.",
+		Statements: []string{
+			"mediamtx has no permission model of its own: the control API is either open or behind HTTP basic auth, so restrict it at the network or reverse-proxy layer.",
+			"Expose the API on an internal interface only — it can also create and delete paths, and this check never calls those endpoints, but anything else reaching it could.",
+		},
+		NotNeeded: "No publishing or reading credential: the check reads the server's own view of its paths, it never opens a stream.",
+	},
 	"flow": {NeedsJudgement: true,
 		Summary: "Whatever the flow's own steps need — typically an application login: a client credential or a user account, supplied through `body_env` / `headers_env`.",
 		Statements: []string{

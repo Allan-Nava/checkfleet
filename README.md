@@ -17,7 +17,7 @@
 
 ---
 
-**checkfleet is a command-line tool that runs domain-aware infrastructure health checks from a single static Go binary.** You describe your targets in a `checkfleet.yml`, run `checkfleet check all`, and get findings as terminal output, an ops-style Markdown report, JSON, a Slack message, or Prometheus metrics. 31 modules ship today — TLS certificate expiry, HTTP, DNS, NATS, Kafka, PostgreSQL, MySQL, MongoDB, Redis, Consul, Vault, HAProxy, Elasticsearch, HLS/DASH streams and more.
+**checkfleet is a command-line tool that runs domain-aware infrastructure health checks from a single static Go binary.** You describe your targets in a `checkfleet.yml`, run `checkfleet check all`, and get findings as terminal output, an ops-style Markdown report, JSON, a Slack message, or Prometheus metrics. 32 modules ship today — TLS certificate expiry, HTTP, DNS, NATS, Kafka, PostgreSQL, MySQL, MongoDB, Redis, Consul, Vault, HAProxy, Elasticsearch, HLS/DASH streams and more.
 
 No agent to install on the targets. No server to keep running. No account, no telemetry.
 

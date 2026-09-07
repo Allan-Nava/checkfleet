@@ -39,6 +39,34 @@ func Validate(cfg *Config) []string {
 			add("certs: warn_days (%d) should be >= crit_days (%d)", x.WarnDays, x.CritDays)
 		}
 	}
+	if x := c.MediaMTX; x != nil {
+		configured++
+		if len(x.Targets) == 0 {
+			add("mediamtx: no target")
+		}
+		for i, t := range x.Targets {
+			label := t.Name
+			if label == "" {
+				label = fmt.Sprintf("target %d", i+1)
+			}
+			if t.URL == "" {
+				add("mediamtx %s: no url", label)
+				continue
+			}
+			// The control API base, not a path: /v3/... is appended, so a URL
+			// that already carries one produces a 404 that reads like an
+			// unreachable server.
+			u, err := url.Parse(t.URL)
+			if err != nil || u.Scheme == "" || u.Host == "" {
+				add("mediamtx %s: url must be scheme+host, e.g. http://mtx-01:9997", label)
+			} else if strings.Trim(u.Path, "/") != "" {
+				add("mediamtx %s: url should be the API base with no path, got %q", label, u.Path)
+			}
+			if t.Username != "" && t.PasswordEnv == "" {
+				add("mediamtx %s: username set with no password_env", label)
+			}
+		}
+	}
 	if x := c.Flow; x != nil {
 		configured++
 		if len(x.Flows) == 0 {

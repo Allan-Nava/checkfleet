@@ -31,6 +31,14 @@ var snippets = map[string]string{
     warn_days: 30
     crit_days: 7
     targets: [example.com:443]`,
+	"mediamtx": `  mediamtx:
+    targets:
+      - name: mtx-01
+        url: http://mtx-01:9997
+        # The paths that must be on the air. A configured path with no
+        # publisher reports not-ready, which is the outage downstream
+        # probes miss because the manifest is still cached.
+        expect_paths: [live/stream1]`,
 	"flow": `  flow:
     flows:
       - name: login

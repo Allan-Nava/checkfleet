@@ -22,6 +22,7 @@ import (
 	"github.com/Allan-Nava/checkfleet/internal/checks/kafka"
 	"github.com/Allan-Nava/checkfleet/internal/checks/keycloak"
 	"github.com/Allan-Nava/checkfleet/internal/checks/ldapcheck"
+	"github.com/Allan-Nava/checkfleet/internal/checks/mediamtx"
 	"github.com/Allan-Nava/checkfleet/internal/checks/memcached"
 	"github.com/Allan-Nava/checkfleet/internal/checks/mongodb"
 	"github.com/Allan-Nava/checkfleet/internal/checks/mysql"
@@ -83,6 +84,7 @@ func Modules(cfg *engine.Config) []Spec {
 		{"memcached", c.Memcached != nil, func() engine.Check { return memcached.New(*c.Memcached) }},
 		{"cassandra", c.Cassandra != nil, func() engine.Check { return cassandra.New(*c.Cassandra) }},
 		{"flow", c.Flow != nil, func() engine.Check { return flow.New(*c.Flow) }},
+		{"mediamtx", c.MediaMTX != nil, func() engine.Check { return mediamtx.New(*c.MediaMTX) }},
 	}
 }
 

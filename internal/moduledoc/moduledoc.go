@@ -18,6 +18,7 @@ var Docs = map[string]string{
 	"keycloak":      "Keycloak health endpoint UP, and per-realm OIDC discovery (token endpoint present, issuer coherent with `/realms/<realm>`).",
 	"tcp":           "Generic TCP reachability: connect (optionally TLS) + latency (`max_latency_ms`), optional `expect_banner` substring.",
 	"tls":           "Deep TLS: chain validity vs trust store, leaf expiry (`warn_days`/`crit_days`), negotiated protocol (below TLS 1.2 -> WARN), hostname mismatch.",
+	"mediamtx":      "mediamtx streaming server via its v3 control API: paths present and ready (a not-ready path has no publisher), `expect_paths` missing, ingest stalled (ready but zero bytes received), reader count per path. Zero-dep HTTP/JSON.",
 	"flow":          "Multi-step HTTP flows: ordered steps where a value captured from one response (`json:`/`header:`/`regex:` selector) is substituted into the next request as `{{name}}`. The finding names the step that failed. Declarative YAML only — no scripting — and captured values are never printed.",
 	"pq":            "Post-quantum TLS readiness, embedding pqprobe: dials each endpoint as a classical client and as a post-quantum-capable one and reports which classes can still handshake — `pq-ready`, `pq-blind`, `pq-refusing` (declined with an alert) or `pq-intolerant` (cut off mid-hello, an outage waiting for a CDN default). Handshakes only, never a request.",
 	"ntp":           "NTP clock offset via SNTP: WARN/BAD over `offset_warn_ms`/`offset_crit_ms`, BAD if the server is unsynchronized (stratum 0 or >=16).",

@@ -172,6 +172,15 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 |---|---|---|
 | `targets` | list of `LDAPTarget` |  |
 
+### `checks.mediamtx`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `MediaMTXTarget` |  |
+| `client_cert` | `string` |  |
+| `client_key` | `string` |  |
+| `ca_cert` | `string` |  |
+
 ### `checks.memcached`
 
 | Key | Type | Default |
@@ -655,6 +664,28 @@ is absent. A blank default means the zero value (`0`, `""`, empty list).
 | `action` | `string` |  |
 | `daily` | `string` |  |
 | `weekdays` | list of `string` |  |
+
+### `MediaMTXConfig`
+
+| Key | Type | Default |
+|---|---|---|
+| `targets` | list of `MediaMTXTarget` |  |
+| `client_cert` | `string` |  |
+| `client_key` | `string` |  |
+| `ca_cert` | `string` |  |
+
+### `MediaMTXTarget`
+
+| Key | Type | Default |
+|---|---|---|
+| `name` | `string` |  |
+| `url` | `string` |  |
+| `username` | `string` |  |
+| `password_env` | `string` |  |
+| `insecure_skip_verify` | `bool` |  |
+| `expect_paths` | list of `string` |  |
+| `warn_no_readers` | `bool` |  |
+| `max_latency_ms` | `int` |  |
 
 ### `MemcachedConfig`
 

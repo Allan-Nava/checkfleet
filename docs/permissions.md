@@ -142,7 +142,7 @@ Reads `/v1/sys/seal-status` and `/v1/sys/health`, which Vault serves unauthentic
 > The exact policy depends on how the target is deployed, so treat the
 > above as guidance rather than a recipe.
 
-## Needs an account (13)
+## Needs an account (14)
 
 ### clickhouse
 
@@ -231,6 +231,17 @@ Binds (anonymously, or with the configured account) and optionally runs one sear
 
 > The exact policy depends on how the target is deployed, so treat the
 > above as guidance rather than a recipe.
+
+### mediamtx
+
+Read-only access to the mediamtx control API (`/v3/paths/list`). Basic auth only when the API is protected, with the credential read from an env var named in the config.
+
+```
+mediamtx has no permission model of its own: the control API is either open or behind HTTP basic auth, so restrict it at the network or reverse-proxy layer.
+Expose the API on an internal interface only — it can also create and delete paths, and this check never calls those endpoints, but anything else reaching it could.
+```
+
+**Not needed:** No publishing or reading credential: the check reads the server's own view of its paths, it never opens a stream.
 
 ### mongodb
 
