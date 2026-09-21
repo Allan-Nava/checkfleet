@@ -7,6 +7,10 @@
   stdin/stdout e usa lo stesso runner del CLI per eseguire moduli e leggere la
   config YAML. È utile per agenti e orchestratori che vogliono invocare
   checkfleet come tool senza passare per il shell.
+- **Spec e backlog MCP/agenti.** Aggiornato il piano di lavoro con i casi d'uso
+  rimanenti: tool MCP più specifici (`explain`, `targets`), bridge HTTP/SSE per
+  orchestratori remoti, e la documentazione tecnica per l'uso con Claude Desktop
+  e VS Code.
 
 ## 1.33.0
 

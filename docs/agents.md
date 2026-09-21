@@ -90,3 +90,73 @@ This is the right shape when an assistant or orchestrator wants to call the
 runner as a tool without shelling out, but it does not replace the CLI: the
 single-binary command remains the canonical way to inspect a fleet, and the MCP
 server is a thin adapter over the same engine.
+
+## MCP technical contract
+
+The server is intentionally small and transport-agnostic. It is a JSON-RPC
+wrapper over the same runner used by the CLI, so a client gets the same
+configuration semantics, status model and filtering rules without a second
+implementation of the check engine.
+
+### Transport
+
+- stdio is the default and safest option for local desktop agents
+- stdin/stdout is line-delimited JSON and uses the standard JSON-RPC 2.0 envelope
+- each request includes `jsonrpc`, `id`, `method`, and `params`
+- the server replies with `jsonrpc`, `id` and `result` or `error`
+
+### Tools
+
+The minimal contract is:
+
+- `tools/list` → declarations for available tools
+- `tools/call` → execution of a tool and structured output
+- `checkfleet_run` → run one or more configured modules with the active config
+- `checkfleet_list_modules` → enumerate configured and available modules
+- `checkfleet_validate` → validate the YAML and return machine-readable issues
+
+A larger follow-up can add `checkfleet_explain` and `checkfleet_targets`, but
+those should still be thin adapters over `internal/moduledoc` and the registry,
+not custom logic.
+
+### Claude Desktop configuration
+
+```json
+{
+  "mcpServers": {
+    "checkfleet": {
+      "command": "/usr/local/bin/checkfleet",
+      "args": ["mcp", "--config", "/path/to/checkfleet.yml"],
+      "env": {
+        "CHECKFLEET_NO_COLOR": "1"
+      }
+    }
+  }
+}
+```
+
+### VS Code configuration
+
+```json
+{
+  "servers": {
+    "checkfleet": {
+      "type": "stdio",
+      "command": "/usr/local/bin/checkfleet",
+      "args": ["mcp", "--config", "/path/to/checkfleet.yml"]
+    }
+  }
+}
+```
+
+### Security assumptions
+
+- the config file is the authority: the tool does not invent or fetch state
+- no long-lived server state is required for the first version
+- no remote network listener by default; any HTTP/SSE variant must sit behind
+  explicit auth and a separate trust boundary
+- the agent must still use the CLI as the source of truth for operator actions,
+  while MCP is only a tool adapter for machine-driven orchestration
+
+This makes the server easy to reason about, easy to test, and consistent with
+checkfleet’s rule that the CLI remains the canonical operational interface.
