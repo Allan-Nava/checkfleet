@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **MCP stdio per checkfleet.** È stato aggiunto un server `checkfleet mcp` che
+  espone un sottoinsieme minimale di tool MCP (`tools/list`, `tools/call`) su
+  stdin/stdout e usa lo stesso runner del CLI per eseguire moduli e leggere la
+  config YAML. È utile per agenti e orchestratori che vogliono invocare
+  checkfleet come tool senza passare per il shell.
+
 ## 1.33.0
 
 - **Modulo `mediamtx` (CF-21).** L'ultimo item aperto del backlog, deprioritizzato «da fare

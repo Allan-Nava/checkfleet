@@ -71,14 +71,22 @@ gates keep that from happening.
 - A test compiles the binary and asserts that **every command and flag the skill
   shows as runnable exists in its usage**.
 
-## Why not an MCP server
+## MCP server
 
-Not now. MCP would be the right shape if checkfleet needed to hold state across
-calls or stream results — it does not. It is a single binary that takes a config
-and prints a document, which a shell tool already exposes perfectly well, and
-every assistant can run a shell command while MCP support varies. A server would
-add a process to supervise, a transport to debug and a second surface to keep
-compatible, in exchange for nothing the CLI does not already give.
+checkfleet also exposes a minimal stdio MCP server for automation-friendly
+clients:
 
-If that changes — long-running fleet state, subscriptions to status transitions
-— it gets reconsidered on the merits.
+```bash
+checkfleet mcp --config checkfleet.yml
+```
+
+It speaks JSON-RPC over stdin/stdout and exposes tools such as
+`checkfleet_run`, `checkfleet_list_modules` and `checkfleet_validate`. The tool
+surface is intentionally small: it asks the same config and runner that the CLI
+uses, and it returns the same findings structure, so the transport is the only
+thing that changes.
+
+This is the right shape when an assistant or orchestrator wants to call the
+runner as a tool without shelling out, but it does not replace the CLI: the
+single-binary command remains the canonical way to inspect a fleet, and the MCP
+server is a thin adapter over the same engine.
