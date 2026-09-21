@@ -101,6 +101,9 @@ See [Installation](https://allan-nava.github.io/checkfleet/installation/) for al
 | `vault` | HashiCorp Vault over HTTP: seal status (sealed/uninitialized), active/standby role, version |
 | `memcached` | memcached over the text protocol: reachability, memory vs limit_maxbytes, evictions, connections, version |
 | `cassandra` | Cassandra/ScyllaDB via the CQL native protocol handshake: node accepts CQL, handshake latency, cluster state vs expect_nodes |
+| `pq` | Post-quantum TLS readiness: embeds [pqprobe](https://github.com/Allan-Nava/pqprobe) to classify whether a peer accepts hybrid ML-KEM handshakes, declines them with a TLS alert, or chokes on the hello itself |
+
+The `pq` module is intentionally not a reimplementation: it wraps the same pqprobe logic that classifies TLS alert vs timeout/reset behaviour, so the distinction between “policy declined” and “outage” stays in one place.
 
 The only module still on the roadmap (see [BACKLOG.md](BACKLOG.md)) is `mediamtx`.
 
