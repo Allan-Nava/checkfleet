@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/go-ldap/ldap/v3 v3.4.14
-	github.com/jackc/pgx/v5 v5.10.0
+	github.com/jackc/pgx/v5 v5.11.0
 	github.com/twmb/franz-go v1.21.5
 	github.com/twmb/franz-go/pkg/kadm v1.18.0
 	go.mongodb.org/mongo-driver/v2 v2.8.0
