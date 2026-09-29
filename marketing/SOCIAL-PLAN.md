@@ -251,6 +251,8 @@ gh repo edit Allan-Nava/checkfleet \
 ## 8. Measurement
 
 Track five numbers, monthly, in one place. Anything more is procrastination.
+The place is [`METRICS.md`](METRICS.md); `scripts/metrics.sh --append` fills the
+rows an API can answer.
 
 | Metric | Where | Why it matters |
 |---|---|---|

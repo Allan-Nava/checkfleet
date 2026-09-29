@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.34.2
+
+- **Misura della discoverability (CF-148, parte automatizzabile).** `scripts/metrics.sh`
+  raccoglie dall'API GitHub i quattro numeri di `SOCIAL-PLAN.md` §8 che un'API sa dare —
+  views e clones (finestra mobile di 14 giorni), referring sites, download delle release,
+  star/fork — come sezione markdown datata; con `--append` la aggiunge a
+  `marketing/METRICS.md`, il «posto unico» che il piano chiedeva e che non esisteva.
+  Primo campione registrato al 2026-09-29. Le due righe senza API (impression di Search
+  Console e cosa rispondono gli assistenti) restano da compilare a mano, con i due prompt
+  fissi scritti in testa al file così che i mesi siano confrontabili.
+
 ## 1.34.1
 
 - **Sicurezza: `labstack/echo/v4` 4.13.3 → 4.15.3 nel modulo desktop.** Chiude l'alert
