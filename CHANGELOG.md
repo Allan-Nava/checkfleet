@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.34.1
+
+- **Sicurezza: `labstack/echo/v4` 4.13.3 → 4.15.3 nel modulo desktop.** Chiude l'alert
+  Dependabot (high): uno slash codificato (`%2F`) aggirava la protezione per-route ed
+  esponeva file statici. Echo entra solo come dipendenza indiretta del dev server di Wails
+  (`wails dev`): la build di release non lo linka, quindi i binari pubblicati non erano
+  esposti — ma l'aggiornamento costa niente e toglie il dubbio.
+
 ## 1.34.0
 
 - **Server MCP (CF-190).** `checkfleet mcp` espone checkfleet come tool MCP per agenti e
