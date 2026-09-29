@@ -4,7 +4,7 @@ nav_order: 13
 description: >-
   Install the checkfleet agent skill and use the CLI correctly from an AI
   assistant — the two semantics that decide whether the output is read right,
-  and why there is no MCP server.
+  and how to call it as an MCP server over stdio or HTTP.
 ---
 
 # Using checkfleet from an AI assistant
@@ -73,51 +73,59 @@ gates keep that from happening.
 
 ## MCP server
 
-checkfleet also exposes a minimal stdio MCP server for automation-friendly
-clients:
+checkfleet also ships an MCP server, a thin adapter over the same config,
+registry and runner the CLI uses:
 
 ```bash
 checkfleet mcp --config checkfleet.yml
 ```
 
-It speaks JSON-RPC over stdin/stdout and exposes tools such as
-`checkfleet_run`, `checkfleet_list_modules` and `checkfleet_validate`. The tool
-surface is intentionally small: it asks the same config and runner that the CLI
-uses, and it returns the same findings structure, so the transport is the only
-thing that changes.
-
-This is the right shape when an assistant or orchestrator wants to call the
-runner as a tool without shelling out, but it does not replace the CLI: the
-single-binary command remains the canonical way to inspect a fleet, and the MCP
-server is a thin adapter over the same engine.
-
-## MCP technical contract
-
-The server is intentionally small and transport-agnostic. It is a JSON-RPC
-wrapper over the same runner used by the CLI, so a client gets the same
-configuration semantics, status model and filtering rules without a second
-implementation of the check engine.
-
-### Transport
-
-- stdio is the default and safest option for local desktop agents
-- stdin/stdout is line-delimited JSON and uses the standard JSON-RPC 2.0 envelope
-- each request includes `jsonrpc`, `id`, `method`, and `params`
-- the server replies with `jsonrpc`, `id` and `result` or `error`
+The transport is the only thing that changes: the findings, the status model
+and the exit-code-free "a check that ran is a success" semantics are the CLI's.
+The single binary stays the canonical way to inspect a fleet.
 
 ### Tools
 
-The minimal contract is:
+| Tool | Arguments | Mirrors |
+|---|---|---|
+| `checkfleet_run` | `module` (default `all`) | `checkfleet check` — findings worst-first, with `status`, `count`, `runbook`, `remediation` |
+| `checkfleet_list_modules` | — | every known module, and the ones configured |
+| `checkfleet_validate` | — | `checkfleet validate` — `valid`, `problems` with did-you-mean `suggestion`, `advisory` notes that do not invalidate, `load_error` when the file cannot load |
+| `checkfleet_explain` | `module` (omit to list all) | `checkfleet explain` + `checkfleet perms` — thresholds, symptoms, and the least privilege the module needs |
+| `checkfleet_targets` | `module`, `discover` (default `true`) | `checkfleet targets --output json` — hostnames only, never a DSN; discovery failures come back as `discovery_errors`, not as a failed call |
 
-- `tools/list` → declarations for available tools
-- `tools/call` → execution of a tool and structured output
-- `checkfleet_run` → run one or more configured modules with the active config
-- `checkfleet_list_modules` → enumerate configured and available modules
-- `checkfleet_validate` → validate the YAML and return machine-readable issues
+A tool that fails (unknown module, unreadable config) returns a normal result
+with `isError: true`, so the model reads the reason and corrects the call. An
+unknown tool or method is a JSON-RPC protocol error.
 
-A larger follow-up can add `checkfleet_explain` and `checkfleet_targets`, but
-those should still be thin adapters over `internal/moduledoc` and the registry,
-not custom logic.
+### stdio transport
+
+- the default, and the right choice for a local desktop agent
+- one JSON-RPC 2.0 message per line in, one response per line out
+- a malformed line is answered with a parse error (`-32700`), it does not end
+  the session; notifications get no reply
+
+### HTTP transport
+
+For an orchestrator that cannot spawn a local process:
+
+```bash
+export CHECKFLEET_MCP_TOKEN=...   # from your secret store, never in a flag or the config
+checkfleet mcp --config checkfleet.yml --listen 127.0.0.1:8765
+```
+
+- one endpoint, `POST /mcp`: MCP *Streamable HTTP* in its stateless form —
+  each POST carries one message and gets its response as `application/json`
+- `GET /mcp` answers `405`: the server never pushes messages, so there is no
+  SSE stream and no session id — every request stands alone, like a CLI run
+- **authentication is mandatory**: `Authorization: Bearer $CHECKFLEET_MCP_TOKEN`,
+  compared in constant time; the server refuses to start without the variable
+- **Origin check** against DNS rebinding: a request carrying an `Origin` header
+  is rejected with `403` unless the origin is listed in `--allow-origin`
+  (comma-separated); requests without `Origin` (non-browser clients) pass
+- bodies over 1 MiB are rejected with `413`
+- bind to loopback, or put it behind your own TLS-terminating proxy: the
+  server speaks plain HTTP
 
 ### Claude Desktop configuration
 
@@ -151,12 +159,11 @@ not custom logic.
 
 ### Security assumptions
 
-- the config file is the authority: the tool does not invent or fetch state
-- no long-lived server state is required for the first version
-- no remote network listener by default; any HTTP/SSE variant must sit behind
-  explicit auth and a separate trust boundary
-- the agent must still use the CLI as the source of truth for operator actions,
-  while MCP is only a tool adapter for machine-driven orchestration
-
-This makes the server easy to reason about, easy to test, and consistent with
-checkfleet’s rule that the CLI remains the canonical operational interface.
+- the config file is the authority: the server does not invent or fetch state,
+  and no tool writes anything
+- no state is kept between calls
+- no network listener unless `--listen` is given, and then never without a token
+- `checkfleet_targets` returns hostnames extracted from DSNs/URIs, never the
+  values themselves, so credentials in a connection string do not reach the model
+- the agent must still treat the CLI as the source of truth for operator
+  actions; MCP is a tool adapter for machine-driven orchestration

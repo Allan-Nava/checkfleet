@@ -1,16 +1,45 @@
 # Changelog
 
-## Unreleased
+## 1.34.0
 
-- **MCP stdio per checkfleet.** È stato aggiunto un server `checkfleet mcp` che
-  espone un sottoinsieme minimale di tool MCP (`tools/list`, `tools/call`) su
-  stdin/stdout e usa lo stesso runner del CLI per eseguire moduli e leggere la
-  config YAML. È utile per agenti e orchestratori che vogliono invocare
-  checkfleet come tool senza passare per il shell.
-- **Spec e backlog MCP/agenti.** Aggiornato il piano di lavoro con i casi d'uso
-  rimanenti: tool MCP più specifici (`explain`, `targets`), bridge HTTP/SSE per
-  orchestratori remoti, e la documentazione tecnica per l'uso con Claude Desktop
-  e VS Code.
+- **Server MCP (CF-190).** `checkfleet mcp` espone checkfleet come tool MCP per agenti e
+  orchestratori, senza passare per la shell: JSON-RPC 2.0 su stdin/stdout, stesso config,
+  stesso registry e stesso runner del CLI. Il transport è l'unica cosa che cambia.
+
+- **Tool `checkfleet_explain` e `checkfleet_targets` (CF-191).** Il backlog li dava per
+  fatti, il server ne esponeva tre. Ora ci sono: `explain` restituisce il contratto del
+  modulo da `internal/moduledoc` (soglie e sintomi, più i privilegi minimi di
+  `checkfleet perms`), senza modulo elenca tutti i moduli con una riga; `targets` è
+  `checkfleet targets --output json` — solo hostname, **mai il valore di un DSN**, con i
+  fallimenti della discovery restituiti come `discovery_errors` invece che come errore.
+
+- **`checkfleet_validate` fa davvero validazione.** Prima caricava il config e rispondeva
+  `ok: true` o un errore di protocollo. Ora usa `engine.Inspect` come il comando
+  `validate`: `problems` con il suggerimento did-you-mean, le note advisory che non
+  invalidano, e un config illeggibile è un risultato con `load_error`, non un crash.
+
+- **Transport HTTP (CF-192).** `checkfleet mcp --listen 127.0.0.1:8765`: una sola route
+  `POST /mcp`, MCP *Streamable HTTP* nella forma stateless (una richiesta, una risposta
+  JSON, nessuna session id, `GET` → 405 perché il server non spinge mai messaggi).
+  **Autenticazione obbligatoria**: bearer token da `CHECKFLEET_MCP_TOKEN`, confronto a
+  tempo costante, e senza la variabile il server non parte. Controllo `Origin` contro il
+  DNS rebinding (`--allow-origin` per le origini browser ammesse), body oltre 1 MiB → 413.
+
+- **Errori secondo MCP.** Un tool che fallisce (modulo sconosciuto, config illeggibile)
+  torna come risultato con `isError: true`, così il modello legge il motivo e corregge la
+  chiamata; tool o metodo sconosciuti restano errori JSON-RPC con il codice giusto
+  (`-32602`, `-32601`). Una riga malformata su stdio riceve un parse error invece di
+  chiudere la sessione. `initialize` negozia la revisione del protocollo.
+
+- **Test senza rete.** I test MCP puntavano a `https://example.com/`: un test che tocca
+  internet è un bug per le regole del progetto. Ora usano un `httptest` locale, e coprono
+  tool per tool, il loop stdio e il transport HTTP (token, origin, 405, 202, 413).
+
+- **Fix: `desktop/go.sum` senza `pqprobe`.** Il modulo `pq` (CF-187) aveva aggiunto la
+  dipendenza al `go.mod` principale ma non al modulo `desktop/`, che importa `internal/*`:
+  in locale `go vet`/`go test` dentro `desktop/` fallivano con «missing go.sum entry».
+  La CI non lo vedeva perché il workflow desktop lancia `go mod tidy` prima della build.
+  `go mod tidy` committato nel modulo desktop.
 
 ## 1.33.0
 

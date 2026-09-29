@@ -115,7 +115,7 @@ func usage() {
   checkfleet explain [module]                                                 # what a module checks and its thresholds
   checkfleet completion <bash|zsh|fish>                                        # print a shell completion script
   checkfleet insight --history F [--digest] [--score] [--clusters] [--anomaly] [--recovery] [--forecast --threshold N] [--slo 0.999] [--output text|json]   # what the history implies
-  checkfleet mcp [--config checkfleet.yml] [--stack prod]                     # stdio MCP server for tools/list + tools/call
+  checkfleet mcp [--config checkfleet.yml] [--stack prod] [--listen 127.0.0.1:8765 [--allow-origin URL]]   # MCP server (stdio, or HTTP with CHECKFLEET_MCP_TOKEN)
   checkfleet skill <install|print> [--dir PATH]                                # install the agent skill shipped in this binary
   checkfleet version`)
 }

@@ -15,6 +15,7 @@ require (
 require (
 	filippo.io/edwards25519 v1.2.0 // indirect
 	git.sr.ht/~jackmordaunt/go-toast v1.1.2 // indirect
+	github.com/Allan-Nava/pqprobe v0.22.0 // indirect
 	github.com/Azure/go-ntlmssp v0.1.1 // indirect
 	github.com/bep/debounce v1.2.1 // indirect
 	github.com/esiqveland/notify v0.13.3 // indirect
